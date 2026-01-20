@@ -26,7 +26,7 @@
 - **Hosting**: Vercel
 
 
-📁 Project Structure
+## 📁 Project Structure
 ```bash
 my-project/
 ├─ app/
