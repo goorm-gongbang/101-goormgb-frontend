@@ -1,41 +1,25 @@
 🛠 Tech Stack
 Language & Framework
-
 Language: TypeScript
-
 Framework: Next.js 16 (App Router)
-
 Styling & UI
-
 Styling: Tailwind CSS
-
 UI Components: shadcn/ui
-
 Icons: lucide-react
-
 State Management
-
 Global State: Zustand
-
 API / Network
-
 HTTP Client: fetch, axios
-
 Development Environment
-
 IDE: VS Code
-
 Code Quality & Productivity
-
 Linting: ESLint
-
 Formatting: Prettier
-
 Deployment
-
 Hosting: Vercel
 
 📁 Project Structure
+```bash
 my-project/
 ├─ app/
 │  ├─ layout.tsx        # 전체 레이아웃 (Header / Footer)
@@ -94,6 +78,7 @@ my-project/
 ├─ tailwind.config.ts
 ├─ tsconfig.json
 └─ package.json
+```
 
 ## 🧠 Architecture Overview
 
