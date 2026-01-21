@@ -23,8 +23,7 @@
 - **Formatting**: Prettier
 
 ### Deployment
-- **Hosting**: Vercel
-
+- **Hosting**: AWS Cloudfront + S3
 
 ## 📁 Project Structure
 ```bash
