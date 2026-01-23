@@ -51,6 +51,202 @@
 
 :root {
   --radius: 0.625rem;
+
+  /* ===========================
+     Foundation / Primary
+  =========================== */
+  --foundation-primary-900: #00664D;
+  --foundation-primary-800: #007A5C;
+  --foundation-primary-700: #008F6B;
+  --foundation-primary-600: #00AD82;
+  --foundation-primary-500: #00C292;
+  --foundation-primary-400: #00D6A1;
+  --foundation-primary-300: #0BEAB2;
+  --foundation-primary-200: #44F9CC;
+  --foundation-primary-100: #8FFCE1;
+  --foundation-primary-50:  #CAFEF1;
+  --foundation-primary-10:  #E4FEF8;
+
+  /* ===========================
+     Foundation / Secondary
+  =========================== */
+  --foundation-secondary-900: #032935;
+  --foundation-secondary-800: #054357;
+  --foundation-secondary-700: #065D79;
+  --foundation-secondary-600: #08779B;
+  --foundation-secondary-500: #0A91BD;
+  --foundation-secondary-400: #0CABDF;
+  --foundation-secondary-300: #1BBDF3;
+  --foundation-secondary-200: #55CEF6;
+  --foundation-secondary-100: #86DCF9;
+  --foundation-secondary-50:  #B6EAFB;
+  --foundation-secondary-10:  #E7F8FE;
+
+  /* ===========================
+     Foundation / Neutral
+  =========================== */
+  --foundation-neutral-black: #000000;
+  --foundation-neutral-20: #050505;
+  --foundation-neutral-40: #0A0A0A;
+  --foundation-neutral-60: #0F0F0F;
+  --foundation-neutral-80: #141414;
+  --foundation-neutral-100: #1A1A1A;
+  --foundation-neutral-120: #1F1F1F;
+  --foundation-neutral-160: #292929;
+  --foundation-neutral-200: #333333;
+  --foundation-neutral-240: #3D3D3D;
+  --foundation-neutral-280: #474747;
+  --foundation-neutral-320: #525252;
+  --foundation-neutral-360: #5C5C5C;
+  --foundation-neutral-400: #666666;
+  --foundation-neutral-440: #707070;
+  --foundation-neutral-480: #7A7A7A;
+  --foundation-neutral-520: #858585;
+  --foundation-neutral-560: #8F8F8F;
+  --foundation-neutral-600: #999999;
+  --foundation-neutral-640: #A3A3A3;
+  --foundation-neutral-680: #ADADAD;
+  --foundation-neutral-720: #B8B8B8;
+  --foundation-neutral-760: #C2C2C2;
+  --foundation-neutral-800: #CCCCCC;
+  --foundation-neutral-840: #D6D6D6;
+  --foundation-neutral-880: #E0E0E0;
+  --foundation-neutral-900: #E6E6E6;
+  --foundation-neutral-920: #EBEBEB;
+  --foundation-neutral-940: #F0F0F0;
+  --foundation-neutral-960: #F5F5F5;
+  --foundation-neutral-980: #FAFAFA;
+  --foundation-neutral-white: #FFFFFF;
+  --background-interactive-neutral-disabled: #E5E5E5;
+  --text-interactive-neutral-disabled: #999999;
+
+  /* ===========================
+     Foundation / (Red)
+  =========================== */
+  --foundation-red-900: #5C0002;
+  --foundation-red-800: #8F0003;
+  --foundation-red-700: #C20004;
+  --foundation-red-600: #F50005;
+  --foundation-red-500: #FF383C;
+  --foundation-red-400: #FF5C5F;
+  --foundation-red-300: #FF8F91;
+  --foundation-red-200: #FFC2C3;
+  --foundation-red-100: #FFDBDC;
+  --foundation-red-50:  #FFF5F5;
+
+  /* ===========================
+     Foundation / (Orange)
+  =========================== */
+  --foundation-orange-900: #5C2B00;
+  --foundation-orange-800: #8F4300;
+  --foundation-orange-700: #C25B00;
+  --foundation-orange-600: #F57300;
+  --foundation-orange-500: #FF8D28;
+  --foundation-orange-400: #FFA85C;
+  --foundation-orange-300: #FFC48F;
+  --foundation-orange-200: #FFDFC2;
+  --foundation-orange-100: #FFECDB;
+  --foundation-orange-50:  #FFFAF5;
+
+  /* ===========================
+     Foundation / (Yellow)
+  =========================== */
+  --foundation-yellow-900: #332900;
+  --foundation-yellow-800: #665200;
+  --foundation-yellow-700: #997A00;
+  --foundation-yellow-600: #CCA300;
+  --foundation-yellow-500: #FFCC00;
+  --foundation-yellow-400: #FFD633;
+  --foundation-yellow-300: #FFE066;
+  --foundation-yellow-200: #FFEB99;
+  --foundation-yellow-100: #FFF5CC;
+  --foundation-yellow-50:  #FFFDF5;
+
+  /* ===========================
+     Foundation / (Green)
+  =========================== */
+  --foundation-green-900: #103D1B;
+  --foundation-green-800: #19612B;
+  --foundation-green-700: #22813A;
+  --foundation-green-600: #299E47;
+  --foundation-green-500: #34C759;
+  --foundation-green-400: #59D478;
+  --foundation-green-300: #82DE99;
+  --foundation-green-200: #AAE9BA;
+  --foundation-green-100: #D3F3DB;
+  --foundation-green-50:  #F7FDF8;
+
+  /* ===========================
+     Foundation / (Blue)
+  =========================== */
+  --foundation-blue-900: #003666;
+  --foundation-blue-800: #00498A;
+  --foundation-blue-700: #005CAD;
+  --foundation-blue-600: #0070D1;
+  --foundation-blue-500: #0088FF;
+  --foundation-blue-400: #33A0FF;
+  --foundation-blue-300: #66B8FF;
+  --foundation-blue-200: #99CFFF;
+  --foundation-blue-100: #CCE7FF;
+  --foundation-blue-50:  #F5FAFF;
+
+  /* ===========================
+     Foundation / (Indigo)
+  =========================== */
+  --foundation-indigo-900: #100778;
+  --foundation-indigo-800: #160AA9;
+  --foundation-indigo-700: #1C0DD9;
+  --foundation-indigo-600: #3626F2;
+  --foundation-indigo-500: #6155F5;
+  --foundation-indigo-400: #8F87F8;
+  --foundation-indigo-300: #A59FF9;
+  --foundation-indigo-200: #C5C0FB;
+  --foundation-indigo-100: #E4E2FD;
+  --foundation-indigo-50:  #F6F5FE;
+
+  /* ===========================
+     Foundation / (Purple)
+  =========================== */
+  --foundation-purple-900: #480C50;
+  --foundation-purple-800: #5C0F66;
+  --foundation-purple-700: #841692;
+  --foundation-purple-600: #AB1DBF;
+  --foundation-purple-500: #CB30E0;
+  --foundation-purple-400: #D65BE6;
+  --foundation-purple-300: #E187ED;
+  --foundation-purple-200: #ECB4F4;
+  --foundation-purple-100: #F7E0FA;
+  --foundation-purple-50:  #FDF6FE;
+
+  /* ===========================
+     Foundation / (Pink)
+  =========================== */
+  --foundation-pink-900: #610012;
+  --foundation-pink-800: #94001C;
+  --foundation-pink-700: #C70026;
+  --foundation-pink-600: #FA0030;
+  --foundation-pink-500: #FF2D55;
+  --foundation-pink-400: #FF617F;
+  --foundation-pink-300: #FF94A8;
+  --foundation-pink-200: #FFC7D2;
+  --foundation-pink-100: #FFE0E6;
+  --foundation-pink-50:  #FFF5F7;
+
+  /* ===========================
+     Foundation / (Brown)
+  =========================== */
+  --foundation-brown-900: #3D2C1F;
+  --foundation-brown-800: #573F2D;
+  --foundation-brown-700: #6C4E38;
+  --foundation-brown-600: #8D6649;
+  --foundation-brown-500: #AC7F5E;
+  --foundation-brown-400: #BD997F;
+  --foundation-brown-300: #CEB4A1;
+  --foundation-brown-200: #E0CFC2;
+  --foundation-brown-100: #F1EAE4;
+  --foundation-brown-50:  #FCFAF8;
+
+
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
