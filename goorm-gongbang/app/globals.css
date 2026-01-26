@@ -52,6 +52,9 @@
 :root {
   --radius: 0.625rem;
 
+  --light-destructive-foreground: #ffffff;
+  --light-primary-foreground: #ffffff;
+
   /* ===========================
      Foundation / Primary
   =========================== */
@@ -66,6 +69,8 @@
   --foundation-primary-100: #8FFCE1;
   --foundation-primary-50:  #CAFEF1;
   --foundation-primary-10:  #E4FEF8;
+  --text-Light-primary-foreground: #666666;
+
 
   /* ===========================
      Foundation / Secondary
@@ -161,6 +166,10 @@
   --foundation-yellow-200: #FFEB99;
   --foundation-yellow-100: #FFF5CC;
   --foundation-yellow-50:  #FFFDF5;
+  --bg-kakao-bg: #FEE500;
+  --bg-kakao-bg-hover: #f7d900;
+  --kakao-text: #000000;
+  --kakao-logo: #000000;
 
   /* ===========================
      Foundation / (Green)

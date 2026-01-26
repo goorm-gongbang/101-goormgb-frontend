@@ -19,9 +19,9 @@ const sizeStyles: Record<UiSize, string> = {
 };
 
 const toneStyles: Record<Tone, string> = {
-  strong: "bg-transparent text-[var(--foundation-primary-600)]",
-  base: "bg-transparent text-[var(--foundation-primary-500)]",
-  soft: "bg-[var(--foundation-primary-10)] text-[var(--foundation-primary-500)]",
+  strong: "bg-transparent text-[var(--foundation-primary-600)] hover:bg-[var(--foundation-primary-10)]",
+  base: "bg-transparent text-[var(--foundation-primary-500)] hover:bg-[var(--foundation-primary-10)]",
+  soft: "bg-[var(--foundation-primary-10)] text-[var(--foundation-primary-500)] hover:bg-[var(--foundation-primary-20)]",
 };
 
 
@@ -42,7 +42,7 @@ export function TertiaryButton ({
                 "rounded-md inline-flex justify-center items-center font-['Pretendard'] font-medium leading-5 transition",
                 sizeStyles[uiSize],
                 disabled ? disabledStyles : toneStyles[tone],
-                !disabled && "cursor-pointer hover:brightness-95",
+                !disabled && "cursor-pointer",
                 className
             )}
             {...props}
