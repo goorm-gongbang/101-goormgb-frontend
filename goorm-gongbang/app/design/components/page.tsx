@@ -22,7 +22,7 @@ function ToneRow({
     <div className="space-y-2">
       <div className="flex items-center gap-2">
         <span className="text-sm font-semibold">{title}</span>
-        <div className="h-px flex-1 bg-[var(--Foundation-Neutral-200, #e5e7eb)]" />
+        <div className="h-px flex-1 bg-[var(--foundation-neutral-200, #e5e7eb)]" />
       </div>
       <div className="flex flex-wrap items-center gap-3 rounded-lg border p-4">
         {children}
