@@ -65,11 +65,11 @@ export function PrimaryButtonWithIcon({
 =========================== */
 const secondaryToneStyles: Record<Tone, string> = {
     strong:
-        "bg-[var(--foundation-primary-10)] border border-[var(--Foundation-Primary-600)] text-[var(--foundation-primary-600)] hover:bg-[var(--foundation-primary-20)]",
+        "bg-[var(--foundation-primary-10)] border border-[var(--foundation-primary-600)] text-[var(--foundation-primary-600)] hover:bg-[var(--foundation-primary-20)]",
     base:
-        "bg-transparent border border-[var(--Foundation-Primary-500)] text-[var(--foundation-primary-500)] hover:bg-[var(--foundation-primary-10)]",
+        "bg-transparent border border-[var(--foundation-primary-500)] text-[var(--foundation-primary-500)] hover:bg-[var(--foundation-primary-10)]",
     soft:
-        "bg-transparent border border-[var(--Foundation-Primary-400)] text-[var(--foundation-primary-400)] hover:bg-[var(--foundation-primary-10)]",
+        "bg-transparent border border-[var(--foundation-primary-400)] text-[var(--foundation-primary-400)] hover:bg-[var(--foundation-primary-10)]",
 };
 
 export function SecondaryButtonWithIcon({
