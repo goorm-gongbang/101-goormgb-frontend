@@ -9,7 +9,7 @@ import { GoogleButton } from "@/components/login/GoogleButton";
 import { ButtonSpinner } from "@/components/common/ButtonLoading";
 import { Toggle } from "@/components/common/Toggle";
 import { ChipButton } from "@/components/common/ChipButton";
-import { CheckboxDemo } from "@/components/common/CheckboxDemo";
+import { UiCheckbox } from "@/components/common/UiCheckbox";
 
 function ToneRow({
   title,
@@ -459,7 +459,7 @@ export default function Components() {
       {/* Checkbox */}
       <Section title="Checkbox">
         <ToneRow title="Checkbox">
-          <CheckboxDemo />
+          <UiCheckbox />
         </ToneRow>
       </Section>
     </div>

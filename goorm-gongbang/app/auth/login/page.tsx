@@ -72,7 +72,7 @@ export default function LoginPage() {
         return;
       }
 
-      router.push("/auth/login"); // 둘다 아닌 경우
+      router.push("/"); // 둘다 아닌 경우
 
     } catch (e) { console.error("⚠️ LOGIN ERROR:", e); return; }
     finally { setLoading(false); }
@@ -86,6 +86,7 @@ export default function LoginPage() {
     const state = nanoid(); // CSCF 방지 state
     sessionStorage.setItem("kakao_oauth_state", state);
 
+    // 이부분 api 요청을 통해 받아 오도록 수정 ★
     const kakaoAuthUrl =
     `https://kauth.kakao.com/oauth/authorize` +
     `?response_type=code` +
