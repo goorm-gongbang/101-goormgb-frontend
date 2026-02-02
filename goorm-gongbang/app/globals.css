@@ -255,7 +255,13 @@
   --foundation-brown-100: #F1EAE4;
   --foundation-brown-50:  #FCFAF8;
 
+   /* ===========================
+     Text
+  =========================== */
+  --text-normal-n240: #3D3D3D;
+  --light-foreground: #000000;
 
+  --background-grey: #FAFAFA;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);

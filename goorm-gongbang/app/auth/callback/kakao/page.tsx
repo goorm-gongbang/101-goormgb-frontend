@@ -24,17 +24,13 @@ export default function KakaoCallbackPage() {
 
   useEffect(() => {
     const code = sp.get("code");
-    const state = sp.get("state");
-
-    /* state 검증 */
-    const savedState = sessionStorage.getItem("kakao_oauth_state");
-    if (!code || !state || !savedState || state !== savedState) {
+    if (!code) {
       toast.error("카카오 로그인 검증 실패");
       router.replace("/auth/login");
       return;
     }
     sessionStorage.removeItem("kakao_oauth_state");
-    
+
     /* ===========================
         API REQUEST
     =========================== */
@@ -70,7 +66,7 @@ export default function KakaoCallbackPage() {
 
       /* status 예외 처리 - 재 가입 제한 */
       const status = String(json?.data?.user?.status ?? "").toUpperCase();
-      if(status === "DEACTIVE") {
+      if (status === "DEACTIVE") {
         toast.error("비활성화된 계정입니다. 관리자에게 문의하세요.");
         router.replace("/auth/login");
         return;
