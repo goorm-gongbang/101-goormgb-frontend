@@ -393,13 +393,13 @@ export default function SeatStyleOnboardingPage() {
                 type="button"
                 onClick={handleNext}
                 disabled={!canGoNext}
-                className={[
+                className={cn(
                   "w-20 h-10 min-w-20 px-4 py-2 rounded-md inline-flex items-center justify-center",
                   "transition-colors duration-150",
                   canGoNext
                     ? "bg-[var(--foundation-primary-600)] hover:bg-[var(--foundation-primary-700)] active:bg-[var(--foundation-primary-800)] cursor-pointer"
                     : "bg-[var(--background-interactive-neutral-disabled,#E5E5E5)] cursor-not-allowed",
-                ].join(" ")}
+                )}
               >
                 <span
                   className={[

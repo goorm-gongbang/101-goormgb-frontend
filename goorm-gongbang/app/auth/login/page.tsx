@@ -19,7 +19,7 @@ export default function LoginPage() {
   const { accessToken, user, bootstrapped } = useAuthStore();
 
   useEffect(() => {
-    console.log("[Justand]", { accessToken, user, bootstrapped });
+    console.log("[Justand]", { accessToken, user, bootstrapped }); // ★ 배포 시 지워질 부분
   }, [accessToken, user, bootstrapped]);
 
   /* ===========================
@@ -62,7 +62,6 @@ export default function LoginPage() {
 
       /* 유저 정보 가져오기 /api/me */
       if (accessToken) {
-        const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
         const meRes = await authFetch(`${API_BASE_URL}/api/me`); // ★ 추후 실제 api 문서에 맞게 변경해야함.
         if (meRes.ok) {
           const meJson = await meRes.json().catch(() => null);
