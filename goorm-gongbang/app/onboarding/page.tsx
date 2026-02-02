@@ -1,9 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
+import { useAuthStore } from "@/stores/authStore";
 import { ChipButton } from "@/components/common/ChipButton";
 import { UiCheckbox } from "@/components/common/UiCheckbox";
 import { cn } from "@/lib/utils";
+import type { Viewpoint, SeatHeight, Section, PreferenceBase } from "@/stores/onboardingPrefStore";
+import { useOnboardingPrefStore } from "@/stores/onboardingPrefStore";
 
 type ViewPreference = "중앙" | "1루 내야" | "3루 내야" | "외야(좌)" | "외야(중)" | "외야(우)";
 type HeightPreference = "하단" | "중단" | "상단" | "무관";
@@ -14,7 +18,7 @@ const heightOptions: HeightPreference[] = ["하단", "중단", "상단", "무관
 const zoneOptions: ZonePreference[] = ["중앙쪽", "중간", "코너(파울라인)", "무관"];
 
 /* Rank Badge */
-function RankBadge({n}: {n: number}) {
+function RankBadge({ n }: { n: number }) {
   return (
     <div className="px-1.5 bg-[var(--foundation-primary-700)] rounded-[100px] inline-flex flex-col justify-center items-center overflow-hidden">
       <div className="text-[var(--foundation-primary-10)] text-xs font-normal font-['Pretendard'] leading-4">
@@ -31,13 +35,13 @@ function Chip({ label, rank, onClick }: {
   onClick: () => void;
 }) {
   return (
-    <ChipButton 
-    uiSize="lg"
-    tone={rank ? "strong" : "soft"}
-    onClick={onClick}
-    aria-pressed={Boolean(rank)}
-    leftIcon={rank ? <RankBadge n={rank} /> : undefined}
-    className={rank ? "gap-2" : ""}
+    <ChipButton
+      uiSize="lg"
+      tone={rank ? "strong" : "soft"}
+      onClick={onClick}
+      aria-pressed={Boolean(rank)}
+      leftIcon={rank ? <RankBadge n={rank} /> : undefined}
+      className={rank ? "gap-2" : ""}
     >
       {label}
     </ChipButton>
@@ -81,12 +85,12 @@ function toggleUpToThree<T>(prev: T[], value: T) {
   const idx = prev.indexOf(value);
 
   /* 이미 선택된 경우 -> 제거 (순서 재 정렬) */
-  if(idx !== -1) {
+  if (idx !== -1) {
     return prev.filter((v) => v !== value);
   }
 
   /* 새로 선택 시 3개면 -> 무시 */
-  if(prev.length >= 3) return prev;
+  if (prev.length >= 3) return prev;
 
   /* 3개 미만이면 -> 끝에 추가 (클릭 순서) */
   return [...prev, value];
@@ -98,11 +102,115 @@ function getRank<T>(arr: T[], value: T) {
 }
 
 export default function SeatStyleOnboardingPage() {
+  /* 서버 enum 매핑 */
+  const VIEWPOINT_MAP: Record<ViewPreference, Viewpoint> = {
+    "중앙": "CENTER",
+    "1루 내야": "INFIELD_1B",
+    "3루 내야": "INFIELD_3B",
+    "외야(좌)": "OUTFIELD_L",
+    "외야(중)": "OUTFIELD_C",
+    "외야(우)": "OUTFIELD_R",
+  };
+
+  const SEAT_HEIGHT_MAP: Record<HeightPreference, SeatHeight> = {
+    "하단": "LOW",
+    "중단": "MID",
+    "상단": "HIGH",
+    "무관": "ANY",
+  };
+
+  const SECTION_MAP: Record<ZonePreference, Section> = {
+    "중앙쪽": "MIDDLE",
+    "중간": "CENTER_SIDE",
+    "코너(파울라인)": "CORNER",
+    "무관": "ANY",
+  };
+
+
+  const router = useRouter();
+  const pathname = usePathname();
+  const sp = useSearchParams();
+  const bootstrapped = useAuthStore((s) => s.bootstrapped);
+  const accessToken = useAuthStore((s) => s.accessToken);
+  const user = useAuthStore((s) => s.user);
+  const checkedRef = useRef(false); // 온보딩 status 조회 중복 방지
+
   const [view, setView] = useState<ViewPreference[]>([]); // 어디서 보고 싶으신가요?
   const [height, setHeight] = useState<HeightPreference[]>([]); // 좌석 높이는 어느 쪽이 좋으신가요?
   const [zone, setZone] = useState<ZonePreference[]>([]); // 구역 위치는 어느 쪽을 선호하시나요?
   const [consentRequired, setConsentRequired] = useState(false); // 선호 데이터 체크
   const [consentMarketing, setConsentMarketing] = useState(false); // 마케팅 수신 동의 체크
+
+  const setBasePreferences = useOnboardingPrefStore((s) => s.setBasePreferences); // 온보딩 zustand 저장
+
+  useEffect(() => {
+    if (!bootstrapped) return;
+
+    /* 로그인 체크 */
+    const isAuthed = Boolean(accessToken) && Boolean(user); // accesstoken과 user 조회
+    if (!isAuthed) {
+      const next = pathname + (sp.toString() ? `?${sp.toString()}` : "");
+      router.replace(`/auth/login?next=${encodeURIComponent(next)}`); // 로그인 후 다시 돌아오도록 처리
+      return;
+    }
+
+    /* 온보딩 상태 체크 (이미 완료면 다른 페이지로) */
+    if (checkedRef.current) return;
+    checkedRef.current = true;
+
+    const controller = new AbortController();
+    (async () => {
+      try {
+        const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
+
+        const res = await fetch(`${API_BASE_URL}/api/users/onboarding/status`, {  // ★ 추후 실제 api 문서에 맞게 변경해야함.
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+          credentials: "include",
+          signal: controller.signal,
+        });
+
+        /* 백엔드 예외처리 */
+        if (res.status === 401) { // 토큰 만료/인증 실패
+          const next = pathname + (sp.toString() ? `?${sp.toString()}` : "");
+          router.replace(`/auth/login?next=${encodeURIComponent(next)}`);
+          return;
+        }
+
+        if (res.status === 403) { // 계정 상태 DEACTIVE
+          router.replace("/auth/login");
+          return;
+        }
+
+        if (!res.ok) { // 이후 오류 코드
+          console.error("❌ onboarding status failed:", res.status);
+          return;
+        }
+
+        const json = await res.json().catch(() => null);
+        console.log("[onboarding/status] json", json);
+
+        const onboardingStatus = Boolean(json?.data?.onboardingStatus);
+
+        /* 이미 온보딩 완료면 이 페이지 들어오면 안됨 -> 홈 이동 */
+        if (onboardingStatus) {
+          const next = new URLSearchParams(sp.toString()).get("next");
+          router.replace(next ? decodeURIComponent(next) : "/");
+          return;
+        }
+
+      } catch (e) {
+        if ((e as any)?.name === "AbortError") return;
+        console.error("⚠️ onboarding status error:", e);
+      }
+    })();
+  }, [bootstrapped, accessToken, user, router, pathname, sp])
+
+  if (!bootstrapped) return null;
+  if (!accessToken || !user) return null;
+
 
   /* 다음 단계 버튼 제한 */
   const canGoNext = useMemo(() => {
@@ -110,9 +218,23 @@ export default function SeatStyleOnboardingPage() {
   }, [view, height, zone, consentRequired]);
 
 
+  /* 다음 버튼 클릭 */
   const handleNext = () => {
     if (!canGoNext) return;
-    console.log("선택값:", { view, height, zone, consentRequired, consentMarketing });
+
+    const basePrefs: PreferenceBase[] = [0, 1, 2].map((i) => ({
+      rank: (i + 1) as 1 | 2 | 3,
+      viewpoint: VIEWPOINT_MAP[view[i]],
+      seatHeight: SEAT_HEIGHT_MAP[height[i]],
+      section: SECTION_MAP[zone[i]],
+    }));
+    console.log({ basePrefs });
+
+    /* 1단계 필수 값 저장 */
+    setBasePreferences(basePrefs);
+
+    /* 옵션 페이지로 이동 */
+    router.push("/onboarding/option");
   };
 
   return (

@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { KakaoButton } from "@/components/login/KakaoButton";
 import { toast } from "sonner"
 import { nanoid } from "nanoid";
+import { authFetch } from "@/lib/authFetch";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -45,9 +46,9 @@ export default function LoginPage() {
         console.error("❌ LOGIN FAIL:", res.status, json);
         // 명세: 400 / 403 / 500
         if (res.status === 400) toast.error(json?.message ?? "아이디 또는 비밀번호 불일치");
-        else if (res.status === 403) toast.error(json?.message ?? "비활성화된 계정입니다. 관리자에게 문의하세요."); 
+        else if (res.status === 403) toast.error(json?.message ?? "비활성화된 계정입니다. 관리자에게 문의하세요.");
         else toast.error(json?.message ?? `로그인 실패 (HTTP ${res.status})`);
-        
+
         return;
       }
 
@@ -58,6 +59,19 @@ export default function LoginPage() {
       /* AccessToken zustand에 삽입 */
       const accessToken = json?.data?.accessToken;
       accessToken ? setAccessToken(accessToken) : console.warn("⚠️ accessToken이 응답에 없습니다.");
+
+      /* 유저 정보 가져오기 /api/me */
+      if (accessToken) {
+        const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
+        const meRes = await authFetch(`${API_BASE_URL}/api/me`); // ★ 추후 실제 api 문서에 맞게 변경해야함.
+        if (meRes.ok) {
+          const meJson = await meRes.json().catch(() => null);
+          const user = meJson?.data ?? null;
+          useAuthStore.getState().setUser(user);
+        } else {
+          useAuthStore.getState().setUser(null);
+        }
+      }
 
       const agreementRequired = Boolean(json?.data?.agreementRequired);
       const onboardingRequired = Boolean(json?.data?.onboardingRequired);
@@ -79,22 +93,35 @@ export default function LoginPage() {
   };
 
   /* 카카오 소셜 로그인 */
-  const handleKakaoLogin = () => {
-    const clientId = process.env.NEXT_PUBLIC_KAKAO_REST_KEY!;
-    const redirectUri = process.env.NEXT_PUBLIC_KAKAO_REDIRECT_URI!;
+  const handleKakaoLogin = async () => {
+    try {
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
 
-    const state = nanoid(); // CSCF 방지 state
-    sessionStorage.setItem("kakao_oauth_state", state);
+      const res = await fetch(
+        `${API_BASE_URL}/api/auth/kakao/login-url`, // 이부분 실제 api url로 수정 /auth/kakao/login-url ★
+        {
+          method: "GET",
+          credentials: "include",
+          headers: { "Accept": "application/json" },
+        }
+      );
 
-    // 이부분 api 요청을 통해 받아 오도록 수정 ★
-    const kakaoAuthUrl =
-    `https://kauth.kakao.com/oauth/authorize` +
-    `?response_type=code` +
-    `&client_id=${encodeURIComponent(clientId)}` +
-    `&redirect_uri=${encodeURIComponent(redirectUri)}` +
-    `&state=${encodeURIComponent(state)}`;
+      const json = await res.json().catch(() => null);
 
-    window.location.href = kakaoAuthUrl;
+      if (!res.ok) {
+        console.error("❌ kakao login-url failed:", res.status, json);
+        return;
+      }
+
+      const loginUrl: string | undefined = json?.data?.loginUrl;
+      if (!loginUrl) {
+        console.error("❌ loginUrl missing:", json);
+        return;
+      }
+
+      /* url 이동 */
+      window.location.href = loginUrl;
+    } catch (e) { console.error("⚠️ kakao login-url error:", e); }
   };
 
   return (
