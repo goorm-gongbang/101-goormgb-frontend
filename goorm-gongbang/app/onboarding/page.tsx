@@ -8,6 +8,7 @@ import { UiCheckbox } from "@/components/common/UiCheckbox";
 import { cn } from "@/lib/utils";
 import type { Viewpoint, SeatHeight, Section, PreferenceBase } from "@/stores/onboardingPrefStore";
 import { useOnboardingPrefStore } from "@/stores/onboardingPrefStore";
+import { PrimaryButton } from "@/components/common/PrimaryButton";
 
 type ViewPreference = "중앙" | "1루 내야" | "3루 내야" | "외야(좌)" | "외야(중)" | "외야(우)";
 type HeightPreference = "하단" | "중단" | "상단" | "무관";
@@ -390,27 +391,14 @@ export default function SeatStyleOnboardingPage() {
 
             {/* Bottom CTA */}
             <div className="self-stretch flex flex-col items-end gap-2 pt-6">
-              <button
-                type="button"
+              <PrimaryButton 
+                uiSize="lg"
+                tone="base"
                 onClick={handleNext}
                 disabled={!canGoNext}
-                className={cn(
-                  "w-20 h-10 min-w-20 px-4 py-2 rounded-md inline-flex items-center justify-center",
-                  "transition-colors duration-150",
-                  canGoNext
-                    ? "bg-[var(--foundation-primary-600)] hover:bg-[var(--foundation-primary-700)] active:bg-[var(--foundation-primary-800)] cursor-pointer"
-                    : "bg-[var(--background-interactive-neutral-disabled,#E5E5E5)] cursor-not-allowed",
-                )}
               >
-                <span
-                  className={[
-                    "flex-1 text-center text-sm font-medium leading-5",
-                    canGoNext ? "text-white" : "text-[var(--text-interactive-neutral-disabled,#999999)]",
-                  ].join(" ")}
-                >
-                  다음
-                </span>
-              </button>
+                다음
+              </PrimaryButton>
             </div>
           </div>
         </div>
