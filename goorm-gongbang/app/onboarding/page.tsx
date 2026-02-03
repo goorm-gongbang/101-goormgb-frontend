@@ -141,7 +141,8 @@ export default function SeatStyleOnboardingPage() {
   const [consentRequired, setConsentRequired] = useState(false); // 선호 데이터 체크
   const [consentMarketing, setConsentMarketing] = useState(false); // 마케팅 수신 동의 체크
 
-  const setBasePreferences = useOnboardingPrefStore((s) => s.setBasePreferences); // 온보딩 zustand 저장
+  const setBasePreferences = useOnboardingPrefStore((s) => s.setBasePreferences); // 온보딩 zustand 저장 (정보)
+  const setMarketingAgreed = useOnboardingPrefStore((s) => s.setMarketingAgreed); // 온보딩 zustand 저장 (마케팅)
 
   useEffect(() => {
     if (!bootstrapped) return;
@@ -228,10 +229,10 @@ export default function SeatStyleOnboardingPage() {
       seatHeight: SEAT_HEIGHT_MAP[height[i]],
       section: SECTION_MAP[zone[i]],
     }));
-    console.log({ basePrefs });
 
     /* 1단계 필수 값 저장 */
     setBasePreferences(basePrefs);
+    setMarketingAgreed(consentMarketing);
 
     /* 옵션 페이지로 이동 */
     router.push("/onboarding/option");
