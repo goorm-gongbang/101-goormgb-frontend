@@ -1,6 +1,6 @@
 "use client";
 
-export default function SeatStyleOnboardingPage() {
+export default function SeatStyleOnboardingOptionPage() {
   
 
   return (
