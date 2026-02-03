@@ -50,6 +50,9 @@
 }
 
 :root {
+  --font-pretendard: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue",
+  Arial, "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
+
   --radius: 0.625rem;
 
   --light-destructive-foreground: #ffffff;
@@ -335,5 +338,6 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-pretendard);
   }
 }
