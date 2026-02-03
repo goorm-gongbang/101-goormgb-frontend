@@ -31,8 +31,10 @@ export type PreferenceBase = Pick<Preference, "rank" | "viewpoint" | "seatHeight
 
 type OnboardingPrefState = {
     preferences: Preference[];
+    marketingAgreed: boolean;
 
     setBasePreferences: (prefs: PreferenceBase[]) => void;
+    setMarketingAgreed: (v: boolean) => void;
     updatePreference: (rank: 1 | 2 | 3, patch: Partial<Preference>) => void;
     reset: () => void;
 };
@@ -41,6 +43,7 @@ export const useOnboardingPrefStore = create<OnboardingPrefState>()(
     persist(
         (set, get) => ({
             preferences: [],
+            marketingAgreed: false,
 
             setBasePreferences: (basePrefs) => {
                 // rank 정렬 + 중복 제거/검증
@@ -62,20 +65,33 @@ export const useOnboardingPrefStore = create<OnboardingPrefState>()(
                     priceMode: "ANY",
                     // priceMin/priceMax는 priceMode=RANGE일 때만 채워질 예정
                 }));
-
-                console.log("[onboardingPrefStore] setBasePreferences input:", basePrefs);
-                console.log("[onboardingPrefStore] merged preferences:", merged);
-
                 set({ preferences: merged });
+
+                console.log("[onboardingPrefStore] after setBasePreferences:", get().preferences);
+            },
+
+            setMarketingAgreed: (v) => {
+                set({ marketingAgreed: v });
+
+                console.log("[onboardingPrefStore] after setMarketingAgreed:", get().marketingAgreed);
             },
 
             updatePreference: (rank, patch) => {
                 const prev = get().preferences;
                 const next = prev.map((p) => (p.rank === rank ? { ...p, ...patch } : p));
                 set({ preferences: next });
+
+                console.log("[onboardingPrefStore] after updatePreference:", get().preferences);
             },
 
-            reset: () => set({ preferences: [] }),
+            reset: () => {
+                set({ preferences: [], marketingAgreed: false });
+
+                console.log("[onboardingPrefStore] after reset:", {
+                    preferences: get().preferences,
+                    marketingAgreed: get().marketingAgreed,
+                });
+            }
         }),
         {
             name: "onboarding-preferences",
