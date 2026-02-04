@@ -137,32 +137,9 @@ export default function SeatStyleOnboardingOptionPage() {
     /* 이전 버튼 클릭 */
     const handlePrev = () => router.back();
 
-    /* Zustand 데이터 patch 적용 */
-    const applyOptionPatchToAllPrioritys = () => {
-        const seatPositionPref: SeatPositionPref = viewType ? SEAT_POSITION_MAP[viewType] : "ANY";
-        const environmentPref: EnvironmentPref = env ? ENV_MAP[env] : "ANY";
-        const moodPref: MoodPref = mood ? MOOD_MAP[mood] : "ANY";
-        const obstructionSensitivity: ObstructionSensitivity = dist ? OBSTRUCTION_MAP[dist] : "NORMAL";
-        const pricePatch = normalizePricePatch(priceToPayload(price));
-
-        const patch: Partial<Preference> = {
-            seatPositionPref,
-            environmentPref,
-            moodPref,
-            obstructionSensitivity,
-            ...pricePatch,
-        };
-
-        updatePreference(1, patch);
-        updatePreference(2, patch);
-        updatePreference(3, patch);
-    };
-
     /* 시작하기 버튼 클릭 */
     const handleNext = async () => {
         if (!canSubmit) return;
-
-        applyOptionPatchToAllPrioritys(); // patch 적용
 
         const seatPositionPref: SeatPositionPref = viewType ? SEAT_POSITION_MAP[viewType] : "ANY";
         const environmentPref: EnvironmentPref = env ? ENV_MAP[env] : "ANY";

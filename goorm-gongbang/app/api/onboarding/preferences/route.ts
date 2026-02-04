@@ -43,8 +43,8 @@ type Preference = {
   obstructionSensitivity?: ObstructionSensitivity;
 
   priceMode?: PriceMode;
-  priceMin?: number;
-  priceMax?: number;
+  priceMin?: number | null;
+  priceMax?: number | null;
 };
 
 type RequestBody = {
