@@ -53,63 +53,61 @@ function toggleSingle<T>(prev: T | null, next: T): T | null {
     return prev === next ? null : next;
 }
 
+/* 서버 enum 매핑 */
+const SEAT_POSITION_MAP: Record<ViewTypePreference, SeatPositionPref> = {
+    "통로 선호": "AISLE",
+    "중앙 선호": "MIDDLE",
+    "무관": "ANY",
+};
+
+const ENV_MAP: Record<EnvPreference, EnvironmentPref> = {
+    "그늘 선호": "SHADE",
+    "햇빛 무관": "SUN_OK",
+    "무관": "ANY",
+};
+
+const MOOD_MAP: Record<MoodPreference, MoodPref> = {
+    "열정적인 응원": "CHEERFUL",
+    "조용한 관람": "QUIET",
+    "무관": "ANY",
+};
+
+const OBSTRUCTION_MAP: Record<DistPreference, ObstructionSensitivity> = {
+    "안전망 민감": "NET_SENSITIVE",
+    "난간·기둥 민감": "RAIL_PILLAR_SENSITIVE",
+    "보통": "NORMAL",
+    "둔감": "ANY",
+};
+
+function priceToPayload(p: PricePreference | null): { priceMode: PriceMode; priceMin?: number; priceMax?: number | null } {
+    if (!p || p === "무관") return { priceMode: "ANY" };
+
+    switch (p) {
+        case "~ 13,000원":
+            return { priceMode: "RANGE", priceMin: 0, priceMax: 13000 };
+        case "14,000원 ~ 17,000원":
+            return { priceMode: "RANGE", priceMin: 14000, priceMax: 17000 };
+        case "18,000원 ~ 29,000원":
+            return { priceMode: "RANGE", priceMin: 18000, priceMax: 29000 };
+        case "30,000원 ~ ":
+            return { priceMode: "RANGE", priceMin: 30000, priceMax: null };
+        default:
+            return { priceMode: "ANY" };
+    }
+}
+
+/* priceMode=AMY면 min/max 제거 */
+function normalizePricePatch(patch: { priceMode: PriceMode; priceMin?: number; priceMax?: number | null }) {
+    if (patch.priceMode === "ANY") {
+        return { priceMode: "ANY" as const, priceMin: null, priceMax: null };
+    }
+    return patch;
+}
 export default function SeatStyleOnboardingOptionPage() {
-    /* 서버 enum 매핑 */
-    const SEAT_POSITION_MAP: Record<ViewTypePreference, SeatPositionPref> = {
-        "통로 선호": "AISLE",
-        "중앙 선호": "MIDDLE",
-        "무관": "ANY",
-    };
-
-    const ENV_MAP: Record<EnvPreference, EnvironmentPref> = {
-        "그늘 선호": "SHADE",
-        "햇빛 무관": "SUN_OK",
-        "무관": "ANY",
-    };
-
-    const MOOD_MAP: Record<MoodPreference, MoodPref> = {
-        "열정적인 응원": "CHEERFUL",
-        "조용한 관람": "QUIET",
-        "무관": "ANY",
-    };
-
-    const OBSTRUCTION_MAP: Record<DistPreference, ObstructionSensitivity> = {
-        "안전망 민감": "NET_SENSITIVE",
-        "난간·기둥 민감": "RAIL_PILLAR_SENSITIVE",
-        "보통": "NORMAL",
-        "둔감": "ANY",
-    };
-
-    function priceToPayload(p: PricePreference | null): { priceMode: PriceMode; priceMin?: number; priceMax?: number | null } {
-        if (!p || p === "무관") return { priceMode: "ANY" };
-
-        switch (p) {
-            case "~ 13,000원":
-                return { priceMode: "RANGE", priceMin: 0, priceMax: 13000 };
-            case "14,000원 ~ 17,000원":
-                return { priceMode: "RANGE", priceMin: 14000, priceMax: 17000 };
-            case "18,000원 ~ 29,000원":
-                return { priceMode: "RANGE", priceMin: 18000, priceMax: 29000 };
-            case "30,000원 ~ ":
-                return { priceMode: "RANGE", priceMin: 30000, priceMax: null };
-            default:
-                return { priceMode: "ANY" };
-        }
-    }
-
-    /* priceMode=AMY면 min/max 제거 */
-    function normalizePricePatch(patch: { priceMode: PriceMode; priceMin?: number; priceMax?: number | null }) {
-        if (patch.priceMode === "ANY") {
-            return { priceMode: "ANY" as const, priceMin: null, priceMax: null };
-        }
-        return patch;
-    }
-
     const accessToken = useAuthStore((s) => s.accessToken); // auth
 
     const preferences = useOnboardingPrefStore((s) => s.preferences); // 필수 페이지 priority 1~3
     const marketingAgreed = useOnboardingPrefStore((s) => s.marketingAgreed); // 필수 페이지 마케팅 동의 체크 여부
-    const updatePreference = useOnboardingPrefStore((s) => s.updatePreference);
     const reset = useOnboardingPrefStore((s) => s.reset);
 
     const router = useRouter();

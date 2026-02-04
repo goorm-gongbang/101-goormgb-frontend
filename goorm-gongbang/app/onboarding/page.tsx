@@ -102,32 +102,32 @@ function getPriority<T>(arr: T[], value: T) {
   return idx === -1 ? null : idx + 1; // 1, 2, 3
 }
 
+/* 서버 enum 매핑 */
+const VIEWPOINT_MAP: Record<ViewPreference, Viewpoint> = {
+  "중앙": "CENTER",
+  "1루 내야": "INFIELD_1B",
+  "3루 내야": "INFIELD_3B",
+  "외야(좌)": "OUTFIELD_L",
+  "외야(중)": "OUTFIELD_C",
+  "외야(우)": "OUTFIELD_R",
+};
+
+const SEAT_HEIGHT_MAP: Record<HeightPreference, SeatHeight> = {
+  "하단": "LOW",
+  "중단": "MID",
+  "상단": "HIGH",
+  "무관": "ANY",
+};
+
+const SECTION_MAP: Record<ZonePreference, Section> = {
+  "중앙쪽": "MIDDLE",
+  "중간": "CENTER_SIDE",
+  "코너(파울라인)": "CORNER",
+  "무관": "ANY",
+};
+
+
 export default function SeatStyleOnboardingPage() {
-  /* 서버 enum 매핑 */
-  const VIEWPOINT_MAP: Record<ViewPreference, Viewpoint> = {
-    "중앙": "CENTER",
-    "1루 내야": "INFIELD_1B",
-    "3루 내야": "INFIELD_3B",
-    "외야(좌)": "OUTFIELD_L",
-    "외야(중)": "OUTFIELD_C",
-    "외야(우)": "OUTFIELD_R",
-  };
-
-  const SEAT_HEIGHT_MAP: Record<HeightPreference, SeatHeight> = {
-    "하단": "LOW",
-    "중단": "MID",
-    "상단": "HIGH",
-    "무관": "ANY",
-  };
-
-  const SECTION_MAP: Record<ZonePreference, Section> = {
-    "중앙쪽": "MIDDLE",
-    "중간": "CENTER_SIDE",
-    "코너(파울라인)": "CORNER",
-    "무관": "ANY",
-  };
-
-
   const router = useRouter();
   const pathname = usePathname();
   const sp = useSearchParams();
@@ -391,7 +391,7 @@ export default function SeatStyleOnboardingPage() {
 
             {/* Bottom CTA */}
             <div className="self-stretch flex flex-col items-end gap-2 pt-6">
-              <PrimaryButton 
+              <PrimaryButton
                 uiSize="lg"
                 tone="base"
                 onClick={handleNext}
