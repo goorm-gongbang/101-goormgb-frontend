@@ -18,8 +18,8 @@ const viewOptions: ViewPreference[] = ["중앙", "1루 내야", "3루 내야", "
 const heightOptions: HeightPreference[] = ["하단", "중단", "상단", "무관"];
 const zoneOptions: ZonePreference[] = ["중앙쪽", "중간", "코너(파울라인)", "무관"];
 
-/* Rank Badge */
-function RankBadge({ n }: { n: number }) {
+/* priority Badge */
+function PriorityBadge({ n }: { n: number }) {
   return (
     <div className="px-1.5 bg-[var(--foundation-primary-700)] rounded-[100px] inline-flex flex-col justify-center items-center overflow-hidden">
       <div className="text-[var(--foundation-primary-10)] text-xs font-normal font-['Pretendard'] leading-4">
@@ -30,19 +30,19 @@ function RankBadge({ n }: { n: number }) {
 }
 
 /* Chip  */
-function Chip({ label, rank, onClick }: {
+function Chip({ label, priority, onClick }: {
   label: string; // 글자 데이터
-  rank: number | null;
+  priority: number | null;
   onClick: () => void;
 }) {
   return (
     <ChipButton
       uiSize="lg"
-      tone={rank ? "strong" : "soft"}
+      tone={priority ? "strong" : "soft"}
       onClick={onClick}
-      aria-pressed={Boolean(rank)}
-      leftIcon={rank ? <RankBadge n={rank} /> : undefined}
-      className={rank ? "gap-2" : ""}
+      aria-pressed={Boolean(priority)}
+      leftIcon={priority ? <PriorityBadge n={priority} /> : undefined}
+      className={priority ? "gap-2" : ""}
     >
       {label}
     </ChipButton>
@@ -97,7 +97,7 @@ function toggleUpToThree<T>(prev: T[], value: T) {
   return [...prev, value];
 }
 
-function getRank<T>(arr: T[], value: T) {
+function getPriority<T>(arr: T[], value: T) {
   const idx = arr.indexOf(value);
   return idx === -1 ? null : idx + 1; // 1, 2, 3
 }
@@ -225,7 +225,7 @@ export default function SeatStyleOnboardingPage() {
     if (!canGoNext) return;
 
     const basePrefs: PreferenceBase[] = [0, 1, 2].map((i) => ({
-      rank: (i + 1) as 1 | 2 | 3,
+      priority: (i + 1) as 1 | 2 | 3,
       viewpoint: VIEWPOINT_MAP[view[i]],
       seatHeight: SEAT_HEIGHT_MAP[height[i]],
       section: SECTION_MAP[zone[i]],
@@ -309,7 +309,7 @@ export default function SeatStyleOnboardingPage() {
 
                   <div className="self-stretch inline-flex items-center gap-1.5 flex-wrap">
                     {viewOptions.map((opt) => (
-                      <Chip key={opt} label={opt} rank={getRank(view, opt)} onClick={() => setView((prev) => toggleUpToThree(prev, opt))} />
+                      <Chip key={opt} label={opt} priority={getPriority(view, opt)} onClick={() => setView((prev) => toggleUpToThree(prev, opt))} />
                     ))}
                   </div>
                 </section>
@@ -337,7 +337,7 @@ export default function SeatStyleOnboardingPage() {
 
                   <div className="self-stretch inline-flex items-center gap-1.5 flex-wrap">
                     {heightOptions.map((opt) => (
-                      <Chip key={opt} label={opt} rank={getRank(height, opt)} onClick={() => setHeight((prev) => toggleUpToThree(prev, opt))} />
+                      <Chip key={opt} label={opt} priority={getPriority(height, opt)} onClick={() => setHeight((prev) => toggleUpToThree(prev, opt))} />
                     ))}
                   </div>
                 </section>
@@ -365,7 +365,7 @@ export default function SeatStyleOnboardingPage() {
 
                   <div className="self-stretch inline-flex items-center gap-1.5 flex-wrap">
                     {zoneOptions.map((opt) => (
-                      <Chip key={opt} label={opt} rank={getRank(zone, opt)} onClick={() => setZone((prev) => toggleUpToThree(prev, opt))} />
+                      <Chip key={opt} label={opt} priority={getPriority(zone, opt)} onClick={() => setZone((prev) => toggleUpToThree(prev, opt))} />
                     ))}
                   </div>
                 </section>

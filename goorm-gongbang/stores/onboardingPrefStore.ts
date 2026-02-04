@@ -11,7 +11,7 @@ export type ObstructionSensitivity = "NET_SENSITIVE" | "RAIL_PILLAR_SENSITIVE" |
 export type PriceMode = "ANY" | "RANGE";
 
 export type Preference = {
-    rank: 1 | 2 | 3;
+    priority: 1 | 2 | 3;
     viewpoint: Viewpoint;
     seatHeight: SeatHeight;
     section: Section;
@@ -22,12 +22,12 @@ export type Preference = {
     obstructionSensitivity: ObstructionSensitivity;
 
     priceMode: PriceMode;
-    priceMin?: number;
-    priceMax?: number;
+    priceMin?: number | null;
+    priceMax?: number | null;
 };
 
 /* 1단계에서 받는 값 */
-export type PreferenceBase = Pick<Preference, "rank" | "viewpoint" | "seatHeight" | "section">;
+export type PreferenceBase = Pick<Preference, "priority" | "viewpoint" | "seatHeight" | "section">;
 
 type OnboardingPrefState = {
     preferences: Preference[];
@@ -35,7 +35,7 @@ type OnboardingPrefState = {
 
     setBasePreferences: (prefs: PreferenceBase[]) => void;
     setMarketingAgreed: (v: boolean) => void;
-    updatePreference: (rank: 1 | 2 | 3, patch: Partial<Preference>) => void;
+    updatePreference: (priority: 1 | 2 | 3, patch: Partial<Preference>) => void;
     reset: () => void;
 };
 
@@ -46,12 +46,12 @@ export const useOnboardingPrefStore = create<OnboardingPrefState>()(
             marketingAgreed: false,
 
             setBasePreferences: (basePrefs) => {
-                // rank 정렬 + 중복 제거/검증
-                const sorted = [...basePrefs].sort((a, b) => a.rank - b.rank);
+                // priority 정렬 + 중복 제거/검증
+                const sorted = [...basePrefs].sort((a, b) => a.priority - b.priority);
 
-                // rank 1~3 모두 있는지 간단 체크(없으면 그냥 저장 안 함)
-                const ranks = new Set(sorted.map((p) => p.rank));
-                if (!(ranks.has(1) && ranks.has(2) && ranks.has(3))) {
+                // priority 1~3 모두 있는지 간단 체크(없으면 그냥 저장 안 함)
+                const prioritys = new Set(sorted.map((p) => p.priority));
+                if (!(prioritys.has(1) && prioritys.has(2) && prioritys.has(3))) {
                     console.warn("[onboardingPrefStore] invalid basePrefs:", basePrefs);
                     return;
                 }
@@ -76,9 +76,9 @@ export const useOnboardingPrefStore = create<OnboardingPrefState>()(
                 console.log("[onboardingPrefStore] after setMarketingAgreed:", get().marketingAgreed);
             },
 
-            updatePreference: (rank, patch) => {
+            updatePreference: (priority, patch) => {
                 const prev = get().preferences;
-                const next = prev.map((p) => (p.rank === rank ? { ...p, ...patch } : p));
+                const next = prev.map((p) => (p.priority === priority ? { ...p, ...patch } : p));
                 set({ preferences: next });
 
                 console.log("[onboardingPrefStore] after updatePreference:", get().preferences);
