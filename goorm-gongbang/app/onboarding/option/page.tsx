@@ -1,10 +1,23 @@
 "use client";
-import { useState } from "react";
+
+import { useState, useMemo, useEffect } from "react";
 import { ChipButton } from "@/components/common/ChipButton";
-import { useRouter} from "next/navigation";
+import { useRouter } from "next/navigation";
 import { TertiaryButton } from "@/components/common/TertiaryButton";
 import { PrimaryButton } from "@/components/common/PrimaryButton";
 import { SecondaryButton } from "@/components/common/SecondaryButton";
+import { InfoTooltip } from "@/components/common/InfoTooltip";
+
+import { useAuthStore } from "@/stores/authStore";
+import {
+    useOnboardingPrefStore,
+    type Preference,
+    type SeatPositionPref,
+    type EnvironmentPref,
+    type MoodPref,
+    type ObstructionSensitivity,
+    type PriceMode,
+} from "@/stores/onboardingPrefStore";
 
 type ViewTypePreference = "통로 선호" | "중앙 선호" | "무관";
 type EnvPreference = "그늘 선호" | "햇빛 무관" | "무관";
@@ -40,31 +53,167 @@ function toggleSingle<T>(prev: T | null, next: T): T | null {
     return prev === next ? null : next;
 }
 
-export default function SeatStyleOnboardingOptionPage() {
-    const router = useRouter();
+/* 서버 enum 매핑 */
+const SEAT_POSITION_MAP: Record<ViewTypePreference, SeatPositionPref> = {
+    "통로 선호": "AISLE",
+    "중앙 선호": "MIDDLE",
+    "무관": "ANY",
+};
 
+const ENV_MAP: Record<EnvPreference, EnvironmentPref> = {
+    "그늘 선호": "SHADE",
+    "햇빛 무관": "SUN_OK",
+    "무관": "ANY",
+};
+
+const MOOD_MAP: Record<MoodPreference, MoodPref> = {
+    "열정적인 응원": "CHEERFUL",
+    "조용한 관람": "QUIET",
+    "무관": "ANY",
+};
+
+const OBSTRUCTION_MAP: Record<DistPreference, ObstructionSensitivity> = {
+    "안전망 민감": "NET_SENSITIVE",
+    "난간·기둥 민감": "RAIL_PILLAR_SENSITIVE",
+    "보통": "NORMAL",
+    "둔감": "ANY",
+};
+
+function priceToPayload(p: PricePreference | null): { priceMode: PriceMode; priceMin?: number; priceMax?: number | null } {
+    if (!p || p === "무관") return { priceMode: "ANY" };
+
+    switch (p) {
+        case "~ 13,000원":
+            return { priceMode: "RANGE", priceMin: 0, priceMax: 13000 };
+        case "14,000원 ~ 17,000원":
+            return { priceMode: "RANGE", priceMin: 14000, priceMax: 17000 };
+        case "18,000원 ~ 29,000원":
+            return { priceMode: "RANGE", priceMin: 18000, priceMax: 29000 };
+        case "30,000원 ~ ":
+            return { priceMode: "RANGE", priceMin: 30000, priceMax: null };
+        default:
+            return { priceMode: "ANY" };
+    }
+}
+
+/* priceMode=AMY면 min/max 제거 */
+function normalizePricePatch(patch: { priceMode: PriceMode; priceMin?: number; priceMax?: number | null }) {
+    if (patch.priceMode === "ANY") {
+        return { priceMode: "ANY" as const, priceMin: null, priceMax: null };
+    }
+    return patch;
+}
+export default function SeatStyleOnboardingOptionPage() {
+    const accessToken = useAuthStore((s) => s.accessToken); // auth
+
+    const preferences = useOnboardingPrefStore((s) => s.preferences); // 필수 페이지 priority 1~3
+    const marketingAgreed = useOnboardingPrefStore((s) => s.marketingAgreed); // 필수 페이지 마케팅 동의 체크 여부
+    const reset = useOnboardingPrefStore((s) => s.reset);
+
+    const router = useRouter();
     const [viewType, setViewType] = useState<ViewTypePreference | null>(null);
     const [env, setEnv] = useState<EnvPreference | null>(null);
     const [mood, setMood] = useState<MoodPreference | null>(null);
     const [dist, setDist] = useState<DistPreference | null>(null);
     const [price, setPrice] = useState<PricePreference | null>(null);
+    const [isFinishing, setIsFinishing] = useState(false);
+
+    /* 옵션 페이지 바로 진입 방지 */
+    useEffect(() => {
+        if (isFinishing) return; // 완료 흐름에서 가드 무시
+        if (!preferences || preferences.length !== 3) {
+            router.replace("/onboarding");
+        }
+    }, [preferences, router, isFinishing]);
+
+    /* api 요청 조건 (accesstoken, preferences data) */
+    const canSubmit = useMemo(() => {
+        return Boolean(accessToken) && Array.isArray(preferences) && preferences.length === 3;
+    }, [accessToken, preferences]);
+
 
     /* 이전 버튼 클릭 */
-    const handlePrev = () => {
-        console.log("handlePrev click");
-        //router.push("/");
-    }
+    const handlePrev = () => router.back();
 
     /* 시작하기 버튼 클릭 */
-    const handleNext = () => {
-        console.log("handlenext click");
-        //router.push("/");
-    };
+    const handleNext = async () => {
+        if (!canSubmit) return;
+
+        const seatPositionPref: SeatPositionPref = viewType ? SEAT_POSITION_MAP[viewType] : "ANY";
+        const environmentPref: EnvironmentPref = env ? ENV_MAP[env] : "ANY";
+        const moodPref: MoodPref = mood ? MOOD_MAP[mood] : "ANY";
+        const obstructionSensitivity: ObstructionSensitivity = dist ? OBSTRUCTION_MAP[dist] : "NORMAL";
+        const pricePatch = normalizePricePatch(priceToPayload(price));
+
+        const finalPreferences: Preference[] = preferences
+            .slice()
+            .sort((a, b) => a.priority - b.priority)
+            .map((p) => ({
+                ...p,
+                seatPositionPref,
+                environmentPref,
+                moodPref,
+                obstructionSensitivity,
+                ...pricePatch,
+            }));
+
+        const body = {
+            marketingConsent: { marketingAgreed: Boolean(marketingAgreed) },
+            preferences: finalPreferences,
+        };
+
+        console.log("body: ", body);
+
+        /* ===========================
+            API REQUEST
+        =========================== */
+        try {
+            const res = await fetch("/api/onboarding/preferences", { // 이부분 실제 api url로 수정 /onboarding/preferences ★
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${accessToken}`,
+                },
+                credentials: "include",
+                body: JSON.stringify(body),
+            })
+
+            /* 명세: 401 / 403 / 409 */
+            if (res.status === 401) { // 인증 실패
+                router.replace("/auth/login");
+                return;
+            }
+
+            if (res.status === 403) { // 계정 상태 DEACTIVE
+                router.replace("/auth/login");
+                return;
+            }
+
+            if (res.status === 409) { // 이미 온보딩 완료
+                router.replace("/");
+                return;
+            }
+
+            if (!res.ok) {
+                const err = await res.json().catch(() => null);
+                console.error("❌ onboarding/preferences failed:", res.status, err);
+                return;
+            }
+            const json = await res.json().catch(() => null);
+            console.log("✅ onboarding/preferences success:", json);
+
+            setIsFinishing(true);
+            router.replace("/"); // 홈 으로 이동
+            setTimeout(() => reset(), 0); // 완료 후 초기화
+
+        } catch (e) { console.error("⚠️ onboarding/preferences error:", e); }
+
+    }
+
 
     /* 건너뛰기 버튼 클릭 */
-    const handleSkip = () => {
-        console.log("handleskip click");
-        //router.push("/");
+    const handleSkip = async () => {
+        await handleNext();
     }
 
     return (
@@ -205,10 +354,21 @@ export default function SeatStyleOnboardingOptionPage() {
                                 {/* Section 5 */}
                                 <section className="self-stretch flex flex-col items-start gap-4">
                                     <div className="self-stretch flex flex-col items-start gap-1.5">
-                                        <div className="self-stretch inline-flex items-start gap-2">
+                                        <div className="self-stretch inline-flex items-center gap-1">
                                             <div className="text-base sm:text-lg font-semibold leading-6 text-black">
                                                 좌석 가격은 어떤 가격대를 원하시나요?
                                             </div>
+                                            <InfoTooltip
+                                                ariaLabel="가격 안내"
+                                                content={
+                                                    <ul className="list-disc pl-4 text-sm leading-5 text-[var(--light-foreground,#111)] space-y-1">
+                                                        <li>~ 13,000원: 외야석 중심</li>
+                                                        <li>14,000원 ~ 17,000원: 내야 저가 / 외야 상단</li>
+                                                        <li>18,000원 ~ 29,000원: 내야 일반석</li>
+                                                        <li>30,000원 ~ : 테이블석 / 프리미엄</li>
+                                                    </ul>
+                                                }
+                                            />
                                         </div>
                                         <div className="self-stretch inline-flex items-center gap-2">
                                             <div className="flex-1 text-sm font-medium leading-5 text-black">
