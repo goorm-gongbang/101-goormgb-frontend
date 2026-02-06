@@ -22,6 +22,7 @@ import { ChipDropButton } from "@/components/common/ChipDropButton"
 import { DropDown } from "@/components/common/DropDown"
 import { Header } from "@/components/layout/Header"
 import { SeatRecommendSummaryCard } from "@/components/common/SeatRecommendSummaryCard"
+import { IconPreview } from "@/components/common/IconPreview"
 
 function ToneRow({
   title,
@@ -597,6 +598,14 @@ export default function Components() {
         </ToneRow>
       </Section>
 
+      <Section title="IconPreview">
+        <ToneRow title="IconPreview">
+          <IconPreview index={0} size="xl" />
+          <IconPreview index={1} size="lg" />
+          <IconPreview index={2} size="md" />
+          <IconPreview index={3} size="sm" />
+        </ToneRow>
+      </Section>
     </div>
   );
 }
