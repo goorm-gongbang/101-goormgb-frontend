@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Info } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 type InfoTooltipProps = {
     /** 툴팁 안에 들어갈 내용 */
@@ -60,10 +61,10 @@ export function InfoTooltip({
                 className="inline-flex h-6 w-6 items-center justify-center rounded-md hover:bg-black/5"
             >
                 <Info 
-                    className={[
+                    className={cn(
                         "h-4 w-4 transition",
-                        open ? activeIconClassName : iconClassName,
-                    ].join(" ")}
+                        open ? activeIconClassName : iconClassName
+                    )}
                 />
             </button>
 
