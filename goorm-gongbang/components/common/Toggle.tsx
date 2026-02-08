@@ -1,17 +1,21 @@
-import { Switch } from "@/components/ui/switch"
+"use client";
 
-export function Toggle() {
+import * as React from "react";
+import { Switch } from "@/components/ui/switch";
+import { cn } from "@/lib/utils";
+
+type ToggleProps = React.ComponentProps<typeof Switch>;
+
+export function Toggle({ className, ...props }: ToggleProps) {
   return (
-    <div className="flex items-center space-x-2">
-      <Switch
-        id="switch-size-default"
-        size="default"
-        className="
-          data-[state=checked]:bg-[var(--foundation-primary-400)]
-          data-[state=unchecked]:bg-[var(--foundation-neutral-680)]
-        "
-      />
-    </div>
-  )
+    <Switch
+      {...props}
+      className={cn(
+        "w-9 h-5 rounded-[300px] overflow-hidden p-0",
+        "data-[state=checked]:bg-[var(--foundation-primary-400)]",
+        "data-[state=unchecked]:bg-[var(--foundation-neutral-680)]",
+        className
+      )}
+    />
+  );
 }
-

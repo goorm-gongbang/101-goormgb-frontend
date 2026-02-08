@@ -1,8 +1,11 @@
+"use client";
+import * as React from "react";
+import { useState } from "react";
 import { PrimaryButton } from "@/components/common/PrimaryButton";
 import { SecondaryButton } from "@/components/common/SecondaryButton";
 import { TertiaryButton } from "@/components/common/TertiaryButton";
 import { PrimaryButtonWithIcon, SecondaryButtonWithIcon, TertiaryButtonWithIcon } from "@/components/common/ButtonWithIcon";
-import { Plus } from "lucide-react";
+import { Plus, MapPin } from "lucide-react";
 import { DestructiveButton } from "@/components/common/ButtonDestructive";
 import { KakaoButton } from "@/components/login/KakaoButton";
 import { GoogleButton } from "@/components/login/GoogleButton";
@@ -10,6 +13,15 @@ import { ButtonSpinner } from "@/components/common/ButtonLoading";
 import { Toggle } from "@/components/common/Toggle";
 import { ChipButton } from "@/components/common/ChipButton";
 import { UiCheckbox } from "@/components/common/UiCheckbox";
+import { RankChipButton } from "@/components/common/RankChipButton";
+import { TicketingNavigator } from "@/components/common/TicketingNavigator";
+import { ChipBlackButton } from "@/components/common/ChipBlackButton";
+import { ButtonReload } from "@/components/common/ButtonReload";
+import { SeatPreferenceRecommendCard } from "@/components/common/SeatPreferenceRecommendCard"
+import { ChipDropButton } from "@/components/common/ChipDropButton"
+import { DropDown } from "@/components/common/DropDown"
+import { Header } from "@/components/layout/Header"
+import { SeatRecommendSummaryCard } from "@/components/common/SeatRecommendSummaryCard"
 
 function ToneRow({
   title,
@@ -49,6 +61,10 @@ function Section({
 }
 
 export default function Components() {
+  const [enabled, setEnabled] = useState(true);
+  const [people, setPeople] = useState(2);
+  const [loggedIn, setLoggedIn] = React.useState(false);
+
   return (
     <div className="mx-auto max-w-5xl space-y-8 p-6">
       <div className="space-y-1">
@@ -462,6 +478,125 @@ export default function Components() {
           <UiCheckbox />
         </ToneRow>
       </Section>
+
+      {/* Rank Chip Button */}
+      <Section title="Rank Chip Button">
+        <ToneRow title="Rank Chip Button">
+          <RankChipButton rank={1} />
+          <RankChipButton rank={2} />
+          <RankChipButton rank={3} />
+          <RankChipButton rank={4} />
+          <RankChipButton rank={5} />
+        </ToneRow>
+      </Section>
+
+      {/* Ticket Navigator */}
+      <Section title="Ticket Navigator">
+        <ToneRow title="Ticket Navigator">
+          <TicketingNavigator active="seat" /> <br />
+          <TicketingNavigator active="order" /> <br />
+          <TicketingNavigator active="pay" />
+        </ToneRow>
+      </Section>
+
+      {/* Chip Black Button */}
+      <Section title="Chip Black Button">
+        <ToneRow title="Chip Black Button">
+          <ChipBlackButton variant="outlineStrong">Button</ChipBlackButton>
+          <ChipBlackButton variant="outline">Button</ChipBlackButton>
+          <ChipBlackButton variant="filled">Button</ChipBlackButton>
+          <ChipBlackButton variant="dark">Button</ChipBlackButton>
+        </ToneRow>
+      </Section>
+
+      {/* Reload Button */}
+      <Section title="Reload Button">
+        <ToneRow title="Reload Button">
+          <ButtonReload state="default" />
+          <ButtonReload state="hover" />
+          <ButtonReload state="pressed" />
+        </ToneRow>
+      </Section>
+
+      {/* DropButton */}
+      <Section title="DropButton">
+        <ToneRow title="DropButton">
+          <DropDown value={people} onChange={setPeople} max={5} />
+        </ToneRow>
+      </Section>
+
+      {/* SeatPreferenceRecommendCard */}
+      <Section title="SeatPreferenceRecommendCard">
+        <ToneRow title="SeatPreferenceRecommendCard">
+          <SeatPreferenceRecommendCard
+            enabled={enabled}
+            onChange={setEnabled}
+          />
+        </ToneRow>
+      </Section>
+
+      {/* ChipDropButton */}
+      <Section title="ChipDropButton">
+        <ToneRow title="ChipDropButton">
+
+          <ChipDropButton label="버튼" variant="neutral" uiState="default" />
+          <ChipDropButton label="버튼" variant="neutral" uiState="default" leftIcon={<MapPin />} />
+
+          <ChipDropButton label="버튼" variant="primary" uiState="default" />
+          <ChipDropButton label="버튼" variant="primary" uiState="default" leftIcon={<MapPin />} />
+
+          <ChipDropButton label="버튼" variant="neutral" uiState="hover" />
+          <ChipDropButton label="버튼" variant="neutral" uiState="hover" leftIcon={<MapPin />} />
+
+          <ChipDropButton label="버튼" uiState="disabled" />
+          <ChipDropButton label="버튼" uiState="disabled" leftIcon={<MapPin />} />
+
+        </ToneRow>
+      </Section>
+
+      <Section title="Header">
+        <ToneRow title="Header">
+          <Header />
+          <Header
+            loggedIn={loggedIn}
+            onLoginClick={() => setLoggedIn(true)}
+            onMyInfoClick={() => console.log("내 정보")}
+            onMyTicketClick={() => console.log("내 티켓")}
+          />
+        </ToneRow>
+      </Section>
+
+      <Section title="SeatRecommendSummaryCard">
+        <ToneRow title="SeatRecommendSummaryCard">
+          <SeatRecommendSummaryCard
+            variant="default"
+            totalPriceText="총 0원"
+            seats={[
+              { left: "000석 000블럭 00열 00번, 00번", right: "0원/매" },
+              { left: "000석 000블럭 00열 00번", right: "0원/매" },
+            ]}
+            tags={["# 1루 내야", "# 하단", "# 통로", "# 응원단 바로 앞"]}
+          />
+
+          <SeatRecommendSummaryCard
+            variant="hover"
+            totalPriceText="총 0원"
+            seats={[{ left: "000석 000블럭 00열 00번", right: "0원/매" }]}
+            tags={["# 1루 내야", "# 하단", "# 통로", "# 응원단 바로 앞"]}
+          />
+
+          <SeatRecommendSummaryCard
+            variant="focused"
+            totalPriceText="총 0원"
+            seats={[
+              { left: "000석 000블럭 00열 00번, 00번", right: "0원/매" },
+              { left: "000석 000블럭 00열 00번", right: "0원/매" },
+            ]}
+            tags={["# 1루 내야", "# 하단", "# 통로", "# 응원단 바로 앞"]}
+          />
+        </ToneRow>
+      </Section>
+
     </div>
   );
 }
