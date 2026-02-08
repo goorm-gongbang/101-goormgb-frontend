@@ -3,38 +3,26 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  startOfDay,
+  addDays,
+  isSameDay,
+  addMonths,
+  getDaysInMonth,
+  setDate as setDateOfMonth,
+} from "date-fns";
 
 const DOW_KO = ["일", "월", "화", "수", "목", "금", "토"] as const;
 
-function startOfDay(d: Date) {
-  const x = new Date(d);
-  x.setHours(0, 0, 0, 0);
-  return x;
-}
-function addDays(d: Date, n: number) {
-  const x = new Date(d);
-  x.setDate(x.getDate() + n);
-  return x;
-}
-function isSameDay(a: Date, b: Date) {
-  return (
-    a.getFullYear() === b.getFullYear() &&
-    a.getMonth() === b.getMonth() &&
-    a.getDate() === b.getDate()
-  );
-}
-function daysInMonth(year: number, monthIndex0: number) {
-  return new Date(year, monthIndex0 + 1, 0).getDate();
-}
 function addMonthsClamped(base: Date, deltaMonths: number) {
-  const y = base.getFullYear();
-  const m0 = base.getMonth();
-  const d = base.getDate();
+  const baseDay = base.getDate();
 
-  const target = new Date(y, m0 + deltaMonths, 1);
-  const last = daysInMonth(target.getFullYear(), target.getMonth());
-  target.setDate(Math.min(d, last));
-  return startOfDay(target);
+  // target month로 이동(1일 기준)
+  const targetMonthFirst = startOfDay(addMonths(new Date(base.getFullYear(), base.getMonth(), 1), deltaMonths));
+  const lastDay = getDaysInMonth(targetMonthFirst);
+
+  // baseDay가 targetMonth의 마지막 일보다 크면 clamp
+  return startOfDay(setDateOfMonth(targetMonthFirst, Math.min(baseDay, lastDay)));
 }
 
 type Props = {
@@ -51,10 +39,9 @@ function useResponsiveSideCount(fixed?: number) {
 
     const calc = () => {
       const w = window.innerWidth;
-      // mobile: 5칸(2+1+2), tablet: 7칸(3+1+3), desktop: 9칸(4+1+4)
-      if (w < 640) return 2; // <sm
-      if (w < 1024) return 3; // sm~md~<lg
-      return 4; // lg+
+      if (w < 640) return 2;   // mobile: 5칸
+      if (w < 1024) return 3;  // tablet: 7칸
+      return 4;                // desktop: 9칸
     };
 
     const onResize = () => setSc(calc());
@@ -78,8 +65,10 @@ export function TodayInitSelectableDateStrip({ className, sideCount, onChange }:
 
   const items = React.useMemo(() => {
     const start = addDays(selectedDate, -responsiveSideCount);
+
     return Array.from({ length: responsiveSideCount * 2 + 1 }, (_, i) => {
       const date = startOfDay(addDays(start, i));
+
       return {
         date,
         dow: DOW_KO[date.getDay()],
@@ -141,11 +130,9 @@ export function TodayInitSelectableDateStrip({ className, sideCount, onChange }:
           </div>
         </div>
 
-        {/* Strip */}
         <div className="w-full border-b-[0.80px] border-[var(--foundation-neutral-880)]">
           <div className="w-full overflow-x-auto">
             <div className="w-full flex items-center justify-between gap-1 sm:gap-2">
-              {/* Prev day */}
               <button
                 type="button"
                 onClick={goPrevDay}
@@ -216,7 +203,6 @@ export function TodayInitSelectableDateStrip({ className, sideCount, onChange }:
                 })}
               </div>
 
-              {/* Next day */}
               <button
                 type="button"
                 onClick={goNextDay}
