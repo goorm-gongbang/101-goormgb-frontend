@@ -623,7 +623,7 @@ export default function Components() {
             dateText="3월 28일"
             timeText="토 · 14 : 00"
             stadiumKo="대구 삼성 라이온즈 파크"
-            stadiumEn="Deagu Samsung Lions Park"
+            stadiumEn="DaeguSamsung Lions Park"
             away={{
               ko: "SSG 랜더스",
               en: "SSG LANDERS",
@@ -645,7 +645,7 @@ export default function Components() {
             dateText="3월 28일"
             timeText="토 · 14 : 00"
             stadiumKo="대구 삼성 라이온즈 파크"
-            stadiumEn="Deagu Samsung Lions Park"
+            stadiumEn="DaeguSamsung Lions Park"
             away={{
               ko: "SSG 랜더스",
               en: "SSG LANDERS",
@@ -666,7 +666,7 @@ export default function Components() {
             dateText="3월 28일"
             timeText="토 · 14 : 00"
             stadiumKo="대구 삼성 라이온즈 파크"
-            stadiumEn="Deagu Samsung Lions Park"
+            stadiumEn="DaeguSamsung Lions Park"
             away={{
               ko: "SSG 랜더스",
               en: "SSG LANDERS",
@@ -691,7 +691,7 @@ export default function Components() {
             dateText="3월 28일"
             timeText="토 · 14 : 00"
             stadiumKo="대구 삼성 라이온즈 파크"
-            stadiumEn="Deagu Samsung Lions Park"
+            stadiumEn="DaeguSamsung Lions Park"
             away={{
               ko: "SSG 랜더스",
               en: "SSG LANDERS",
@@ -714,7 +714,7 @@ export default function Components() {
             dateText="3월 28일"
             timeText="토 · 14 : 00"
             stadiumKo="대구 삼성 라이온즈 파크"
-            stadiumEn="Deagu Samsung Lions Park"
+            stadiumEn="DaeguSamsung Lions Park"
             away={{
               ko: "SSG 랜더스",
               en: "SSG LANDERS",
@@ -739,7 +739,7 @@ export default function Components() {
             dateText="3월 28일"
             timeText="토 · 14 : 00"
             stadiumKo="대구 삼성 라이온즈 파크"
-            stadiumEn="Deagu Samsung Lions Park"
+            stadiumEn="DaeguSamsung Lions Park"
             away={{
               ko: "SSG 랜더스",
               en: "SSG LANDERS",
@@ -821,8 +821,8 @@ export default function Components() {
         </ToneRow>
       </Section>
 
-      <Section title="MatchCard">
-        <ToneRow title="MatchCard">
+      <Section title="TeamInfoCard">
+        <ToneRow title="TeamInfoCard">
           <TeamInfoCard
             dataLogo="두산"
             teamName="두산 베어스"

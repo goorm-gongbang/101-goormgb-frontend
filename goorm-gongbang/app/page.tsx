@@ -57,7 +57,7 @@ export default function Home() {
                     dateText="3월 28일"
                     timeText="토 · 14 : 00"
                     stadiumKo="대구 삼성 라이온즈 파크"
-                    stadiumEn="Deagu Samsung Lions Park"
+                    stadiumEn="Daegu Samsung Lions Park"
                     away={{
                       ko: "SSG 랜더스",
                       en: "SSG LANDERS",
@@ -78,7 +78,7 @@ export default function Home() {
                     dateText="3월 28일"
                     timeText="토 · 14 : 00"
                     stadiumKo="대구 삼성 라이온즈 파크"
-                    stadiumEn="Deagu Samsung Lions Park"
+                    stadiumEn="Daegu Samsung Lions Park"
                     away={{
                       ko: "SSG 랜더스",
                       en: "SSG LANDERS",
@@ -99,7 +99,7 @@ export default function Home() {
                     dateText="3월 28일"
                     timeText="토 · 14 : 00"
                     stadiumKo="대구 삼성 라이온즈 파크"
-                    stadiumEn="Deagu Samsung Lions Park"
+                    stadiumEn="Daegu Samsung Lions Park"
                     away={{
                       ko: "SSG 랜더스",
                       en: "SSG LANDERS",
@@ -121,7 +121,7 @@ export default function Home() {
                     dateText="3월 28일"
                     timeText="토 · 14 : 00"
                     stadiumKo="대구 삼성 라이온즈 파크"
-                    stadiumEn="Deagu Samsung Lions Park"
+                    stadiumEn="Daegu Samsung Lions Park"
                     away={{
                       ko: "SSG 랜더스",
                       en: "SSG LANDERS",
@@ -145,7 +145,7 @@ export default function Home() {
                     dateText="3월 28일"
                     timeText="토 · 14 : 00"
                     stadiumKo="대구 삼성 라이온즈 파크"
-                    stadiumEn="Deagu Samsung Lions Park"
+                    stadiumEn="Daegu Samsung Lions Park"
                     away={{
                       ko: "SSG 랜더스",
                       en: "SSG LANDERS",
