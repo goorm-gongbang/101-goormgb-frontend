@@ -29,6 +29,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { cn } from "@/lib/utils";
 import { CalendarDays, ChevronDown } from "lucide-react";
 import { TodayInitSelectableDateStrip } from "@/components/common/TodayInitSelectableDateStrip";
+import { TeamInfoCard } from "@/components/common/TeamInfoCard";
 
 function ToneRow({
   title,
@@ -817,6 +818,17 @@ export default function Components() {
             }}
           />
 
+        </ToneRow>
+      </Section>
+
+      <Section title="MatchCard">
+        <ToneRow title="MatchCard">
+          <TeamInfoCard
+            dataLogo="두산"
+            teamName="두산 베어스"
+            logo={<IconPreview index={7} size="md" />}
+            onButtonClick={() => console.log("상세 보기")}
+          />
         </ToneRow>
       </Section>
     </div>
