@@ -22,6 +22,13 @@ import { ChipDropButton } from "@/components/common/ChipDropButton"
 import { DropDown } from "@/components/common/DropDown"
 import { Header } from "@/components/layout/Header"
 import { SeatRecommendSummaryCard } from "@/components/common/SeatRecommendSummaryCard"
+import { IconPreview } from "@/components/common/IconPreview"
+import { MatchCard } from "@/components/common/MatchCard";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import { CalendarDays, ChevronDown } from "lucide-react";
+import { TodayInitSelectableDateStrip } from "@/components/common/TodayInitSelectableDateStrip";
 
 function ToneRow({
   title,
@@ -64,6 +71,8 @@ export default function Components() {
   const [enabled, setEnabled] = useState(true);
   const [people, setPeople] = useState(2);
   const [loggedIn, setLoggedIn] = React.useState(false);
+  const [date, setDate] = React.useState<Date | undefined>(new Date());
+  const [open, setOpen] = React.useState(false);
 
   return (
     <div className="mx-auto max-w-5xl space-y-8 p-6">
@@ -597,6 +606,219 @@ export default function Components() {
         </ToneRow>
       </Section>
 
+      <Section title="IconPreview">
+        <ToneRow title="IconPreview">
+          <IconPreview index={0} size="xl" />
+          <IconPreview index={1} size="lg" />
+          <IconPreview index={2} size="md" />
+          <IconPreview index={3} size="sm" />
+        </ToneRow>
+      </Section>
+
+      <Section title="MatchCard">
+        <ToneRow title="MatchCard">
+          {/* 기본 */}
+          <MatchCard
+            dateText="3월 28일"
+            timeText="토 · 14 : 00"
+            stadiumKo="대구 삼성 라이온즈 파크"
+            stadiumEn="Deagu Samsung Lions Park"
+            away={{
+              ko: "SSG 랜더스",
+              en: "SSG LANDERS",
+              dataLogo: "SSG",
+              logo: <IconPreview index={0} size="md" />,
+            }}
+            home={{
+              ko: "기아 타이거즈",
+              en: "KIA TIGERS",
+              dataLogo: "기아",
+              logo: <IconPreview index={1} size="md" />,
+            }}
+          />
+
+          {/* 기본 + shadow + outline */}
+          <MatchCard
+            elevated
+            withOutline
+            dateText="3월 28일"
+            timeText="토 · 14 : 00"
+            stadiumKo="대구 삼성 라이온즈 파크"
+            stadiumEn="Deagu Samsung Lions Park"
+            away={{
+              ko: "SSG 랜더스",
+              en: "SSG LANDERS",
+              dataLogo: "SSG",
+              logo: <IconPreview index={2} size="md" />,
+            }}
+            home={{
+              ko: "기아 타이거즈",
+              en: "KIA TIGERS",
+              dataLogo: "기아",
+              logo: <IconPreview index={3} size="md" />,
+            }}
+          />
+
+          {/* Coming Soon */}
+          <MatchCard
+            variant="comingSoon"
+            dateText="3월 28일"
+            timeText="토 · 14 : 00"
+            stadiumKo="대구 삼성 라이온즈 파크"
+            stadiumEn="Deagu Samsung Lions Park"
+            away={{
+              ko: "SSG 랜더스",
+              en: "SSG LANDERS",
+              dataLogo: "SSG",
+              logo: <IconPreview index={4} size="md" />,
+            }}
+            home={{
+              ko: "기아 타이거즈",
+              en: "KIA TIGERS",
+              dataLogo: "기아",
+              logo: <IconPreview index={5} size="md" />,
+            }}
+            overlayTopText="Coming Soon"
+            overlayMainText="3월 21일 16:00 오픈"
+          />
+
+          {/* Coming Soon + shadow + outline */}
+          <MatchCard
+            variant="comingSoon"
+            elevated
+            withOutline
+            dateText="3월 28일"
+            timeText="토 · 14 : 00"
+            stadiumKo="대구 삼성 라이온즈 파크"
+            stadiumEn="Deagu Samsung Lions Park"
+            away={{
+              ko: "SSG 랜더스",
+              en: "SSG LANDERS",
+              dataLogo: "SSG",
+              logo: <IconPreview index={6} size="md" />,
+            }}
+            home={{
+              ko: "기아 타이거즈",
+              en: "KIA TIGERS",
+              dataLogo: "기아",
+              logo: <IconPreview index={7} size="md" />,
+            }}
+            overlayTopText="Coming Soon"
+            overlayMainText="3월 21일 16:00 오픈"
+          />
+
+          {/* Sold Out */}
+          <MatchCard
+            variant="soldOut"
+            dateText="3월 28일"
+            timeText="토 · 14 : 00"
+            stadiumKo="대구 삼성 라이온즈 파크"
+            stadiumEn="Deagu Samsung Lions Park"
+            away={{
+              ko: "SSG 랜더스",
+              en: "SSG LANDERS",
+              dataLogo: "SSG",
+              logo: <IconPreview index={8} size="md" />,
+            }}
+            home={{
+              ko: "기아 타이거즈",
+              en: "KIA TIGERS",
+              dataLogo: "기아",
+              logo: <IconPreview index={9} size="md" />,
+            }}
+            overlayTopText="Sold Out"
+            overlayMainText="예매 마감"
+          />
+
+          {/* Sold Out + shadow + outline */}
+          <MatchCard
+            variant="soldOut"
+            elevated
+            withOutline
+            dateText="3월 28일"
+            timeText="토 · 14 : 00"
+            stadiumKo="대구 삼성 라이온즈 파크"
+            stadiumEn="Deagu Samsung Lions Park"
+            away={{
+              ko: "SSG 랜더스",
+              en: "SSG LANDERS",
+              dataLogo: "SSG",
+              logo: <IconPreview index={8} size="md" />,
+            }}
+            home={{
+              ko: "기아 타이거즈",
+              en: "KIA TIGERS",
+              dataLogo: "기아",
+              logo: <IconPreview index={9} size="md" />,
+            }}
+            overlayTopText="Sold Out"
+            overlayMainText="예매 마감"
+          />
+        </ToneRow>
+      </Section>
+
+      <Section title="Calendar">
+        <ToneRow title="Calendar">
+          <Popover open={open} onOpenChange={setOpen}>
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                data-icon="on"
+                data-state="Default"
+                className={cn(
+                  "w-20 h-9 min-w-20 px-4 py-2",
+                  "bg-[var(--background-white)] rounded-md",
+                  "outline outline-1 outline-offset-[-1px] outline-[var(--foundation-neutral-880)]",
+                  "inline-flex justify-center items-center"
+                )}
+                aria-label="날짜 선택"
+              >
+                {/* 왼쪽: calendar-days */}
+                <div className="w-6 h-6 pr-0.5 flex justify-start items-center">
+                  <CalendarDays
+                    className="h-5 w-5 text-[var(--foundation-primary-500)]"
+                    strokeWidth={1.5}
+                    aria-hidden="true"
+                  />
+                </div>
+
+                {/* 오른쪽: triangle-down (ChevronDown) */}
+                <div className="pl-2 flex justify-start items-center">
+                  <ChevronDown
+                    className="h-4 w-4 text-[var(--foundation-primary-400)]"
+                    strokeWidth={2}
+                    aria-hidden="true"
+                  />
+                </div>
+              </button>
+            </PopoverTrigger>
+
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={date}
+                onSelect={(d) => {
+                  setDate(d);
+                  setOpen(false); // 날짜 선택하면 닫기
+                }}
+                className="rounded-lg border"
+                captionLayout="dropdown"
+              />
+            </PopoverContent>
+          </Popover>
+        </ToneRow>
+      </Section>
+
+      <Section title="DateStripHeader">
+        <ToneRow title="DateStripHeader">
+          <TodayInitSelectableDateStrip
+            onChange={(date) => {
+              console.log("선택된 날짜:", date);
+            }}
+          />
+
+        </ToneRow>
+      </Section>
     </div>
   );
 }
