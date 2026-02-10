@@ -31,8 +31,10 @@ type MarketingConsent = {
   marketingAgreed: boolean;
 };
 
+type Priority = 1 | 2 | 3;
+
 type Preference = {
-  priority: 1 | 2 | 3;
+  priority: Priority;
   viewpoint: Viewpoint;
   seatHeight: SeatHeight;
   section: Section;
@@ -107,6 +109,11 @@ function isInt(n: unknown): n is number {
 
 function isNonNegativeInt(n: unknown): n is number {
   return isInt(n) && n >= 0;
+}
+
+// ✅ Priority 타입가드 (핵심)
+function isPriority(v: unknown): v is Priority {
+  return v === 1 || v === 2 || v === 3;
 }
 
 const VIEWPOINTS: readonly Viewpoint[] = [
@@ -206,16 +213,28 @@ export async function POST(req: Request) {
     return jsonError(409, "이미 온보딩이 완료된 사용자입니다.", "CONFLICT");
   }
 
-  // priority 중복 + 1,2,3 모두 있어야 함
-  const prioritys = body.preferences.map((p) => p?.priority);
-  const prioritySet = new Set(prioritys);
-  const mustprioritys = new Set([1, 2, 3]);
+  // ✅ priority 중복 + 1,2,3 모두 있어야 함 (타입 안전하게 수정)
+  const priorities = body.preferences.map((p) => p?.priority);
 
-  if (prioritySet.size !== 3 || prioritys.some((r) => r !== 1 && r !== 2 && r !== 3)) {
+  // 먼저 값 자체가 1|2|3 인지 검증
+  if (priorities.length !== 3 || priorities.some((r) => !isPriority(r))) {
     return jsonError(400, "priority는 1,2,3이 각각 한 번씩 있어야 합니다.");
   }
-  for (const r of mustprioritys) {
-    if (!prioritySet.has(r)) return jsonError(400, "priority는 1,2,3이 모두 포함되어야 합니다.");
+
+  // 여기서부터 priorities는 Priority[] 로 취급 가능
+  const prioritySet = new Set<Priority>(priorities as Priority[]);
+  const mustPriorities: readonly Priority[] = [1, 2, 3] as const;
+
+  // 중복 체크
+  if (prioritySet.size !== 3) {
+    return jsonError(400, "priority는 1,2,3이 각각 한 번씩 있어야 합니다.");
+  }
+
+  // 포함 체크 (✅ 여기서 타입 에러 사라짐)
+  for (const r of mustPriorities) {
+    if (!prioritySet.has(r)) {
+      return jsonError(400, "priority는 1,2,3이 모두 포함되어야 합니다.");
+    }
   }
 
   // 각 preference 필수: viewpoint, seatHeight, section
