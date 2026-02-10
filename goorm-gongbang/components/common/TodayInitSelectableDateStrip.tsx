@@ -11,6 +11,9 @@ import {
   getDaysInMonth,
   setDate as setDateOfMonth,
 } from "date-fns";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { CalendarDays, ChevronDown } from "lucide-react";
 
 const DOW_KO = ["일", "월", "화", "수", "목", "금", "토"] as const;
 
@@ -93,11 +96,62 @@ export function TodayInitSelectableDateStrip({ className, sideCount, onChange }:
 
   const PRIMARY_500 = "text-[var(--foundation-primary-500)]";
 
+  const [open, setOpen] = React.useState(false);
+  
   return (
     <div className={cn("w-full flex flex-col items-center gap-3", className)}>
-      <div className="w-full max-w-[1088px] flex flex-col items-center gap-3">
+      <div className="w-full flex flex-col items-center gap-3">
         <div className="w-full flex justify-center">
-          <div className="flex items-center gap-4 sm:gap-7">
+          <div className="flex items-center gap-4 sm:gap-4">
+            <Popover open={open} onOpenChange={setOpen}>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  data-icon="on"
+                  data-state="Default"
+                  className={cn(
+                    "w-20 h-9 min-w-20 px-4 py-2",
+                    "bg-[var(--background-white)] rounded-md",
+                    "outline outline-1 outline-offset-[-1px] outline-[var(--foundation-neutral-880)]",
+                    "inline-flex justify-center items-center"
+                  )}
+                  aria-label="날짜 선택"
+                >
+                  {/* 왼쪽: calendar-days */}
+                  <div className="w-6 h-6 pr-0.5 flex justify-start items-center">
+                    <CalendarDays
+                      className="h-5 w-5 text-[var(--foundation-primary-500)]"
+                      strokeWidth={1.5}
+                      aria-hidden="true"
+                    />
+                  </div>
+
+                  {/* 오른쪽: triangle-down (ChevronDown) */}
+                  <div className="pl-2 flex justify-start items-center">
+                    <ChevronDown
+                      className="h-4 w-4 text-[var(--foundation-primary-400)]"
+                      strokeWidth={2}
+                      aria-hidden="true"
+                    />
+                  </div>
+                </button>
+              </PopoverTrigger>
+
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={(d) => {
+                    if(!d) return;
+                    updateSelected(d);
+                    setOpen(false); // 날짜 선택하면 닫기
+                  }}
+                  className="rounded-lg border"
+                  captionLayout="dropdown-months"
+                  
+                />
+              </PopoverContent>
+            </Popover>
             <button
               type="button"
               onClick={goPrevMonth}
