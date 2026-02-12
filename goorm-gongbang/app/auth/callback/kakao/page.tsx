@@ -86,6 +86,4 @@ export default function KakaoCallbackPage() {
       toast.success(json.message ?? "로그인 성공");
     })();
   }, [sp, router, setAccessToken, setUser]);
-
-  return <div className="p-6">로그인 중...</div>;
 }

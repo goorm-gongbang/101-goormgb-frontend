@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 type Size = "xl" | "lg" | "md" | "sm";
 
 type Props = {
-  index: number;     // 0~9
+  logoImg: string;
   size?: Size;
 
   /** object-fit */
@@ -53,8 +53,14 @@ const SIZE_PRESETS: Record<
   },
 };
 
+const CLUBS_CDN_BASE = process.env.NEXT_PUBLIC_CDN_CLUBS_BASE_URL;
+function resolveLogoSrc(input: string) {
+  if (/^https?:\/\//i.test(input)) return input; // input이 이미 https:// 로 시작하면 그대로 사용
+  return new URL(input.replace(/^\//, ""), CLUBS_CDN_BASE).toString(); // base + 상대경로 결합
+}
+
 export function IconPreview({
-  index,
+  logoImg,
   size = "xl",
   fit = "contain",
   className,
@@ -66,8 +72,8 @@ export function IconPreview({
     <div className={cn(preset.container, className)}>
       <div className={preset.inner}>
         <img
-          src={`/logo/logo${index + 1}.png`}
-          alt={`icon-${index + 1}`}
+          src={resolveLogoSrc(logoImg)}
+          alt={`alt-${logoImg}`}
           className={cn(preset.img, fit === "contain" ? "object-contain" : "object-cover", imgClassName)}
         />
       </div>
