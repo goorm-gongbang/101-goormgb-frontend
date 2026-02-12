@@ -4,7 +4,7 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 import { ChevronRight } from "lucide-react";
 
-type MatchCardVariant = "default" | "comingSoon" | "soldOut";
+type MatchCardVariant = "default" | "comingSoon" | "soldOut" | "ended";
 
 type Team = {
     ko: string;
@@ -67,7 +67,7 @@ export function MatchCard({
     const overlayGradient =
         variant === "comingSoon"
             ? "from-[var(--foundation-neutral-white)] to-[var(--foundation-neutral-480)] opacity-40"
-            : variant === "soldOut"
+            : variant === "soldOut" || variant === "ended"
                 ? "from-[var(--foundation-neutral-white)] to-[var(--foundation-neutral-720)] opacity-60"
                 : "";
 
@@ -77,10 +77,23 @@ export function MatchCard({
 
     const overlayTop =
         overlayTopText ??
-        (variant === "comingSoon" ? "Coming Soon" : variant === "soldOut" ? "Sold Out" : "");
+        (variant === "comingSoon"
+            ? "Coming Soon"
+            : variant === "soldOut"
+                ? "Sold Out"
+                : variant === "ended"
+                    ? "Ended"
+                    : "");
+
     const overlayMain =
         overlayMainText ??
-        (variant === "comingSoon" ? "3월 21일 16:00 오픈" : variant === "soldOut" ? "예매 마감" : "");
+        (variant === "comingSoon"
+            ? "0월 0일 00:00 오픈"
+            : variant === "soldOut"
+                ? "예매 마감"
+                : variant === "ended"
+                    ? "경기 종료"
+                    : "");
 
     const renderLogo = (team: Team, imgClassName: string) => {
         if (team.logo) return team.logo;
@@ -217,7 +230,7 @@ export function MatchCard({
                             <ChevronRight
                                 className={cn(
                                     "h-12 w-12 md:h-12 md:w-12",
-                                    variant === "soldOut"
+                                    variant === "soldOut" || variant === "ended"
                                         ? "text-[var(--foundation-secondary-900)]"
                                         : "text-[var(--foundation-primary-500)]"
                                 )}
@@ -239,7 +252,7 @@ export function MatchCard({
                                 title={overlayMain}
                                 className={cn(
                                     "self-stretch text-right text-xl font-semibold font-['Pretendard'] leading-8 truncate",
-                                    variant === "soldOut"
+                                    variant === "soldOut" || variant === "ended"
                                         ? "text-[var(--foundation-secondary-900)]"
                                         : "text-[var(--foundation-primary-700)]"
                                 )}

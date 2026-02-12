@@ -568,8 +568,6 @@ export default function Components() {
         <ToneRow title="Header">
           <Header />
           <Header
-            loggedIn={loggedIn}
-            onLoginClick={() => setLoggedIn(true)}
             onMyInfoClick={() => console.log("내 정보")}
             onMyTicketClick={() => console.log("내 티켓")}
           />
@@ -609,10 +607,10 @@ export default function Components() {
 
       <Section title="IconPreview">
         <ToneRow title="IconPreview">
-          <IconPreview index={0} size="xl" />
-          <IconPreview index={1} size="lg" />
-          <IconPreview index={2} size="md" />
-          <IconPreview index={3} size="sm" />
+          <IconPreview logoImg="https://i.postimg.cc/nhNmb3Nn/logo1.png" size="xl" />
+          <IconPreview logoImg="https://i.postimg.cc/nhNmb3Nn/logo1.png" size="lg" />
+          <IconPreview logoImg="https://i.postimg.cc/nhNmb3Nn/logo1.png" size="md" />
+          <IconPreview logoImg="https://i.postimg.cc/nhNmb3Nn/logo1.png" size="sm" />
         </ToneRow>
       </Section>
 
@@ -628,13 +626,13 @@ export default function Components() {
               ko: "SSG 랜더스",
               en: "SSG LANDERS",
               dataLogo: "SSG",
-              logo: <IconPreview index={0} size="md" />,
+              logo: <IconPreview logoImg="https://i.postimg.cc/nhNmb3Nn/logo1.png" size="md" />,
             }}
             home={{
               ko: "기아 타이거즈",
               en: "KIA TIGERS",
               dataLogo: "기아",
-              logo: <IconPreview index={1} size="md" />,
+              logo: <IconPreview logoImg="https://i.postimg.cc/nhNmb3Nn/logo1.png" size="md" />,
             }}
           />
 
@@ -650,13 +648,13 @@ export default function Components() {
               ko: "SSG 랜더스",
               en: "SSG LANDERS",
               dataLogo: "SSG",
-              logo: <IconPreview index={2} size="md" />,
+              logo: <IconPreview logoImg="https://i.postimg.cc/nhNmb3Nn/logo1.png" size="md" />,
             }}
             home={{
               ko: "기아 타이거즈",
               en: "KIA TIGERS",
               dataLogo: "기아",
-              logo: <IconPreview index={3} size="md" />,
+              logo: <IconPreview logoImg="https://i.postimg.cc/nhNmb3Nn/logo1.png" size="md" />,
             }}
           />
 
@@ -671,13 +669,13 @@ export default function Components() {
               ko: "SSG 랜더스",
               en: "SSG LANDERS",
               dataLogo: "SSG",
-              logo: <IconPreview index={4} size="md" />,
+              logo: <IconPreview logoImg="https://i.postimg.cc/nhNmb3Nn/logo1.png" size="md" />,
             }}
             home={{
               ko: "기아 타이거즈",
               en: "KIA TIGERS",
               dataLogo: "기아",
-              logo: <IconPreview index={5} size="md" />,
+              logo: <IconPreview logoImg="https://i.postimg.cc/nhNmb3Nn/logo1.png" size="md" />,
             }}
             overlayTopText="Coming Soon"
             overlayMainText="3월 21일 16:00 오픈"
@@ -696,13 +694,13 @@ export default function Components() {
               ko: "SSG 랜더스",
               en: "SSG LANDERS",
               dataLogo: "SSG",
-              logo: <IconPreview index={6} size="md" />,
+              logo: <IconPreview logoImg="https://i.postimg.cc/nhNmb3Nn/logo1.png" size="md" />,
             }}
             home={{
               ko: "기아 타이거즈",
               en: "KIA TIGERS",
               dataLogo: "기아",
-              logo: <IconPreview index={7} size="md" />,
+              logo: <IconPreview logoImg="https://i.postimg.cc/nhNmb3Nn/logo1.png" size="md" />,
             }}
             overlayTopText="Coming Soon"
             overlayMainText="3월 21일 16:00 오픈"
@@ -719,13 +717,13 @@ export default function Components() {
               ko: "SSG 랜더스",
               en: "SSG LANDERS",
               dataLogo: "SSG",
-              logo: <IconPreview index={8} size="md" />,
+              logo: <IconPreview logoImg="https://i.postimg.cc/nhNmb3Nn/logo1.png" size="md" />,
             }}
             home={{
               ko: "기아 타이거즈",
               en: "KIA TIGERS",
               dataLogo: "기아",
-              logo: <IconPreview index={9} size="md" />,
+              logo: <IconPreview logoImg="https://i.postimg.cc/nhNmb3Nn/logo1.png" size="md" />,
             }}
             overlayTopText="Sold Out"
             overlayMainText="예매 마감"
@@ -744,13 +742,13 @@ export default function Components() {
               ko: "SSG 랜더스",
               en: "SSG LANDERS",
               dataLogo: "SSG",
-              logo: <IconPreview index={8} size="md" />,
+              logo: <IconPreview logoImg="https://i.postimg.cc/nhNmb3Nn/logo1.png" size="md" />,
             }}
             home={{
               ko: "기아 타이거즈",
               en: "KIA TIGERS",
               dataLogo: "기아",
-              logo: <IconPreview index={9} size="md" />,
+              logo: <IconPreview logoImg="https://i.postimg.cc/nhNmb3Nn/logo1.png" size="md" />,
             }}
             overlayTopText="Sold Out"
             overlayMainText="예매 마감"
@@ -826,7 +824,7 @@ export default function Components() {
           <TeamInfoCard
             dataLogo="두산"
             teamName="두산 베어스"
-            logo={<IconPreview index={7} size="md" />}
+            logo={<IconPreview logoImg="https://i.postimg.cc/nhNmb3Nn/logo1.png" size="md" />}
             onButtonClick={() => console.log("상세 보기")}
           />
         </ToneRow>

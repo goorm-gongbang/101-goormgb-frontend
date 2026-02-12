@@ -110,10 +110,13 @@ export function TodayInitSelectableDateStrip({ className, sideCount, onChange }:
                   data-icon="on"
                   data-state="Default"
                   className={cn(
-                    "w-20 h-9 min-w-20 px-4 py-2",
+                    "w-20 h-9 min-w-20 px-4 py-2 cursor-pointer",
                     "bg-[var(--background-white)] rounded-md",
                     "outline outline-1 outline-offset-[-1px] outline-[var(--foundation-neutral-880)]",
-                    "inline-flex justify-center items-center"
+                    "inline-flex justify-center items-center",
+                    open
+                      ? "bg-[var(--foundation-primary-10)] outline-[var(--foundation-primary-500)]"
+                      : "bg-[var(--background-white)] outline-[var(--foundation-neutral-880)]"
                   )}
                   aria-label="날짜 선택"
                 >
@@ -155,7 +158,7 @@ export function TodayInitSelectableDateStrip({ className, sideCount, onChange }:
             <button
               type="button"
               onClick={goPrevMonth}
-              className="w-8 h-8 flex items-center justify-center"
+              className="w-8 h-8 flex items-center justify-center cursor-pointer"
               aria-label="이전 달"
             >
               <ChevronLeft className="w-5 h-5 text-[var(--light-foreground)]" strokeWidth={2} />
@@ -176,7 +179,7 @@ export function TodayInitSelectableDateStrip({ className, sideCount, onChange }:
             <button
               type="button"
               onClick={goNextMonth}
-              className="w-8 h-8 flex items-center justify-center"
+              className="w-8 h-8 flex items-center justify-center cursor-pointer"
               aria-label="다음 달"
             >
               <ChevronRight className="w-5 h-5 text-[var(--light-foreground)]" strokeWidth={2} />
@@ -193,7 +196,7 @@ export function TodayInitSelectableDateStrip({ className, sideCount, onChange }:
                 className={cn(
                   "shrink-0 rounded-full outline outline-1 outline-offset-[-1px]",
                   "bg-[var(--foundation-neutral-white)] outline-[var(--foundation-neutral-800)]",
-                  "w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center"
+                  "w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center cursor-pointer"
                 )}
                 aria-label="이전 날짜"
               >
@@ -263,7 +266,7 @@ export function TodayInitSelectableDateStrip({ className, sideCount, onChange }:
                 className={cn(
                   "shrink-0 rounded-full outline outline-1 outline-offset-[-1px]",
                   "bg-[var(--foundation-neutral-white)] outline-[var(--foundation-neutral-800)]",
-                  "w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center"
+                  "w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center cursor-pointer"
                 )}
                 aria-label="다음 날짜"
               >
