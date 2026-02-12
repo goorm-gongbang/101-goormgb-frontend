@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuthStore } from "@/stores/authStore";
 import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
 
 type KakaoLoginResponse = {
   code: string;
@@ -86,4 +87,10 @@ export default function KakaoCallbackPage() {
       toast.success(json.message ?? "로그인 성공");
     })();
   }, [sp, router, setAccessToken, setUser]);
+
+  return (
+    <div className="min-h-[calc(100vh-0px)] w-full flex flex-col items-center justify-center gap-3">
+      <Loader2 className="h-8 w-8 animate-spin text-[var(--foundation-primary-500)]" />
+    </div>
+  );
 }
