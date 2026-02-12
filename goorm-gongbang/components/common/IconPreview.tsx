@@ -56,6 +56,7 @@ const SIZE_PRESETS: Record<
 const CLUBS_CDN_BASE = process.env.NEXT_PUBLIC_CDN_CLUBS_BASE_URL;
 function resolveLogoSrc(input: string) {
   if (/^https?:\/\//i.test(input)) return input; // input이 이미 https:// 로 시작하면 그대로 사용
+  if (!CLUBS_CDN_BASE) return input; // env가 없을 경우
   return new URL(input.replace(/^\//, ""), CLUBS_CDN_BASE).toString(); // base + 상대경로 결합
 }
 
