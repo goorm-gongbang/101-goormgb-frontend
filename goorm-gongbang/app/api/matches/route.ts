@@ -39,11 +39,11 @@ type MatchesPayload = {
 /* ===========================
    HELPERS
 =========================== */
-function requireBearer(req: Request) {
-  const auth = req.headers.get("authorization") ?? "";
-  const m = auth.match(/^Bearer\s+(.+)$/i);
-  return m?.[1]?.trim() ?? null;
-}
+// function requireBearer(req: Request) {
+//   const auth = req.headers.get("authorization") ?? "";
+//   const m = auth.match(/^Bearer\s+(.+)$/i);
+//   return m?.[1]?.trim() ?? null;
+// }
 
 function json<T>(status: number, body: ApiResponse<T>) {
   return NextResponse.json(body, { status });
@@ -150,14 +150,14 @@ function makeMockMatches(date: string): ApiMatch[] {
    ROUTE
 =========================== */
 export async function GET(req: Request) {
-  const token = requireBearer(req);
-  if (!token) {
-    return json<null>(401, {
-      code: "UNAUTHORIZED",
-      message: "Authorization: Bearer <accessToken> 헤더가 필요합니다.",
-      data: null,
-    });
-  }
+  // const token = requireBearer(req);
+  // if (!token) {
+  //   return json<null>(401, {
+  //     code: "UNAUTHORIZED",
+  //     message: "Authorization: Bearer <accessToken> 헤더가 필요합니다.",
+  //     data: null,
+  //   });
+  // }
 
   const { searchParams } = new URL(req.url);
   const dateParam = searchParams.get("date");

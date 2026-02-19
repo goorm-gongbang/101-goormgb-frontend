@@ -244,8 +244,6 @@ export default function Home() {
   const [loadingMatches, setLoadingMatches] = useState(false); // 로딩(spinner) - 경기 일정
   const [loadingTeams, setLoadingTeams] = useState(false); // 로딩(spinner) - 팀 리스트
 
-  const accessToken = useAuthStore((s) => s.accessToken);
-
   /* 경기 일정 - 날짜 변경 될 때마다 재 요청 */
   useEffect(() => {
     const controller = new AbortController();
@@ -255,7 +253,6 @@ export default function Home() {
       try {
         const data = await apiGet<MatchesPayloadFromApi>(`/api/matches?date=${selectedDate}`, {  // ★ 이 부분은 API 명세에 맞게 수정해야합니다. /matches?date={YYYY-MM-DD}
           signal: controller.signal,
-          accessToken,
         });
         setMatchesPayload(data);
 
@@ -269,7 +266,7 @@ export default function Home() {
     })();
 
     return () => controller.abort();
-  }, [selectedDate, accessToken]);
+  }, [selectedDate]);
 
   /* 팀 리스트 요청 - 1회 요청 */
   useEffect(() => {
@@ -280,7 +277,6 @@ export default function Home() {
       try {
         const data = await apiGet<TeamsPayload>(`/api/clubs`, { // ★ 이 부분은 API 명세에 맞게 수정해야합니다. -> /clubs
           signal: controller.signal,
-          accessToken,
         });
         setTeamsPayload(data);
 
@@ -294,7 +290,7 @@ export default function Home() {
     })();
 
     return () => controller.abort();
-  }, [accessToken]);
+  }, []);
 
   /* 3월 28일은 총 5개의 경기가 있습니다. */
   const countText = useMemo(() => {
