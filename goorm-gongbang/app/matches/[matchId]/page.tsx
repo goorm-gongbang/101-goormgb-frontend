@@ -206,7 +206,7 @@ export default function MatchDetailSectionResponsive(props: MatchDetailProps) {
                   </div>
 
                   {/* Away */}
-                  <div className="relative bg-stone-800">
+                  <div className="relative bg-black">
                     <div className="h-24 sm:h-28 px-4 sm:px-6 lg:px-10 py-4 bg-black flex items-center">
                       <div className="w-full flex items-center justify-start">
                         <div className="flex items-center gap-3 sm:gap-10 md:gap-20 lg:gap-30 min-w-0">
@@ -339,7 +339,7 @@ export default function MatchDetailSectionResponsive(props: MatchDetailProps) {
                     </div>
 
                     <div className="text-[var(--text-info-n600)] text-sm font-normal font-['Pretendard'] leading-5">
-                      일시 : 3월 29일 (일) 14:00 <br />
+                      일시 : {matchAtText} <br />
                       장소 : {stadiumAddress}
                     </div>
                   </div>

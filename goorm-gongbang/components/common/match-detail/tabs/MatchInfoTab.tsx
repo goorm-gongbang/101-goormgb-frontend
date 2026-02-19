@@ -39,6 +39,9 @@ export function MatchInfoTab({
     seatPrices,
     outfieldPrices,
 }: Props) {
+
+    const handleCopy = () => { navigator.clipboard.writeText(stadiumAddress) }
+
     return (
         <div className="flex flex-col gap-2">
             <InfoRowResponsive label="참가 팀명" value={`${homeKo} vs ${awayKo}`} />
@@ -52,7 +55,7 @@ export function MatchInfoTab({
                     <div className="text-[var(--text-normal-n240)] text-base font-normal font-['Pretendard'] leading-6">
                         {stadiumKo}
                     </div>
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1" onClick={handleCopy}>
                         <div className="min-w-0 truncate text-[var(--text-info-n600)] text-xs font-normal font-['Pretendard'] underline leading-4">
                             {stadiumAddress}
                         </div>

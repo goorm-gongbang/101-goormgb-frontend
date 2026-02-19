@@ -62,7 +62,7 @@ export function MatchRefundTab() {
         </div>
 
         <div className="self-stretch pl-7 flex flex-col justify-center items-center gap-1.5">
-          <ol className="list-disc self-stretch justify-center text-black text-sm font-normal font-['Pretendard'] leading-5">
+          <ul className="list-disc self-stretch justify-center text-black text-sm font-normal font-['Pretendard'] leading-5">
             <li className="text-black text-sm font-normal font-['Pretendard'] leading-5">
               경기일자 및 좌석변경은 불가합니다.
             </li>
@@ -79,7 +79,7 @@ export function MatchRefundTab() {
             <li className="text-black text-sm font-normal font-['Pretendard'] leading-5">
               당일 경기 예매는 결제 이후 취소가 불가합니다.
             </li>
-          </ol>
+          </ul>
         </div>
       </div>
     </div>
