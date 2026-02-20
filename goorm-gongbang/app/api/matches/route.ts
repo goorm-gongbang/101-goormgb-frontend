@@ -99,7 +99,7 @@ function makeMockMatches(date: string): ApiMatch[] {
 
   return [
     {
-      matchId: 10,
+      matchId: 101,
       matchAt,
       saleStatus: "ON_SALE",
       salesOpenAt,
@@ -108,7 +108,7 @@ function makeMockMatches(date: string): ApiMatch[] {
       stadium: { stadiumId: 3, koName: "잠실야구장", enName: "Jamsil Baseball Stadium" },
     },
     {
-      matchId: 11,
+      matchId: 102,
       matchAt,
       saleStatus: "ON_SALE",
       salesOpenAt,
@@ -117,7 +117,7 @@ function makeMockMatches(date: string): ApiMatch[] {
       stadium: { stadiumId: 3, koName: "잠실야구장", enName: "Jamsil Baseball Stadium" },
     },
     {
-      matchId: 12,
+      matchId: 103,
       matchAt,
       saleStatus: "UPCOMING",
       salesOpenAt,
@@ -126,7 +126,7 @@ function makeMockMatches(date: string): ApiMatch[] {
       stadium: { stadiumId: 5, koName: "한화생명 이글스파크", enName: "Hanwha Life Eagles Park" },
     },
     {
-      matchId: 13,
+      matchId: 104,
       matchAt,
       saleStatus: "SOLD_OUT",
       salesOpenAt,
@@ -135,7 +135,7 @@ function makeMockMatches(date: string): ApiMatch[] {
       stadium: { stadiumId: 8, koName: "인천SSG랜더스필드", enName: "Incheon SSG Landers Field" },
     },
     {
-      matchId: 14,
+      matchId: 105,
       matchAt,
       saleStatus: "ENDED",
       salesOpenAt,

@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { SeatPreferenceRecommendCard } from "@/components/common/SeatPreferenceRecommendCard"
 import { DesiredPriceCard } from "@/components/common/DesiredPriceCard"
 import { BookingButton } from "@/components/common/BookingButton";
@@ -9,7 +9,52 @@ import { TabButton } from "@/components/common/TabButton";
 import { MatchInfoTab } from "@/components/common/match-detail/tabs/MatchInfoTab";
 import { MatchRecommendTab } from "@/components/common/match-detail/tabs/MatchRecommendTab";
 import { MatchRefundTab } from "@/components/common/match-detail/tabs/MatchRefundTab";
+import { useParams } from "next/navigation";
+import { Spinner } from "@/components/ui/spinner";
+import Image from "next/image";
 
+/* ===========================
+    API TYPES
+=========================== */
+type SaleStatus = "ON_SALE" | "UPCOMING" | "SOLD_OUT" | "ENDED";
+type PurchaseStatus = "PURCHASABLE" | "NOT_PURCHASABLE";
+
+type club = {
+  clubId: number; // 구단 식별자
+  koName: string; // 구단명(한국어)
+  enName: string; // 구단명(영어)
+  logoImg: string; // 로고 이미지
+  clubColor: string; // 브랜드 컬러 
+}
+
+type MatchGuide = {
+  teamsDisplay: string; // “국문 vs 국문” 문자열
+  ageLimit: string; // 이용연령(예: 전체관람가)
+  placeDisplay: string; // 장소 표기(구장명)
+  addressDisplay: string; // 구장 주소
+  datetimeDisplay: string; // UI 표기용 날짜/시간 문자열
+  purchaseStatus: PurchaseStatus; // 화면 표시용 구매 상태 (카드 내부 기능 구현 전이라도 배지 노출에 필요)
+  matchDdayLabel: string; // 카드 상단에 노출되는 D-day 표기 문자열 (예: "D-1", "D-3", "D-DAY")
+}
+
+type MatchDetailData = {
+  matchId: number; // 경기 식별자
+  matchAt: string; // 경기 일시 (ISO-8601 형식)
+  saleStatus: SaleStatus; // 경기 판매 상태
+  homeClub: club; // 홈
+  awayClub: club; // 어웨이
+  matchGuide: MatchGuide;
+}
+
+type ApiResponse<T> = {
+  code: string;
+  message: string;
+  data: T | null;
+};
+
+/* ===========================
+    UI TYPES
+=========================== */
 type SeatPriceRow = {
   seatType: string;
   weekday: string;
@@ -23,27 +68,15 @@ type OutfieldPriceRow = {
   weekend: string;
 };
 
-type MatchDetailProps = {
-  homeKo: string;
-  homeEn: string;
-  awayKo: string;
-  awayEn: string;
-  stadiumKo: string;
-  stadiumAddress: string;
-  matchAtText: string;
-  ageLimitText: string;
-
-  heroBgImageUrl?: string;
-  homeLogoUrl?: string;
-  awayLogoUrl?: string;
-
-  saleBadgeText?: string;
-  dDayText?: string;
-};
-
-type SaleBadgeText = "구매 가능" | "매진" | "경기 종료";
+type SaleBadgeText = "구매 가능" | "구매 불가" | "매진" | "경기 종료";
 
 type TabKey = "INFO" | "RECOMMEND" | "REFUND";
+
+type Props = {
+  heroBgImageUrl?: string;
+  seatPrices?: SeatPriceRow[];
+  outfieldPrices?: OutfieldPriceRow[];
+}
 
 const DEFAULT_SEAT_PRICES: SeatPriceRow[] = [
   { seatType: "중앙석", weekday: "80,000", weekend: "80,000" },
@@ -61,90 +94,178 @@ const DEFAULT_OUTFIELD_PRICES: OutfieldPriceRow[] = [
   { groupLabel: "", category: "어린이, 유공자, 경로자", weekday: "4,500", weekend: "5,000" },
 ];
 
-export default function MatchDetailSectionResponsive(props: MatchDetailProps) {
-  const {
-    homeKo = "LG 트윈스",
-    homeEn = "LG TWINS",
-    awayKo = "KT 위즈",
-    awayEn = "KT WIZ",
-    stadiumKo = "잠실종합운동장 잠실야구장",
-    stadiumAddress = "서울 송파구 올림픽로 19-2 서울종합운동장",
-    matchAtText = "2026년 2월 19일 (목) 23:00",
-    ageLimitText = "전체관람가",
-    heroBgImageUrl = "https://placehold.co/1440x997",
-    homeLogoUrl = "https://placehold.co/190x163",
-    awayLogoUrl = "https://placehold.co/190x163",
-    saleBadgeText = "구매 가능",
-    dDayText = "경기 D-1",
-  } = props;
+/** =========================
+ *  Helpers
+ * ========================= */
+const CLUBS_CDN_BASE = process.env.NEXT_PUBLIC_CDN_CLUBS_BASE_URL;
+function resolveLogoSrc(input: string) {
+  if (/^https?:\/\//i.test(input)) return input; // input이 이미 https:// 로 시작하면 그대로 사용
+  if (!CLUBS_CDN_BASE) return input; // env가 없을 경우
+  return new URL(input.replace(/^\//, ""), CLUBS_CDN_BASE).toString(); // base + 상대경로 결합
+}
 
-  const SALE_BADGE_STYLE: Record<SaleBadgeText, { wrapper: string; text: string }> = {
-    "구매 가능": {
-      wrapper:
-        "bg-[var(--foundation-red-100)] outline-[var(--foundation-red-400)]",
-      text: "text-[var(--foundation-red-500)]",
-    },
-    "매진": {
-      wrapper:
-        "bg-[var(--foundation-brown-50)] outline-[var(--foundation-neutral-720)]",
-      text: "text-[var(--foundation-neutral-720)]",
-    },
-    "경기 종료": {
-      wrapper:
-        "bg-[var(--foundation-neutral-900)] outline-[var(--foundation-neutral-720)]",
-      text: "text-[var(--foundation-neutral-720)]",
-    },
-  };
+function ensureKstOffset(iso: string) {
+  // API 예시가 "2026-03-29T14:00:00" 처럼 오프셋이 없을 수 있어요.
+  // UI/카운트다운용 Date 생성은 KST로 해석되게 +09:00을 붙여줍니다(오프셋/UTC 있으면 그대로).
+  if (!iso) return iso;
+  if (/[zZ]|[+\-]\d{2}:\d{2}$/.test(iso)) return iso;
+  return `${iso}+09:00`;
+}
 
-  const seatPrices = DEFAULT_SEAT_PRICES;
-  const outfieldPrices = DEFAULT_OUTFIELD_PRICES;
+function toSaleBadgeText(saleStatus: SaleStatus, purchaseStatus: PurchaseStatus): SaleBadgeText {
+  // 명세의 purchaseStatus 규칙을 우선 반영
+  if (purchaseStatus === "PURCHASABLE") return "구매 가능";
+  if (saleStatus === "SOLD_OUT") return "매진";
+  if (saleStatus === "ENDED") return "경기 종료";
+  return "구매 불가"; // UPCOMING 등
+}
+
+// 99분이 넘어도 99:59로 고정
+function mmssTwoDigitsMinutes(sec: number) {
+  const s = Math.max(0, sec);
+  const mmRaw = Math.floor(s / 60);
+  const ss = s % 60;
+
+  const mm = Math.min(mmRaw, 99);
+
+  const ssShown = mmRaw > 99 ? 59 : ss;
+
+  return `${String(mm).padStart(2, "0")} : ${String(ssShown).padStart(2, "0")}`;
+};
+
+export default function MatchDetailSectionResponsive({
+  heroBgImageUrl = "/match/match-detail.png",
+  seatPrices = DEFAULT_SEAT_PRICES,
+  outfieldPrices = DEFAULT_OUTFIELD_PRICES,
+}: Props) {
+  const params = useParams();
+
+  const matchId = useMemo(() => {
+    const raw = (params as Record<string, string | string[] | undefined>)?.matchId;
+    const str = Array.isArray(raw) ? raw[0] : raw;
+    const n = str ? Number(str) : NaN;
+    return Number.isFinite(n) && n > 0 ? n : null;
+  }, [params]);
 
   const [enabled, setEnabled] = useState(true);
   const [enabledPrice, setEnabledPrice] = useState(true);
+  const [activeTab, setActiveTab] = React.useState<TabKey>("INFO");
 
-  // "2026년 3월 29일 (일) 14:00" 형태 파싱
-  function parseMatchAtTextToISO(text: string) {
-    const m = text.match(/(\d{4})년\s*(\d{1,2})월\s*(\d{1,2})일.*?(\d{1,2}):(\d{2})/);
-    if (!m) return null;
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [data, setData] = useState<MatchDetailData | null>(null);
 
-    const [, y, mo, d, hh, mm] = m;
-    const yyyy = Number(y);
-    const month = String(Number(mo)).padStart(2, "0");
-    const day = String(Number(d)).padStart(2, "0");
-    const hour = String(Number(hh)).padStart(2, "0");
-    const min = String(Number(mm)).padStart(2, "0");
+  useEffect(() => {
+    if (!matchId) return;
 
-    // KST(+09:00) 명시 ISO 생성 (사용자 PC 타임존이 달라도 안전)
-    return `${yyyy}-${month}-${day}T${hour}:${min}:00+09:00`;
+    let alive = true;
+
+    (async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const res = await fetch(`/api/matches/${matchId}`, { // ★ 추후에 GET /matches/{matchId} 로 변경
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+          cache: "no-store",
+        });
+
+        const json = (await res.json()) as ApiResponse<MatchDetailData>;
+
+        if (!alive) return;
+
+        if (!res.ok || !json.data) {
+          setError(json?.message ?? "조회 실패");
+          setData(null);
+          return;
+        }
+
+        setData(json.data);
+        console.log("응답 DATA: ", json.data); // 디버깅 용도 이므로 추후에 지움
+      } catch {
+        if (!alive) return;
+        setError("서버 오류");
+        setData(null);
+      } finally {
+        if (!alive) return;
+        setLoading(false);
+      }
+    })();
+
+    return () => {
+      alive = false;
+    };
+  }, [matchId]);
+
+  if (!matchId) {
+    return <div className="p-6 text-sm text-[var(--foundation-neutral-720)]">잘못된 matchId 입니다.</div>;
   }
+  if (loading) {
+    return (
+      <div className="grid min-h-screen place-items-center">
+        <div className="flex flex-col items-center gap-3">
+          <Spinner className="h-6 w-6" />
+        </div>
+      </div>
+    );
+  }
+  if (error) {
+    return <div className="p-6 text-sm text-[var(--foundation-neutral-720)]">{error}</div>;
+  }
+  if (!data) return null;
 
-  const matchISO = React.useMemo(() => parseMatchAtTextToISO(matchAtText), [matchAtText]);
+  /** =========================
+   *  API -> UI Mapping
+   * ========================= */
+  const homeKo = data.homeClub.koName;
+  const homeEn = data.homeClub.enName;
+  const awayKo = data.awayClub.koName;
+  const awayEn = data.awayClub.enName;
 
-  // 경기 시작 시간 Date
-  const matchAtDate = React.useMemo(() => (matchISO ? new Date(matchISO) : null), [matchISO]);
+  const stadiumKo = data.matchGuide.placeDisplay;
+  const stadiumAddress = data.matchGuide.addressDisplay;
 
-  // 99분이 넘어도 99:59로 고정
-  const mmssTwoDigitsMinutes = (sec: number) => {
-    const s = Math.max(0, sec);
-    const mmRaw = Math.floor(s / 60);
-    const ss = s % 60;
+  const matchAtText = data.matchGuide.datetimeDisplay;
+  const ageLimitText = data.matchGuide.ageLimit;
 
-    const mm = Math.min(mmRaw, 99);
+  const homeLogoUrl = resolveLogoSrc(data.homeClub.logoImg);
+  const awayLogoUrl = resolveLogoSrc(data.awayClub.logoImg);
 
-    const ssShown = mmRaw > 99 ? 59 : ss;
+  const saleBadgeText = toSaleBadgeText(data.saleStatus, data.matchGuide.purchaseStatus);
+  const dDayText = `경기 ${data.matchGuide.matchDdayLabel}`;
 
-    return `${String(mm).padStart(2, "0")} : ${String(ssShown).padStart(2, "0")}`;
+  const SALE_BADGE_STYLE: Record<SaleBadgeText, { wrapper: string; text: string }> = {
+    "구매 가능": {
+      wrapper: "bg-[var(--foundation-red-100)] outline-[var(--foundation-red-400)]",
+      text: "text-[var(--foundation-red-500)]",
+    },
+    "구매 불가": {
+      wrapper: "bg-[var(--foundation-neutral-900)] outline-[var(--foundation-neutral-720)]",
+      text: "text-[var(--foundation-neutral-720)]",
+    },
+    "매진": {
+      wrapper: "bg-[var(--foundation-brown-50)] outline-[var(--foundation-neutral-720)]",
+      text: "text-[var(--foundation-neutral-720)]",
+    },
+    "경기 종료": {
+      wrapper: "bg-[var(--foundation-neutral-900)] outline-[var(--foundation-neutral-720)]",
+      text: "text-[var(--foundation-neutral-720)]",
+    },
   };
 
-  const [activeTab, setActiveTab] = React.useState<TabKey>("INFO");
+  // BookingButton에 넘길 Date (offset 없으면 KST로 보정)
+  const matchAtDate = new Date(ensureKstOffset(data.matchAt));
 
   return (
     <div className="w-full">
       <section className="relative w-full bg-[var(--background-grey)] overflow-hidden">
         {/* background image */}
-        <img
+        <Image
           className="absolute inset-x-0 -top-[300px] sm:-top-[380px] md:-top-[455px] w-full h-[900px] sm:h-[997px] object-cover blur-[2px]"
           src={heroBgImageUrl}
+          fill
+          priority
           alt="background"
         />
         <div className="absolute inset-0 opacity-30 bg-black blur-[2px]" />
@@ -178,9 +299,9 @@ export default function MatchDetailSectionResponsive(props: MatchDetailProps) {
                       <div className="w-full flex items-center justify-end">
                         <div className="flex items-center gap-3 sm:gap-10 md:gap-20 lg:gap-30 min-w-0">
                           {/* Logo */}
-                          <div className="shrink-0 mr-1 sm:mr-2 -translate-y-1 sm:-translate-y-2 md:-translate-y-19">
+                          <div className="shrink-0 mr-1 sm:mr-2 -translate-y-0 sm:-translate-y-0 md:-translate-y-15">
                             <img
-                              className="w-12 h-12 sm:w-20 sm:h-20 md:w-30 md:h-30 object-contain"
+                              className="w-22 h-22 sm:w-30 sm:h-30 md:w-40 md:h-40 object-contain"
                               src={homeLogoUrl}
                               alt="home logo"
                             />
@@ -226,9 +347,9 @@ export default function MatchDetailSectionResponsive(props: MatchDetailProps) {
                           </div>
 
                           {/* Logo */}
-                          <div className="shrink-0 ml-1 sm:ml-2 -translate-y-1 sm:-translate-y-2 md:-translate-y-19">
+                          <div className="shrink-0 ml-1 sm:ml-2 -translate-y-0 sm:-translate-y-0 md:-translate-y-15">
                             <img
-                              className="w-12 h-12 sm:w-20 sm:h-20 md:w-30 md:h-30 object-contain"
+                              className="w-22 h-22 sm:w-30 sm:h-30 md:w-40 md:h-40 object-contain"
                               src={awayLogoUrl}
                               alt="away logo"
                             />
