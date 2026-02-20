@@ -22,9 +22,8 @@ export function SeatPreferenceRecommendCard({
   return (
     <div
       className={cn(
-        "w-96 px-6 py-4 bg-[var(--foundation-neutral-white)] rounded-2xl",
-        "outline outline-1 outline-offset-[-1px] outline-[var(--foundation-neutral-880)]",
-        "inline-flex flex-col justify-start items-start gap-2",
+        "w-full py-4 bg-[var(--foundation-neutral-white)] rounded-2xl",
+        "inline-flex flex-col justify-start items-start gap-4",
         className
       )}
     >
@@ -33,7 +32,19 @@ export function SeatPreferenceRecommendCard({
         <div className="flex justify-center items-center gap-2">
           <div className="justify-center text-[var(--foundation-neutral-black)] text-base font-semibold font-['Pretendard'] leading-6">
             사용자 선호 좌석 추천
+            <div className="text-[var(--foundation-primary-500)] text-xs font-normal font-['Pretendard'] leading-4">
+              {enabled ? (
+                <>
+                  선호도에 맞는 좌석을 추천해드려요.
+                </>
+              ) : 
+                <>
+                  추천 기능이 비활성화 되었습니다. 좌석을 직접 선택합니다.
+                </>
+              }
+            </div>
           </div>
+
         </div>
 
         <Toggle checked={enabled} onCheckedChange={onChange} />
@@ -42,9 +53,6 @@ export function SeatPreferenceRecommendCard({
       {/* 토글 ON일 때만 아래 영역 표시 */}
       {enabled && (
         <>
-          {/* Divider */}
-          <div className="self-stretch h-0 outline outline-1 outline-offset-[-0.50px] outline-[var(--foundation-neutral-840)]" />
-
           {/* People count row */}
           <div className="self-stretch inline-flex justify-between items-center">
             <div className="flex justify-center items-center gap-2">

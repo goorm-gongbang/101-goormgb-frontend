@@ -103,14 +103,6 @@ function unauthorized(message = "인증이 필요합니다.") {
 }
 
 export async function GET(req: Request) {
-  // ✅ Authorization: Bearer <accessToken> 체크 (명세 준수)
-  const auth = req.headers.get("authorization") ?? "";
-  const m = auth.match(/^Bearer\s+(.+)$/i);
-  const token = m?.[1]?.trim();
-
-  if (!token) {
-    return unauthorized("Authorization Bearer 토큰이 필요합니다.");
-  }
 
   // ✅ 토큰 검증은 '임시 mock'이므로 여기서는 통과 처리
   // 실제로 검증하고 싶으면 아래처럼 환경변수로 간단 체크 가능:

@@ -282,10 +282,19 @@
 
    /* ===========================
      Text
-  =========================== */
+   =========================== */
   --text-normal-n240: #3D3D3D;
+  --text-info-n600: #999999;
   --light-foreground: #000000;
-  
+
+   /* ===========================
+     구단 색상
+   =========================== */
+  --pink-800: #A32C41;
+
+  --stroke-interactive-neutral-default: #E0E0E0;
+  --background-white: #FFFFFF;
+
   --background-grey: #FAFAFA;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
