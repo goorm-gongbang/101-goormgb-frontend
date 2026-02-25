@@ -20,7 +20,7 @@ jobs:
             const author = context.payload.pull_request.user.login;
             const assignees = context.payload.pull_request.assignees.map(a => a.login);
 
-            // PR 제목 기반 라벨 매핑
+            // PR 제목 기반 라벨 매핑 (단어 단위 매칭)
             const labelMap = [
               { patterns: ['feat', 'feature'], label: 'feature' },
               { patterns: ['refactor'],        label: 'refactor' },
@@ -29,10 +29,10 @@ jobs:
               { patterns: ['hotfix'],          label: 'hotfix' },
             ];
 
-            // 매칭되는 라벨 전부 찾기
+            // 매칭되는 라벨 전부 찾기 (여러 개 가능, 단어 단위 매칭)
             const matchedLabels = [];
             for (const { patterns, label } of labelMap) {
-              if (patterns.some(p => title.includes(p))) {
+              if (patterns.some(p => new RegExp(`\\b${p}\\b`).test(title))) {
                 matchedLabels.push(label);
               }
             }
