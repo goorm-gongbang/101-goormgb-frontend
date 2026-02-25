@@ -1,0 +1,64 @@
+name: Auto Label and Assign PR
+
+on:
+  pull_request:
+    types:
+      - opened
+
+jobs:
+  auto-label-and-assign:
+    runs-on: ubuntu-latest
+    steps:
+      # PR 제목 기반 라벨 자동 추가 + 작성자 assignee 자동 지정
+      - name: Auto Label and Assign
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const title = context.payload.pull_request.title.toLowerCase();
+            const prNumber = context.payload.pull_request.number;
+            const author = context.payload.pull_request.user.login;
+            const assignees = context.payload.pull_request.assignees.map(a => a.login);
+
+            // PR 제목 기반 라벨 매핑
+            const labelMap = [
+              { patterns: ['feat', 'feature'], label: 'feature' },
+              { patterns: ['refactor'],        label: 'refactor' },
+              { patterns: ['bug', 'fix'],      label: 'bug' },
+              { patterns: ['chore'],           label: 'chore' },
+              { patterns: ['hotfix'],          label: 'hotfix' },
+            ];
+
+            // 매칭되는 라벨 전부 찾기
+            const matchedLabels = [];
+            for (const { patterns, label } of labelMap) {
+              if (patterns.some(p => title.includes(p))) {
+                matchedLabels.push(label);
+              }
+            }
+
+            // 라벨 추가
+            if (matchedLabels.length > 0) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                labels: matchedLabels
+              });
+              console.log(`Added labels: ${matchedLabels}`);
+            } else {
+              console.log('No matching label found, skipping');
+            }
+
+            // assignee 미지정 시 PR 작성자 자동 지정
+            if (assignees.length === 0) {
+              await github.rest.issues.addAssignees({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                assignees: [author]
+              });
+              console.log(`Assigned to author: ${author}`);
+            } else {
+              console.log('Assignee already set, skipping');
+            }
