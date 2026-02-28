@@ -12,6 +12,8 @@ import { MatchRefundTab } from "@/components/common/match-detail/tabs/MatchRefun
 import { useParams } from "next/navigation";
 import { Spinner } from "@/components/ui/spinner";
 import Image from "next/image";
+import { getMatchById } from "@/lib/services";
+import { CDN_CLUBS_BASE_URL } from "@/lib/api/config";
 
 /* ===========================
     API TYPES
@@ -97,11 +99,10 @@ const DEFAULT_OUTFIELD_PRICES: OutfieldPriceRow[] = [
 /** =========================
  *  Helpers
  * ========================= */
-const CLUBS_CDN_BASE = process.env.NEXT_PUBLIC_CDN_CLUBS_BASE_URL;
 function resolveLogoSrc(input: string) {
   if (/^https?:\/\//i.test(input)) return input; // input이 이미 https:// 로 시작하면 그대로 사용
-  if (!CLUBS_CDN_BASE) return input; // env가 없을 경우
-  return new URL(input.replace(/^\//, ""), CLUBS_CDN_BASE).toString(); // base + 상대경로 결합
+  if (!CDN_CLUBS_BASE_URL) return input; // env가 없을 경우
+  return new URL(input.replace(/^\//, ""), CDN_CLUBS_BASE_URL).toString(); // base + 상대경로 결합
 }
 
 function ensureKstOffset(iso: string) {
@@ -165,12 +166,7 @@ export default function MatchDetailSectionResponsive({
       setError(null);
 
       try {
-        const res = await fetch(`/api/matches/${matchId}`, { // ★ 추후에 GET /matches/{matchId} 로 변경
-          method: "GET",
-          headers: { "Content-Type": "application/json" },
-          cache: "no-store",
-        });
-
+        const res = await getMatchById(matchId);
         const json = (await res.json()) as ApiResponse<MatchDetailData>;
 
         if (!alive) return;
@@ -182,7 +178,7 @@ export default function MatchDetailSectionResponsive({
         }
 
         setData(json.data);
-        console.log("응답 DATA: ", json.data); // 디버깅 용도 이므로 추후에 지움
+        console.log("응답 DATA: ", json.data);
       } catch {
         if (!alive) return;
         setError("서버 오류");

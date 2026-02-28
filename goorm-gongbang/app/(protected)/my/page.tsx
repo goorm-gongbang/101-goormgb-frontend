@@ -3,27 +3,18 @@
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/authStore";
 import { toast } from "sonner";
+import { logout as logoutApi } from "@/lib/services";
 
 export default function Page() {
   const router = useRouter();
 
   const accessToken = useAuthStore((s) => s.accessToken);
-  const logout = useAuthStore((s) => s.logout);
+  const logoutStore = useAuthStore((s) => s.logout);
 
   const handleLogout = async () => {
-    const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
-
     try {
-      const res = await fetch(`${API_BASE_URL}/api/auth/logout`, { // ★ 이부분 auth/logout 으로 추후 변경 
-        method: "POST",
-        credentials: "include",
-        headers: {
-          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}), // accessToken 없으면 보내지 않음(401 유도)
-          Accept: "application/json",
-        },
-      });
+      const res = await logoutApi();
 
-      /* 백엔드 예외처리 */
       if (res.status === 401) {
         const json = await res.json().catch(() => null);
         toast.error(json?.message ?? "인증이 만료되었습니다. 다시 로그인해주세요.");
@@ -38,8 +29,8 @@ export default function Page() {
       console.error("⚠️ LOGOUT ERROR:", e);
       toast.error("네트워크 오류로 로그아웃 요청에 실패했습니다.");
     } finally {
-      logout(); // access 토큰 삭제
-      router.replace("/auth/login"); // 로그인 창 이동
+      logoutStore();
+      router.replace("/auth/login");
     }
   };
 

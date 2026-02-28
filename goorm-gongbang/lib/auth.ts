@@ -1,7 +1,12 @@
 /* ===========================
-    * HttpOnly refresh 쿠키를 이용해서 
+    * HttpOnly refresh 쿠키를 이용해서
       /api/refresh에 POST -> 새 accessToken을 JSON으로 받음.
+
+    * NOTE: 이 파일은 @/lib/services/auth-guard.service.ts로 통합되었습니다.
+      기존 코드 호환성을 위해 유지되지만, 새 코드는 @/lib/services를 사용하세요.
 =========================== */
+
+import { API_BASE_URL } from "@/lib/api/config";
 
 export type RefreshResponse = {
   code: string;
@@ -10,8 +15,7 @@ export type RefreshResponse = {
 };
 
 export async function refreshAccessToken(): Promise<string | null> {
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
-  const res = await fetch(`${API_BASE_URL}/api/refresh`, { // ★ 추후 /auth/token/refresh 변경
+  const res = await fetch(`${API_BASE_URL}/auth/token/refresh`, {
     method: "POST",
     credentials: "include", // refreshToken Set-Cookie
     cache: "no-store",
@@ -19,8 +23,8 @@ export async function refreshAccessToken(): Promise<string | null> {
 
   const json = (await res.json().catch(() => null)) as RefreshResponse | null;
 
-  console.log("[refresh] status:", res.status, "body:", json); // ★운영환경에서는 제거
-  
+  console.log("[refresh] status:", res.status, "body:", json);
+
   if (!res.ok) return null;
   return json?.data?.accessToken ?? null;
 }

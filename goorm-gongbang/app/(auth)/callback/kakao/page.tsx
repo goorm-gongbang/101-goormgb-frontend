@@ -5,16 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useAuthStore } from "@/stores/authStore";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
-
-type KakaoLoginResponse = {
-  code: string;
-  message: string;
-  data: {
-    accessToken: string;
-    user: { userId: number; status: "ACTIVE" | "DEACTIVE" | string };
-    onboardingRequired: boolean;
-  };
-};
+import { kakaoLogin, type KakaoLoginResponse } from "@/lib/services";
 
 export default function KakaoCallbackPage() {
   const router = useRouter();
@@ -32,23 +23,11 @@ export default function KakaoCallbackPage() {
     }
     sessionStorage.removeItem("kakao_oauth_state");
 
-    /* ===========================
-        API REQUEST
-    =========================== */
     (async () => {
-      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
-      const res = await fetch(`${API_BASE_URL}/api/kakao`, { // ★ /auth/kakao로 변경해야함.
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include", // refreshToken Set-Cookie
-        cache: "no-store",
-        body: JSON.stringify({ authorizationCode: code }),
-      });
-
+      const res = await kakaoLogin({ code });
       const json = (await res.json().catch(() => null)) as KakaoLoginResponse | null;
 
       if (!res.ok) {
-        /* 명세: 400 / 403 / 500 */
         if (res.status === 400) toast.error(json?.message ?? "카카오 코드가 유효하지 않습니다.");
         else if (res.status === 403) toast.error(json?.message ?? "비활성화된 계정입니다. 관리자에게 문의하세요.");
         else toast.error(json?.message ?? `로그인 실패 (HTTP ${res.status})`);
@@ -57,7 +36,6 @@ export default function KakaoCallbackPage() {
         return;
       }
 
-      /* AccessToken 예외 처리 */
       const accessToken = json?.data?.accessToken;
       if (!accessToken) {
         toast.error("accessToken이 응답에 없습니다.");
@@ -65,26 +43,13 @@ export default function KakaoCallbackPage() {
         return;
       }
 
-      /* status 예외 처리 - 재 가입 제한 */
-      const status = String(json?.data?.user?.status ?? "").toUpperCase();
-      if (status === "DEACTIVE") {
-        toast.error("비활성화된 계정입니다. 관리자에게 문의하세요.");
-        router.replace("/auth/login");
-        return;
-      }
-
-      /* (accessToken, user) zustand에 저장 */
       setAccessToken(accessToken);
-      setUser({
-        id: String(json.data.user.userId),
-        status: String(json.data.user.status)
-      });
 
-      /* 온보딩 분기 */
-      if (json.data.onboardingRequired) router.replace("/onboarding"); // 온보딩 페이지로 이동
-      else router.replace("/"); // 홈페이지로 이동
+      // 온보딩 분기
+      if (json?.data?.onboardingRequired) router.replace("/onboarding");
+      else router.replace("/");
 
-      toast.success(json.message ?? "로그인 성공");
+      toast.success(json?.message ?? "로그인 성공");
     })();
   }, [sp, router, setAccessToken, setUser]);
 

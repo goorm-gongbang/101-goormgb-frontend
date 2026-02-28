@@ -7,8 +7,8 @@ import { IconPreview } from "@/components/common/IconPreview";
 import { TeamInfoCard } from "@/components/common/TeamInfoCard";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useAuthStore } from "@/stores/authStore";
 import { useRouter } from "next/navigation";
+import { getMatches, getClubs } from "@/lib/services";
 
 /* ===========================
    API TYPES
@@ -200,33 +200,6 @@ function TeamCardSkeleton() {
 }
 
 
-/* ===========================
-   API FETCH
-=========================== */
-async function apiGet<T>(url: string, opts?: { signal?: AbortSignal; accessToken?: string | null }): Promise<T> {
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
-
-  const res = await fetch(`${API_BASE_URL}${url}`, {
-    method: "GET",
-    headers: {
-      Accept: "application/json",
-      ...(opts?.accessToken ? { Authorization: `Bearer ${opts.accessToken}` } : {}),
-    },
-    signal: opts?.signal,
-    cache: "no-store",
-  });
-
-  const json = (await res.json().catch(() => null)) as ApiResponse<T> | null;
-  console.log("응답 data", json);
-
-  if (!json) throw new Error("응답 파싱 실패");
-
-  if (!res.ok || json.code !== "OK") {
-    throw new Error(json.message ?? `요청 실패 (HTTP ${res.status})`);
-  }
-
-  return json.data;
-}
 
 export default function Home() {
   const router = useRouter();
@@ -251,17 +224,23 @@ export default function Home() {
 
     (async () => {
       try {
-        const data = await apiGet<MatchesPayloadFromApi>(`/api/matches?date=${selectedDate}`, {  // ★ 이 부분은 API 명세에 맞게 수정해야합니다. /matches?date={YYYY-MM-DD}
-          signal: controller.signal,
-        });
-        setMatchesPayload(data);
+        const res = await getMatches(selectedDate);
+        if (controller.signal.aborted) return;
 
+        const json = await res.json().catch(() => null);
+        console.log("응답 data", json);
+
+        if (!res.ok || json?.code !== "OK") {
+          setMatchesPayload(null);
+          return;
+        }
+
+        setMatchesPayload(json.data);
       } catch (e) {
         if ((e as any)?.name === "AbortError") return;
         setMatchesPayload(null);
-
       } finally {
-        setLoadingMatches(false);
+        if (!controller.signal.aborted) setLoadingMatches(false);
       }
     })();
 
@@ -275,17 +254,22 @@ export default function Home() {
 
     (async () => {
       try {
-        const data = await apiGet<TeamsPayload>(`/api/clubs`, { // ★ 이 부분은 API 명세에 맞게 수정해야합니다. -> /clubs
-          signal: controller.signal,
-        });
-        setTeamsPayload(data);
+        const res = await getClubs();
+        if (controller.signal.aborted) return;
 
+        const json = await res.json().catch(() => null);
+
+        if (!res.ok || json?.code !== "OK") {
+          setTeamsPayload(null);
+          return;
+        }
+
+        setTeamsPayload(json.data);
       } catch (e) {
         if ((e as any)?.name === "AbortError") return;
         setTeamsPayload(null);
-
       } finally {
-        setLoadingTeams(false);
+        if (!controller.signal.aborted) setLoadingTeams(false);
       }
     })();
 
