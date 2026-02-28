@@ -35,7 +35,7 @@ export type {
 --------------------------- */
 export async function getMatches(date?: string): Promise<Response> {
   const params = date ? `?date=${date}` : "";
-  return fetch(`${API_BASE_URL}/matches${params}`, {
+  return fetch(`${API_BASE_URL}/order/matches${params}`, {
     method: "GET",
     cache: "no-store",
   });
@@ -45,7 +45,7 @@ export async function getMatches(date?: string): Promise<Response> {
    경기 상세 조회
 --------------------------- */
 export async function getMatchById(matchId: string | number): Promise<Response> {
-  return fetch(`${API_BASE_URL}/matches/${matchId}`, {
+  return fetch(`${API_BASE_URL}/order/matches/${matchId}`, {
     method: "GET",
     cache: "no-store",
   });
@@ -55,17 +55,17 @@ export async function getMatchById(matchId: string | number): Promise<Response> 
    구단 목록 조회
 --------------------------- */
 export async function getClubs(): Promise<Response> {
-  return fetch(`${API_BASE_URL}/clubs`, {
+  return fetch(`${API_BASE_URL}/order/clubs`, {
     method: "GET",
     cache: "no-store",
   });
 }
 
 /* ---------------------------
-   온보딩 상태 조회
+   온보딩 선호도 조회 (상태 확인용)
 --------------------------- */
 export async function getOnboardingStatus(accessToken: string): Promise<Response> {
-  return fetch(`${API_BASE_URL}/users/onboarding/status`, {
+  return fetch(`${API_BASE_URL}/order/onboarding/preferences`, {
     method: "GET",
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -82,7 +82,7 @@ export async function saveOnboardingPreferences(
   accessToken: string,
   body: OnboardingPreferencesRequest
 ): Promise<Response> {
-  return fetch(`${API_BASE_URL}/onboarding/preferences`, {
+  return fetch(`${API_BASE_URL}/order/onboarding/preferences`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

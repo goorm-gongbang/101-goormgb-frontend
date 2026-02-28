@@ -7,8 +7,7 @@ import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { KakaoButton } from "@/components/login/KakaoButton";
 import { toast } from "sonner";
-import { login, getMe, type LoginResponse } from "@/lib/services";
-import { API_BASE_URL } from "@/lib/api/config";
+import { login, getMe, getKakaoLoginUrl, type LoginResponse } from "@/lib/services";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -87,12 +86,7 @@ export default function LoginPage() {
   --------------------------- */
   const handleKakaoLogin = async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}/auth/kakao/login-url`, {
-        method: "GET",
-        credentials: "include",
-        headers: { Accept: "application/json" },
-      });
-
+      const res = await getKakaoLoginUrl();
       const json = await res.json().catch(() => null);
 
       if (!res.ok) {

@@ -60,10 +60,21 @@ export async function refreshAccessToken(): Promise<string | null> {
    카카오 OAuth 로그인
 --------------------------- */
 export async function kakaoLogin(body: KakaoLoginRequest): Promise<Response> {
-  return fetch(`${API_BASE_URL}/auth/kakao`, {
+  return fetch(`${API_BASE_URL}/auth/kakao/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
+    body: JSON.stringify({ authorizationCode: body.code }),
+    credentials: "include",
+    cache: "no-store",
+  });
+}
+
+/* ---------------------------
+   카카오 로그인 URL 조회
+--------------------------- */
+export async function getKakaoLoginUrl(): Promise<Response> {
+  return fetch(`${API_BASE_URL}/auth/kakao/login-url`, {
+    method: "GET",
     credentials: "include",
     cache: "no-store",
   });
@@ -71,9 +82,11 @@ export async function kakaoLogin(body: KakaoLoginRequest): Promise<Response> {
 
 /* ---------------------------
    내 정보 조회
+   NOTE: 백엔드에 /users/me 엔드포인트 없음 - 로그인 응답에서 user 정보 사용
 --------------------------- */
 export async function getMe(accessToken: string): Promise<Response> {
-  return fetch(`${API_BASE_URL}/users/me`, {
+  // TODO: 백엔드에 /auth/me 또는 /users/me 엔드포인트 필요
+  return fetch(`${API_BASE_URL}/auth/me`, {
     method: "GET",
     headers: {
       Authorization: `Bearer ${accessToken}`,
