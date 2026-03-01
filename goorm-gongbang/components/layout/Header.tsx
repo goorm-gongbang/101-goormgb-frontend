@@ -21,19 +21,25 @@ export function Header({ className, onMyInfoClick, onMyTicketClick }: Props) {
   const isLoggedIn = bootstrapped && !!accessToken && !!user;
 
   const handleLogin = () => {
-    const next = typeof window !== "undefined" ? window.location.pathname + window.location.search : "/"; // 로그인 후 돌아오도록
-    router.push(`/auth/login?next=${encodeURIComponent(next)}`);
+    const next =
+      typeof window !== "undefined"
+        ? window.location.pathname + window.location.search
+        : "/"; // 로그인 후 돌아오도록
+    router.push(`/login?next=${encodeURIComponent(next)}`);
   };
 
   return (
     <div
       className={cn(
         "w-full self-stretch h-12 px-4 sm:px-6 md:px-10 lg:px-16 xl:px-24 2xl:px-[120px] bg-[var(--foundation-neutral-980)] inline-flex justify-between items-center",
-        className
+        className,
       )}
     >
       {/* Logo */}
-      <div onClick={() => router.push("/")} className="cursor-pointer self-stretch flex justify-start items-center">
+      <div
+        onClick={() => router.push("/")}
+        className="cursor-pointer self-stretch flex justify-start items-center"
+      >
         <div className="justify-start text-gray-900 text-lg font-bold font-['Pretendard'] leading-9">
           Pyo
         </div>
@@ -50,7 +56,7 @@ export function Header({ className, onMyInfoClick, onMyTicketClick }: Props) {
           onClick={handleLogin}
           className={cn(
             "h-6 min-w-14 p-2 bg-[var(--foundation-primary-500)] rounded-md",
-            "flex justify-center items-center"
+            "flex justify-center items-center",
           )}
         >
           <span className="flex-1 text-center justify-center text-[var(--foundation-neutral-white)] text-xs font-medium font-['Pretendard'] leading-5 cursor-pointer">

@@ -18,28 +18,34 @@ export default function KakaoCallbackPage() {
     const code = sp.get("code");
     if (!code) {
       toast.error("카카오 로그인 검증 실패");
-      router.replace("/auth/login");
+      router.replace("/login");
       return;
     }
     sessionStorage.removeItem("kakao_oauth_state");
 
     (async () => {
       const res = await kakaoLogin({ code });
-      const json = (await res.json().catch(() => null)) as KakaoLoginResponse | null;
+      const json = (await res
+        .json()
+        .catch(() => null)) as KakaoLoginResponse | null;
 
       if (!res.ok) {
-        if (res.status === 400) toast.error(json?.message ?? "카카오 코드가 유효하지 않습니다.");
-        else if (res.status === 403) toast.error(json?.message ?? "비활성화된 계정입니다. 관리자에게 문의하세요.");
+        if (res.status === 400)
+          toast.error(json?.message ?? "카카오 코드가 유효하지 않습니다.");
+        else if (res.status === 403)
+          toast.error(
+            json?.message ?? "비활성화된 계정입니다. 관리자에게 문의하세요.",
+          );
         else toast.error(json?.message ?? `로그인 실패 (HTTP ${res.status})`);
 
-        router.replace("/auth/login");
+        router.replace("/login");
         return;
       }
 
       const accessToken = json?.data?.accessToken;
       if (!accessToken) {
         toast.error("accessToken이 응답에 없습니다.");
-        router.replace("/auth/login");
+        router.replace("/login");
         return;
       }
 

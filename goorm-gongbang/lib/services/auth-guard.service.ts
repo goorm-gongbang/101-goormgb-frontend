@@ -14,13 +14,19 @@ import type {
 } from "@/lib/types";
 
 // Re-export types for convenience
-export type { LoginRequest, LoginResponse, RefreshResponse, KakaoLoginRequest, KakaoLoginResponse };
+export type {
+  LoginRequest,
+  LoginResponse,
+  RefreshResponse,
+  KakaoLoginRequest,
+  KakaoLoginResponse,
+};
 
 /* ---------------------------
    로그인 (ID/PW)
 --------------------------- */
 export async function login(body: LoginRequest): Promise<Response> {
-  return fetch(`${API_BASE_URL}/auth/login`, {
+  return fetch(`${API_BASE_URL}/auth/dev/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),

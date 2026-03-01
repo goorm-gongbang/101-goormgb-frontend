@@ -7,7 +7,12 @@ import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { KakaoButton } from "@/components/login/KakaoButton";
 import { toast } from "sonner";
-import { login, getMe, getKakaoLoginUrl, type LoginResponse } from "@/lib/services";
+import {
+  login,
+  getMe,
+  getKakaoLoginUrl,
+  type LoginResponse,
+} from "@/lib/services";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -35,8 +40,12 @@ export default function LoginPage() {
 
       if (!res.ok) {
         console.error("❌ LOGIN FAIL:", res.status, json);
-        if (res.status === 400) toast.error(json?.message ?? "아이디 또는 비밀번호 불일치");
-        else if (res.status === 403) toast.error(json?.message ?? "비활성화된 계정입니다. 관리자에게 문의하세요.");
+        if (res.status === 400)
+          toast.error(json?.message ?? "아이디 또는 비밀번호 불일치");
+        else if (res.status === 403)
+          toast.error(
+            json?.message ?? "비활성화된 계정입니다. 관리자에게 문의하세요.",
+          );
         else toast.error(json?.message ?? `로그인 실패 (HTTP ${res.status})`);
         return;
       }
@@ -64,7 +73,7 @@ export default function LoginPage() {
       const onboardingRequired = Boolean(json?.data?.onboardingRequired);
 
       if (agreementRequired) {
-        router.push("/auth/login");
+        router.push("/login");
         return;
       }
 
@@ -126,8 +135,7 @@ export default function LoginPage() {
                   로그인 / 회원가입
                 </h1>
                 <p className="w-full text-center text-sm font-normal leading-6 text-[var(--foundation-neutral-black)] sm:text-base">
-                  간편 로그인으로 <br />
-                  더 쉽게, 더 많은 경기를 관람해보세요.
+                  간편 로그인으로 <br />더 쉽게, 더 많은 경기를 관람해보세요.
                 </p>
               </div>
             </div>
@@ -157,7 +165,11 @@ export default function LoginPage() {
                 {loading ? "로그인 중..." : "로그인"}
               </button>
 
-              <KakaoButton onClick={handleKakaoLogin} bgVariant="kakao" contentPadding="6" />
+              <KakaoButton
+                onClick={handleKakaoLogin}
+                bgVariant="kakao"
+                contentPadding="6"
+              />
             </div>
 
             {/* Terms */}
@@ -165,14 +177,22 @@ export default function LoginPage() {
               <span className="text-[var(--foundation-neutral-560)]">
                 해당 계정을 통해 표고에 로그인함으로써 <br />
               </span>
-              <Link href="/terms/privacy" className="text-[var(--foundation-blue-500)] hover:underline">
+              <Link
+                href="/terms/privacy"
+                className="text-[var(--foundation-blue-500)] hover:underline"
+              >
                 개인정보 수집·이용
               </Link>
               <span className="text-[var(--foundation-neutral-560)]"> 및 </span>
-              <Link href="/terms/service" className="text-[var(--foundation-blue-500)] hover:underline">
+              <Link
+                href="/terms/service"
+                className="text-[var(--foundation-blue-500)] hover:underline"
+              >
                 이용약관
               </Link>
-              <span className="text-[var(--foundation-neutral-560)]">에 동의하는 것으로 간주됩니다.</span>
+              <span className="text-[var(--foundation-neutral-560)]">
+                에 동의하는 것으로 간주됩니다.
+              </span>
             </div>
           </div>
         </section>

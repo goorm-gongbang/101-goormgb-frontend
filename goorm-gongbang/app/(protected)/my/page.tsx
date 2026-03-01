@@ -17,7 +17,9 @@ export default function Page() {
 
       if (res.status === 401) {
         const json = await res.json().catch(() => null);
-        toast.error(json?.message ?? "인증이 만료되었습니다. 다시 로그인해주세요.");
+        toast.error(
+          json?.message ?? "인증이 만료되었습니다. 다시 로그인해주세요.",
+        );
       } else if (!res.ok) {
         const json = await res.json().catch(() => null);
         toast.error(json?.message ?? `로그아웃 실패 (HTTP ${res.status})`);
@@ -30,7 +32,7 @@ export default function Page() {
       toast.error("네트워크 오류로 로그아웃 요청에 실패했습니다.");
     } finally {
       logoutStore();
-      router.replace("/auth/login");
+      router.replace("/login");
     }
   };
 

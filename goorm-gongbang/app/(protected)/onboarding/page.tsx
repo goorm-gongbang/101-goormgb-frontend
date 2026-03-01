@@ -6,18 +6,41 @@ import { useAuthStore } from "@/stores/authStore";
 import { ChipButton } from "@/components/common/ChipButton";
 import { UiCheckbox } from "@/components/common/UiCheckbox";
 import { cn } from "@/lib/utils";
-import type { Viewpoint, SeatHeight, Section, PreferenceBase } from "@/stores/onboardingPrefStore";
+import type {
+  Viewpoint,
+  SeatHeight,
+  Section,
+  PreferenceBase,
+} from "@/stores/onboardingPrefStore";
 import { useOnboardingPrefStore } from "@/stores/onboardingPrefStore";
 import { PrimaryButton } from "@/components/common/PrimaryButton";
 import { getOnboardingStatus } from "@/lib/services";
 
-type ViewPreference = "중앙" | "1루 내야" | "3루 내야" | "외야(좌)" | "외야(중)" | "외야(우)";
+type ViewPreference =
+  | "중앙"
+  | "1루 내야"
+  | "3루 내야"
+  | "외야(좌)"
+  | "외야(중)"
+  | "외야(우)";
 type HeightPreference = "하단" | "중단" | "상단" | "무관";
 type ZonePreference = "중앙쪽" | "중간" | "코너(파울라인)" | "무관";
 
-const viewOptions: ViewPreference[] = ["중앙", "1루 내야", "3루 내야", "외야(좌)", "외야(중)", "외야(우)"];
+const viewOptions: ViewPreference[] = [
+  "중앙",
+  "1루 내야",
+  "3루 내야",
+  "외야(좌)",
+  "외야(중)",
+  "외야(우)",
+];
 const heightOptions: HeightPreference[] = ["하단", "중단", "상단", "무관"];
-const zoneOptions: ZonePreference[] = ["중앙쪽", "중간", "코너(파울라인)", "무관"];
+const zoneOptions: ZonePreference[] = [
+  "중앙쪽",
+  "중간",
+  "코너(파울라인)",
+  "무관",
+];
 
 /* priority Badge */
 function PriorityBadge({ n }: { n: number }) {
@@ -31,7 +54,11 @@ function PriorityBadge({ n }: { n: number }) {
 }
 
 /* Chip */
-function Chip({ label, priority, onClick }: {
+function Chip({
+  label,
+  priority,
+  onClick,
+}: {
   label: string;
   priority: number | null;
   onClick: () => void;
@@ -51,7 +78,14 @@ function Chip({ label, priority, onClick }: {
 }
 
 /* CheckBox */
-function ConsentRow({ id, label, requiredBadge, checked, onChange, disabled }: {
+function ConsentRow({
+  id,
+  label,
+  requiredBadge,
+  checked,
+  onChange,
+  disabled,
+}: {
   id: string;
   label: string;
   requiredBadge?: boolean;
@@ -73,7 +107,7 @@ function ConsentRow({ id, label, requiredBadge, checked, onChange, disabled }: {
           "text-sm leading-5 cursor-pointer",
           requiredBadge ? "font-semibold" : "font-normal",
           "text-[var(--light-foreground)]",
-          disabled && "cursor-not-allowed"
+          disabled && "cursor-not-allowed",
         )}
       >
         {label}
@@ -97,7 +131,7 @@ function getPriority<T>(arr: T[], value: T) {
 
 /* 서버 enum 매핑 */
 const VIEWPOINT_MAP: Record<ViewPreference, Viewpoint> = {
-  "중앙": "CENTER",
+  중앙: "CENTER",
   "1루 내야": "INFIELD_1B",
   "3루 내야": "INFIELD_3B",
   "외야(좌)": "OUTFIELD_L",
@@ -106,17 +140,17 @@ const VIEWPOINT_MAP: Record<ViewPreference, Viewpoint> = {
 };
 
 const SEAT_HEIGHT_MAP: Record<HeightPreference, SeatHeight> = {
-  "하단": "LOW",
-  "중단": "MID",
-  "상단": "HIGH",
-  "무관": "ANY",
+  하단: "LOW",
+  중단: "MID",
+  상단: "HIGH",
+  무관: "ANY",
 };
 
 const SECTION_MAP: Record<ZonePreference, Section> = {
-  "중앙쪽": "MIDDLE",
-  "중간": "CENTER_SIDE",
+  중앙쪽: "MIDDLE",
+  중간: "CENTER_SIDE",
   "코너(파울라인)": "CORNER",
-  "무관": "ANY",
+  무관: "ANY",
 };
 
 export default function SeatStyleOnboardingPage() {
@@ -134,8 +168,12 @@ export default function SeatStyleOnboardingPage() {
   const [consentRequired, setConsentRequired] = useState(false);
   const [consentMarketing, setConsentMarketing] = useState(false);
 
-  const setBasePreferences = useOnboardingPrefStore((s) => s.setBasePreferences);
-  const setMarketingAgreed = useOnboardingPrefStore((s) => s.setMarketingAgreed);
+  const setBasePreferences = useOnboardingPrefStore(
+    (s) => s.setBasePreferences,
+  );
+  const setMarketingAgreed = useOnboardingPrefStore(
+    (s) => s.setMarketingAgreed,
+  );
 
   useEffect(() => {
     if (!bootstrapped) return;
@@ -143,7 +181,7 @@ export default function SeatStyleOnboardingPage() {
     const isAuthed = Boolean(accessToken) && Boolean(user);
     if (!isAuthed) {
       const next = pathname + (sp.toString() ? `?${sp.toString()}` : "");
-      router.replace(`/auth/login?next=${encodeURIComponent(next)}`);
+      router.replace(`/login?next=${encodeURIComponent(next)}`);
       return;
     }
 
@@ -157,12 +195,12 @@ export default function SeatStyleOnboardingPage() {
 
         if (res.status === 401) {
           const next = pathname + (sp.toString() ? `?${sp.toString()}` : "");
-          router.replace(`/auth/login?next=${encodeURIComponent(next)}`);
+          router.replace(`/login?next=${encodeURIComponent(next)}`);
           return;
         }
 
         if (res.status === 403) {
-          router.replace("/auth/login");
+          router.replace("/login");
           return;
         }
 
@@ -191,7 +229,12 @@ export default function SeatStyleOnboardingPage() {
   if (!accessToken || !user) return null;
 
   const canGoNext = useMemo(() => {
-    return view.length === 3 && height.length === 3 && zone.length === 3 && consentRequired;
+    return (
+      view.length === 3 &&
+      height.length === 3 &&
+      zone.length === 3 &&
+      consentRequired
+    );
   }, [view, height, zone, consentRequired]);
 
   const handleNext = () => {
@@ -210,22 +253,44 @@ export default function SeatStyleOnboardingPage() {
   };
 
   return (
-    <div className="w-full min-h-screen overflow-hidden" style={{ background: "var(--background-grey, #FAFAFA)" }}>
+    <div
+      className="w-full min-h-screen overflow-hidden"
+      style={{ background: "var(--background-grey, #FAFAFA)" }}
+    >
       <div className="w-full min-h-screen flex flex-col lg:flex-row">
         {/* Left Copy 영역 */}
         <div className="w-full lg:w-1/2 flex items-center">
           <div className="w-full px-6 sm:px-10 lg:px-20 py-12 lg:py-0">
             <div className="inline-flex flex-col items-start gap-8 max-w-[524px]">
-              <div data-progress="1/2" className="inline-flex items-center gap-2">
-                <div className="w-24 h-2.5 rounded-full" style={{ background: "var(--foundation-primary-500, #00C292)" }} />
-                <div className="w-24 h-2.5 rounded-full" style={{ background: "var(--foundation-neutral-900, #E6E6E6)" }} />
+              <div
+                data-progress="1/2"
+                className="inline-flex items-center gap-2"
+              >
+                <div
+                  className="w-24 h-2.5 rounded-full"
+                  style={{
+                    background: "var(--foundation-primary-500, #00C292)",
+                  }}
+                />
+                <div
+                  className="w-24 h-2.5 rounded-full"
+                  style={{
+                    background: "var(--foundation-neutral-900, #E6E6E6)",
+                  }}
+                />
               </div>
 
               <div className="self-stretch flex flex-col items-start gap-[5px]">
-                <div className="self-stretch text-2xl sm:text-3xl font-semibold leading-9 sm:leading-10" style={{ color: "var(--text-normal-n240, #3D3D3D)" }}>
+                <div
+                  className="self-stretch text-2xl sm:text-3xl font-semibold leading-9 sm:leading-10"
+                  style={{ color: "var(--text-normal-n240, #3D3D3D)" }}
+                >
                   원하시는 좌석 스타일을 선택해주세요
                 </div>
-                <div className="self-stretch text-base sm:text-lg font-normal leading-6 sm:leading-7" style={{ color: "var(--text-normal-n240, #3D3D3D)" }}>
+                <div
+                  className="self-stretch text-base sm:text-lg font-normal leading-6 sm:leading-7"
+                  style={{ color: "var(--text-normal-n240, #3D3D3D)" }}
+                >
                   1순위부터 우선 반영되며, 상황에 따라 다음 순위가 활용돼요.
                   <br />
                   모든 순위를 입력해야 추천 정확도가 높아져요.
@@ -245,16 +310,34 @@ export default function SeatStyleOnboardingPage() {
                 <section className="self-stretch flex flex-col items-start gap-4">
                   <div className="self-stretch flex flex-col items-start gap-1.5">
                     <div className="self-stretch inline-flex items-start gap-2">
-                      <div className="text-base sm:text-lg font-semibold leading-6 text-black">어디에서 보고 싶으신가요? 선호하는 순으로 선택해주세요.</div>
-                      <div className="flex-none whitespace-nowrap text-base sm:text-lg font-semibold leading-6" style={{ color: "var(--foundation-primary-500, #00C292)" }}>*필수</div>
+                      <div className="text-base sm:text-lg font-semibold leading-6 text-black">
+                        어디에서 보고 싶으신가요? 선호하는 순으로 선택해주세요.
+                      </div>
+                      <div
+                        className="flex-none whitespace-nowrap text-base sm:text-lg font-semibold leading-6"
+                        style={{
+                          color: "var(--foundation-primary-500, #00C292)",
+                        }}
+                      >
+                        *필수
+                      </div>
                     </div>
                     <div className="self-stretch inline-flex items-center gap-2">
-                      <div className="flex-1 text-sm font-medium leading-5 text-black">경기 시야와 관람 경험에 가장 큰 영향을 줘요.</div>
+                      <div className="flex-1 text-sm font-medium leading-5 text-black">
+                        경기 시야와 관람 경험에 가장 큰 영향을 줘요.
+                      </div>
                     </div>
                   </div>
                   <div className="self-stretch inline-flex items-center gap-1.5 flex-wrap">
                     {viewOptions.map((opt) => (
-                      <Chip key={opt} label={opt} priority={getPriority(view, opt)} onClick={() => setView((prev) => toggleUpToThree(prev, opt))} />
+                      <Chip
+                        key={opt}
+                        label={opt}
+                        priority={getPriority(view, opt)}
+                        onClick={() =>
+                          setView((prev) => toggleUpToThree(prev, opt))
+                        }
+                      />
                     ))}
                   </div>
                 </section>
@@ -263,16 +346,34 @@ export default function SeatStyleOnboardingPage() {
                 <section className="self-stretch flex flex-col items-start gap-4">
                   <div className="self-stretch flex flex-col items-start gap-1.5">
                     <div className="self-stretch inline-flex items-start gap-2">
-                      <div className="text-base sm:text-lg font-semibold leading-6 text-black">좌석 높이는 어느 쪽이 좋으신가요?</div>
-                      <div className="flex-none whitespace-nowrap text-base sm:text-lg font-semibold leading-6" style={{ color: "var(--foundation-primary-500, #00C292)" }}>*필수</div>
+                      <div className="text-base sm:text-lg font-semibold leading-6 text-black">
+                        좌석 높이는 어느 쪽이 좋으신가요?
+                      </div>
+                      <div
+                        className="flex-none whitespace-nowrap text-base sm:text-lg font-semibold leading-6"
+                        style={{
+                          color: "var(--foundation-primary-500, #00C292)",
+                        }}
+                      >
+                        *필수
+                      </div>
                     </div>
                     <div className="self-stretch inline-flex items-center gap-2">
-                      <div className="flex-1 text-sm font-medium leading-5 text-black">앞뒤 거리와 시야 각도에 영향을 줘요.</div>
+                      <div className="flex-1 text-sm font-medium leading-5 text-black">
+                        앞뒤 거리와 시야 각도에 영향을 줘요.
+                      </div>
                     </div>
                   </div>
                   <div className="self-stretch inline-flex items-center gap-1.5 flex-wrap">
                     {heightOptions.map((opt) => (
-                      <Chip key={opt} label={opt} priority={getPriority(height, opt)} onClick={() => setHeight((prev) => toggleUpToThree(prev, opt))} />
+                      <Chip
+                        key={opt}
+                        label={opt}
+                        priority={getPriority(height, opt)}
+                        onClick={() =>
+                          setHeight((prev) => toggleUpToThree(prev, opt))
+                        }
+                      />
                     ))}
                   </div>
                 </section>
@@ -281,16 +382,34 @@ export default function SeatStyleOnboardingPage() {
                 <section className="self-stretch flex flex-col items-start gap-4">
                   <div className="self-stretch flex flex-col items-start gap-1.5">
                     <div className="self-stretch inline-flex items-start gap-2">
-                      <div className="text-base sm:text-lg font-semibold leading-6 text-black">구역 위치는 어느 쪽을 선호하시나요?</div>
-                      <div className="flex-none whitespace-nowrap text-base sm:text-lg font-semibold leading-6" style={{ color: "var(--foundation-primary-500, #00C292)" }}>*필수</div>
+                      <div className="text-base sm:text-lg font-semibold leading-6 text-black">
+                        구역 위치는 어느 쪽을 선호하시나요?
+                      </div>
+                      <div
+                        className="flex-none whitespace-nowrap text-base sm:text-lg font-semibold leading-6"
+                        style={{
+                          color: "var(--foundation-primary-500, #00C292)",
+                        }}
+                      >
+                        *필수
+                      </div>
                     </div>
                     <div className="self-stretch inline-flex items-center gap-2">
-                      <div className="flex-1 text-sm font-medium leading-5 text-black">중앙에 가까울수록 시야가 안정적이에요.</div>
+                      <div className="flex-1 text-sm font-medium leading-5 text-black">
+                        중앙에 가까울수록 시야가 안정적이에요.
+                      </div>
                     </div>
                   </div>
                   <div className="self-stretch inline-flex items-center gap-1.5 flex-wrap">
                     {zoneOptions.map((opt) => (
-                      <Chip key={opt} label={opt} priority={getPriority(zone, opt)} onClick={() => setZone((prev) => toggleUpToThree(prev, opt))} />
+                      <Chip
+                        key={opt}
+                        label={opt}
+                        priority={getPriority(zone, opt)}
+                        onClick={() =>
+                          setZone((prev) => toggleUpToThree(prev, opt))
+                        }
+                      />
                     ))}
                   </div>
                 </section>
@@ -298,14 +417,30 @@ export default function SeatStyleOnboardingPage() {
 
               {/* Consents */}
               <div className="self-stretch flex flex-col items-start gap-2">
-                <ConsentRow id="consent-required" label="[필수] 선호 데이터 활용 동의" requiredBadge checked={consentRequired} onChange={setConsentRequired} />
-                <ConsentRow id="consent-marketing" label="[선택] 마케팅 수신 동의" checked={consentMarketing} onChange={setConsentMarketing} />
+                <ConsentRow
+                  id="consent-required"
+                  label="[필수] 선호 데이터 활용 동의"
+                  requiredBadge
+                  checked={consentRequired}
+                  onChange={setConsentRequired}
+                />
+                <ConsentRow
+                  id="consent-marketing"
+                  label="[선택] 마케팅 수신 동의"
+                  checked={consentMarketing}
+                  onChange={setConsentMarketing}
+                />
               </div>
             </div>
 
             {/* Bottom CTA */}
             <div className="self-stretch flex flex-col items-end gap-2 pt-6">
-              <PrimaryButton uiSize="lg" tone="base" onClick={handleNext} disabled={!canGoNext}>
+              <PrimaryButton
+                uiSize="lg"
+                tone="base"
+                onClick={handleNext}
+                disabled={!canGoNext}
+              >
                 다음
               </PrimaryButton>
             </div>
