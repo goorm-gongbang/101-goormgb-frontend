@@ -14,6 +14,7 @@ import { Spinner } from "@/components/ui/spinner";
 import Image from "next/image";
 import { getMatchById } from "@/lib/services";
 import { CDN_CLUBS_BASE_URL } from "@/lib/api/config";
+import { ApiError } from "@/lib/api";
 
 /* ===========================
     API TYPES
@@ -166,22 +167,18 @@ export default function MatchDetailSectionResponsive({
       setError(null);
 
       try {
-        const res = await getMatchById(matchId);
-        const json = (await res.json()) as ApiResponse<MatchDetailData>;
-
+        const data = await getMatchById(matchId);
         if (!alive) return;
 
-        if (!res.ok || !json.data) {
-          setError(json?.message ?? "조회 실패");
-          setData(null);
-          return;
+        setData((data as MatchDetailData) ?? null);
+        console.log("응답 DATA: ", data);
+      } catch (e) {
+        if (!alive) return;
+        if (e instanceof ApiError) {
+          setError(e.message);
+        } else {
+          setError("서버 오류");
         }
-
-        setData(json.data);
-        console.log("응답 DATA: ", json.data);
-      } catch {
-        if (!alive) return;
-        setError("서버 오류");
         setData(null);
       } finally {
         if (!alive) return;

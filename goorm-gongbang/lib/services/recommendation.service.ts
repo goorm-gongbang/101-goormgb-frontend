@@ -13,4 +13,4 @@ export type { RecommendedMatch, RecommendationsResponse };
 
 /* 추천 경기 조회 */
 export const getRecommendedMatches = () =>
-  auth.get(`${API_BASE_URL}/recommendations/matches`);
+  auth.get<RecommendationsResponse>(`${API_BASE_URL}/recommendations/matches`);

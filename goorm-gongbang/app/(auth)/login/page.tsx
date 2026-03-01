@@ -11,8 +11,8 @@ import {
   login,
   getMe,
   getKakaoLoginUrl,
-  type LoginResponse,
 } from "@/lib/services";
+import { ApiError } from "@/lib/api";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -35,42 +35,27 @@ export default function LoginPage() {
     try {
       setLoading(true);
 
-      const res = await login({ loginId, password });
-      const json = (await res.json().catch(() => null)) as LoginResponse | null;
+      const data = await login({ loginId, password });
+      console.log("✅ LOGIN SUCCESS:", data);
+      toast(data?.message ?? "로그인 성공");
 
-      if (!res.ok) {
-        console.error("❌ LOGIN FAIL:", res.status, json);
-        if (res.status === 400)
-          toast.error(json?.message ?? "아이디 또는 비밀번호 불일치");
-        else if (res.status === 403)
-          toast.error(
-            json?.message ?? "비활성화된 계정입니다. 관리자에게 문의하세요.",
-          );
-        else toast.error(json?.message ?? `로그인 실패 (HTTP ${res.status})`);
-        return;
-      }
-
-      console.log("✅ LOGIN SUCCESS:", json);
-      toast(json?.message ?? "로그인 성공");
-
-      const token = json?.data?.accessToken;
+      const token = data?.data?.accessToken;
       if (token) {
         setAccessToken(token);
 
         // 유저 정보 가져오기
-        const meRes = await getMe(token);
-        if (meRes.ok) {
-          const meJson = await meRes.json().catch(() => null);
-          useAuthStore.getState().setUser(meJson?.data ?? null);
-        } else {
+        try {
+          const meData = await getMe();
+          useAuthStore.getState().setUser(meData ?? null);
+        } catch {
           useAuthStore.getState().setUser(null);
         }
       } else {
         console.warn("⚠️ accessToken이 응답에 없습니다.");
       }
 
-      const agreementRequired = Boolean(json?.data?.agreementRequired);
-      const onboardingRequired = Boolean(json?.data?.onboardingRequired);
+      const agreementRequired = Boolean(data?.data?.agreementRequired);
+      const onboardingRequired = Boolean(data?.data?.onboardingRequired);
 
       if (agreementRequired) {
         router.push("/login");
@@ -84,7 +69,12 @@ export default function LoginPage() {
 
       router.push("/");
     } catch (e) {
-      console.error("⚠️ LOGIN ERROR:", e);
+      if (e instanceof ApiError) {
+        console.error("❌ LOGIN FAIL:", e.status, e.message);
+        toast.error(e.message);
+      } else {
+        console.error("⚠️ LOGIN ERROR:", e);
+      }
     } finally {
       setLoading(false);
     }
@@ -95,23 +85,21 @@ export default function LoginPage() {
   --------------------------- */
   const handleKakaoLogin = async () => {
     try {
-      const res = await getKakaoLoginUrl();
-      const json = await res.json().catch(() => null);
+      const data = await getKakaoLoginUrl();
+      const loginUrl = data?.loginUrl;
 
-      if (!res.ok) {
-        console.error("❌ kakao login-url failed:", res.status, json);
-        return;
-      }
-
-      const loginUrl: string | undefined = json?.data?.loginUrl;
       if (!loginUrl) {
-        console.error("❌ loginUrl missing:", json);
+        console.error("❌ loginUrl missing:", data);
         return;
       }
 
       window.location.href = loginUrl;
     } catch (e) {
-      console.error("⚠️ kakao login-url error:", e);
+      if (e instanceof ApiError) {
+        console.error("❌ kakao login-url failed:", e.status, e.message);
+      } else {
+        console.error("⚠️ kakao login-url error:", e);
+      }
     }
   };
 

@@ -35,21 +35,21 @@ export type {
 /* 경기 목록 조회 */
 export const getMatches = (date?: string) => {
   const params = date ? `?date=${date}` : "";
-  return auth.get(`${API_BASE_URL}/order/matches${params}`);
+  return auth.get<MatchesData>(`${API_BASE_URL}/order/matches${params}`);
 };
 
 /* 경기 상세 조회 */
 export const getMatchById = (matchId: string | number) =>
-  auth.get(`${API_BASE_URL}/order/matches/${matchId}`);
+  auth.get<MatchDetail>(`${API_BASE_URL}/order/matches/${matchId}`);
 
 /* 구단 목록 조회 */
 export const getClubs = () =>
-  auth.get(`${API_BASE_URL}/order/clubs`);
+  auth.get<ClubsData>(`${API_BASE_URL}/order/clubs`);
 
 /* 온보딩 선호도 조회 */
 export const getOnboardingStatus = () =>
-  auth.get(`${API_BASE_URL}/order/onboarding/preferences`);
+  auth.get<{ onboardingStatus: boolean }>(`${API_BASE_URL}/order/onboarding/preferences`);
 
 /* 온보딩 선호도 저장 */
 export const saveOnboardingPreferences = (body: OnboardingPreferencesRequest) =>
-  auth.post(`${API_BASE_URL}/order/onboarding/preferences`, body);
+  auth.post<void, OnboardingPreferencesRequest>(`${API_BASE_URL}/order/onboarding/preferences`, body);

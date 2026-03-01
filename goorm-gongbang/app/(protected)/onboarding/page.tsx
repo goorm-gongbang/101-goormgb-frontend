@@ -15,6 +15,7 @@ import type {
 import { useOnboardingPrefStore } from "@/stores/onboardingPrefStore";
 import { PrimaryButton } from "@/components/common/PrimaryButton";
 import { getOnboardingStatus } from "@/lib/services";
+import { ApiError } from "@/lib/api";
 
 type ViewPreference =
   | "중앙"
@@ -188,45 +189,31 @@ export default function SeatStyleOnboardingPage() {
     if (checkedRef.current) return;
     checkedRef.current = true;
 
-    const controller = new AbortController();
     (async () => {
       try {
-        const res = await getOnboardingStatus(accessToken!);
+        const data = await getOnboardingStatus();
+        console.log("[onboarding/status] data", data);
 
-        if (res.status === 401) {
-          const next = pathname + (sp.toString() ? `?${sp.toString()}` : "");
-          router.replace(`/login?next=${encodeURIComponent(next)}`);
-          return;
-        }
-
-        if (res.status === 403) {
-          router.replace("/login");
-          return;
-        }
-
-        if (!res.ok) {
-          console.error("❌ onboarding status failed:", res.status);
-          return;
-        }
-
-        const json = await res.json().catch(() => null);
-        console.log("[onboarding/status] json", json);
-
-        const onboardingStatus = Boolean(json?.data?.onboardingStatus);
+        const onboardingStatus = Boolean(data?.onboardingStatus);
         if (onboardingStatus) {
           const next = new URLSearchParams(sp.toString()).get("next");
           router.replace(next ? decodeURIComponent(next) : "/");
           return;
         }
       } catch (e) {
-        if ((e as any)?.name === "AbortError") return;
-        console.error("⚠️ onboarding status error:", e);
+        if (e instanceof ApiError) {
+          if (e.status === 401 || e.status === 403) {
+            const next = pathname + (sp.toString() ? `?${sp.toString()}` : "");
+            router.replace(`/login?next=${encodeURIComponent(next)}`);
+            return;
+          }
+          console.error("❌ onboarding status failed:", e.message);
+        } else {
+          console.error("⚠️ onboarding status error:", e);
+        }
       }
     })();
   }, [bootstrapped, accessToken, user, router, pathname, sp]);
-
-  if (!bootstrapped) return null;
-  if (!accessToken || !user) return null;
 
   const canGoNext = useMemo(() => {
     return (
@@ -236,6 +223,9 @@ export default function SeatStyleOnboardingPage() {
       consentRequired
     );
   }, [view, height, zone, consentRequired]);
+
+  if (!bootstrapped) return null;
+  if (!accessToken || !user) return null;
 
   const handleNext = () => {
     if (!canGoNext) return;

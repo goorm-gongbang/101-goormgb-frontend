@@ -4,32 +4,23 @@ import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/authStore";
 import { toast } from "sonner";
 import { logout as logoutApi } from "@/lib/services";
+import { ApiError } from "@/lib/api";
 
 export default function Page() {
   const router = useRouter();
-
-  const accessToken = useAuthStore((s) => s.accessToken);
   const logoutStore = useAuthStore((s) => s.logout);
 
   const handleLogout = async () => {
     try {
-      const res = await logoutApi();
-
-      if (res.status === 401) {
-        const json = await res.json().catch(() => null);
-        toast.error(
-          json?.message ?? "인증이 만료되었습니다. 다시 로그인해주세요.",
-        );
-      } else if (!res.ok) {
-        const json = await res.json().catch(() => null);
-        toast.error(json?.message ?? `로그아웃 실패 (HTTP ${res.status})`);
-      } else {
-        const json = await res.json().catch(() => null);
-        toast.success(json?.message ?? "로그아웃 완료");
-      }
+      await logoutApi();
+      toast.success("로그아웃 완료");
     } catch (e) {
-      console.error("⚠️ LOGOUT ERROR:", e);
-      toast.error("네트워크 오류로 로그아웃 요청에 실패했습니다.");
+      if (e instanceof ApiError) {
+        toast.error(e.message);
+      } else {
+        console.error("⚠️ LOGOUT ERROR:", e);
+        toast.error("네트워크 오류로 로그아웃 요청에 실패했습니다.");
+      }
     } finally {
       logoutStore();
       router.replace("/login");

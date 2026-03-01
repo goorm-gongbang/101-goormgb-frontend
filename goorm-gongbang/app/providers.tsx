@@ -29,12 +29,10 @@ export default function Providers({ children }: { children: React.ReactNode }) {
 
       /* [2] 유저 정보 가져오기: /api/me */
       if (token) {
-        const meRes = await getMe();
-        if (meRes.ok) {
-          const meJson = await meRes.json().catch(() => null);
-          const user = meJson?.data ?? null;
-          if (mounted) setUser(user);
-        } else {
+        try {
+          const user = await getMe();
+          if (mounted) setUser(user ?? null);
+        } catch {
           if (mounted) setUser(null); // 토큰은 있는데 me가 실패하면 세션 문제 가능 → 정리
         }
       }

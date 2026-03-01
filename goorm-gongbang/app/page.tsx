@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRouter } from "next/navigation";
 import { getMatches, getClubs } from "@/lib/services";
+import { ApiError } from "@/lib/api";
 
 /* ===========================
    API TYPES
@@ -219,61 +220,51 @@ export default function Home() {
 
   /* 경기 일정 - 날짜 변경 될 때마다 재 요청 */
   useEffect(() => {
-    const controller = new AbortController();
+    let cancelled = false;
     setLoadingMatches(true);
 
     (async () => {
       try {
-        const res = await getMatches(selectedDate);
-        if (controller.signal.aborted) return;
-
-        const json = await res.json().catch(() => null);
-        console.log("응답 data", json);
-
-        if (!res.ok || json?.code !== "OK") {
-          setMatchesPayload(null);
-          return;
-        }
-
-        setMatchesPayload(json.data);
+        const data = await getMatches(selectedDate);
+        if (cancelled) return;
+        console.log("응답 data", data);
+        setMatchesPayload(data ?? null);
       } catch (e) {
-        if ((e as any)?.name === "AbortError") return;
+        if (cancelled) return;
+        if (e instanceof ApiError) {
+          console.error("경기 목록 조회 실패:", e.message);
+        }
         setMatchesPayload(null);
       } finally {
-        if (!controller.signal.aborted) setLoadingMatches(false);
+        if (!cancelled) setLoadingMatches(false);
       }
     })();
 
-    return () => controller.abort();
+    return () => { cancelled = true; };
   }, [selectedDate]);
 
   /* 팀 리스트 요청 - 1회 요청 */
   useEffect(() => {
-    const controller = new AbortController();
+    let cancelled = false;
     setLoadingTeams(true);
 
     (async () => {
       try {
-        const res = await getClubs();
-        if (controller.signal.aborted) return;
-
-        const json = await res.json().catch(() => null);
-
-        if (!res.ok || json?.code !== "OK") {
-          setTeamsPayload(null);
-          return;
-        }
-
-        setTeamsPayload(json.data);
+        const data = await getClubs();
+        if (cancelled) return;
+        setTeamsPayload(data ?? null);
       } catch (e) {
-        if ((e as any)?.name === "AbortError") return;
+        if (cancelled) return;
+        if (e instanceof ApiError) {
+          console.error("구단 목록 조회 실패:", e.message);
+        }
         setTeamsPayload(null);
       } finally {
-        if (!controller.signal.aborted) setLoadingTeams(false);
+        if (!cancelled) setLoadingTeams(false);
       }
     })();
 
-    return () => controller.abort();
+    return () => { cancelled = true; };
   }, []);
 
   /* 3월 28일은 총 5개의 경기가 있습니다. */

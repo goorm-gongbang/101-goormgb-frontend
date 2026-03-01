@@ -5,7 +5,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useAuthStore } from "@/stores/authStore";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
-import { kakaoLogin, type KakaoLoginResponse } from "@/lib/services";
+import { kakaoLogin } from "@/lib/services";
+import { ApiError } from "@/lib/api";
 
 export default function KakaoCallbackPage() {
   const router = useRouter();
@@ -24,38 +25,31 @@ export default function KakaoCallbackPage() {
     sessionStorage.removeItem("kakao_oauth_state");
 
     (async () => {
-      const res = await kakaoLogin({ code });
-      const json = (await res
-        .json()
-        .catch(() => null)) as KakaoLoginResponse | null;
+      try {
+        const data = await kakaoLogin({ code });
 
-      if (!res.ok) {
-        if (res.status === 400)
-          toast.error(json?.message ?? "카카오 코드가 유효하지 않습니다.");
-        else if (res.status === 403)
-          toast.error(
-            json?.message ?? "비활성화된 계정입니다. 관리자에게 문의하세요.",
-          );
-        else toast.error(json?.message ?? `로그인 실패 (HTTP ${res.status})`);
+        const accessToken = data?.data?.accessToken;
+        if (!accessToken) {
+          toast.error("accessToken이 응답에 없습니다.");
+          router.replace("/login");
+          return;
+        }
 
+        setAccessToken(accessToken);
+
+        // 온보딩 분기
+        if (data?.data?.onboardingRequired) router.replace("/onboarding");
+        else router.replace("/");
+
+        toast.success(data?.message ?? "로그인 성공");
+      } catch (e) {
+        if (e instanceof ApiError) {
+          toast.error(e.message);
+        } else {
+          toast.error("로그인 처리 중 오류가 발생했습니다.");
+        }
         router.replace("/login");
-        return;
       }
-
-      const accessToken = json?.data?.accessToken;
-      if (!accessToken) {
-        toast.error("accessToken이 응답에 없습니다.");
-        router.replace("/login");
-        return;
-      }
-
-      setAccessToken(accessToken);
-
-      // 온보딩 분기
-      if (json?.data?.onboardingRequired) router.replace("/onboarding");
-      else router.replace("/");
-
-      toast.success(json?.message ?? "로그인 성공");
     })();
   }, [sp, router, setAccessToken, setUser]);
 

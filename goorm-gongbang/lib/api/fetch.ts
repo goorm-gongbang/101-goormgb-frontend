@@ -5,6 +5,7 @@
 =========================== */
 
 import { useAuthStore } from "@/stores/authStore";
+import { ApiError } from "./error";
 
 // 공통 기본 설정
 const baseConfig: RequestInit = {
@@ -84,6 +85,22 @@ function buildRequest<T>(init: FetchOptions<T>): RequestInit {
 }
 
 /* ---------------------------
+   응답 파싱 + 에러 처리
+   - res.ok가 false면 ApiError throw
+   - 백엔드 message 그대로 전달
+--------------------------- */
+async function handleResponse<T>(res: Response): Promise<T> {
+  const json = await res.json().catch(() => null);
+
+  if (!res.ok) {
+    const message = json?.message ?? json?.error ?? `요청 실패 (${res.status})`;
+    throw new ApiError(message, res.status, json?.code);
+  }
+
+  return json?.data ?? json;
+}
+
+/* ---------------------------
    인증 필요한 API
    - Authorization 헤더 자동 부착
    - body가 object면 자동 JSON.stringify
@@ -158,18 +175,20 @@ export function publicFetch<T = unknown>(
    - auth.delete(url)
 =========================== */
 export const auth = {
-  get: (url: string) => authFetch(url, { method: "GET" }),
+  get: <T = unknown>(url: string) =>
+    authFetch(url, { method: "GET" }).then(handleResponse<T>),
 
-  post: <T = unknown>(url: string, body?: T) =>
-    authFetch(url, { method: "POST", body }),
+  post: <T = unknown, B = unknown>(url: string, body?: B) =>
+    authFetch(url, { method: "POST", body }).then(handleResponse<T>),
 
-  put: <T = unknown>(url: string, body?: T) =>
-    authFetch(url, { method: "PUT", body }),
+  put: <T = unknown, B = unknown>(url: string, body?: B) =>
+    authFetch(url, { method: "PUT", body }).then(handleResponse<T>),
 
-  patch: <T = unknown>(url: string, body?: T) =>
-    authFetch(url, { method: "PATCH", body }),
+  patch: <T = unknown, B = unknown>(url: string, body?: B) =>
+    authFetch(url, { method: "PATCH", body }).then(handleResponse<T>),
 
-  delete: (url: string) => authFetch(url, { method: "DELETE" }),
+  delete: <T = unknown>(url: string) =>
+    authFetch(url, { method: "DELETE" }).then(handleResponse<T>),
 };
 
 /* ===========================
@@ -181,16 +200,18 @@ export const auth = {
    - pub.delete(url)
 =========================== */
 export const pub = {
-  get: (url: string) => publicFetch(url, { method: "GET" }),
+  get: <T = unknown>(url: string) =>
+    publicFetch(url, { method: "GET" }).then(handleResponse<T>),
 
-  post: <T = unknown>(url: string, body?: T) =>
-    publicFetch(url, { method: "POST", body }),
+  post: <T = unknown, B = unknown>(url: string, body?: B) =>
+    publicFetch(url, { method: "POST", body }).then(handleResponse<T>),
 
-  put: <T = unknown>(url: string, body?: T) =>
-    publicFetch(url, { method: "PUT", body }),
+  put: <T = unknown, B = unknown>(url: string, body?: B) =>
+    publicFetch(url, { method: "PUT", body }).then(handleResponse<T>),
 
-  patch: <T = unknown>(url: string, body?: T) =>
-    publicFetch(url, { method: "PATCH", body }),
+  patch: <T = unknown, B = unknown>(url: string, body?: B) =>
+    publicFetch(url, { method: "PATCH", body }).then(handleResponse<T>),
 
-  delete: (url: string) => publicFetch(url, { method: "DELETE" }),
+  delete: <T = unknown>(url: string) =>
+    publicFetch(url, { method: "DELETE" }).then(handleResponse<T>),
 };

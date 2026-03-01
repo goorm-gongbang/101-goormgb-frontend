@@ -13,12 +13,12 @@ export type { SeatStatus, Seat, SeatsData, SeatReservationRequest };
 
 /* 좌석 목록 조회 (public) */
 export const getSeats = (matchId: string | number) =>
-  pub.get(`${API_BASE_URL}/seats?matchId=${matchId}`);
+  pub.get<SeatsData>(`${API_BASE_URL}/seats?matchId=${matchId}`);
 
 /* 좌석 예약 */
 export const reserveSeats = (body: SeatReservationRequest) =>
-  auth.post(`${API_BASE_URL}/seats/reserve`, body);
+  auth.post<{ reservationId: string }, SeatReservationRequest>(`${API_BASE_URL}/seats/reserve`, body);
 
 /* 좌석 예약 취소 */
 export const cancelReservation = (reservationId: string | number) =>
-  auth.delete(`${API_BASE_URL}/seats/reservations/${reservationId}`);
+  auth.delete<void>(`${API_BASE_URL}/seats/reservations/${reservationId}`);

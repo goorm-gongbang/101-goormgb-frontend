@@ -13,12 +13,12 @@ export type { QueueStatus, QueueStatusResponse };
 
 /* 대기열 진입 */
 export const enterQueue = (matchId: string | number) =>
-  auth.post(`${API_BASE_URL}/queue/enter`, { matchId });
+  auth.post<QueueStatusResponse>(`${API_BASE_URL}/queue/enter`, { matchId });
 
 /* 대기열 상태 조회 */
 export const getQueueStatus = (matchId: string | number) =>
-  auth.get(`${API_BASE_URL}/queue/status?matchId=${matchId}`);
+  auth.get<QueueStatusResponse>(`${API_BASE_URL}/queue/status?matchId=${matchId}`);
 
 /* 대기열 이탈 */
 export const leaveQueue = (matchId: string | number) =>
-  auth.post(`${API_BASE_URL}/queue/leave`, { matchId });
+  auth.post<void>(`${API_BASE_URL}/queue/leave`, { matchId });

@@ -19,6 +19,7 @@ import {
   type PriceMode,
 } from "@/stores/onboardingPrefStore";
 import { saveOnboardingPreferences } from "@/lib/services";
+import { ApiError } from "@/lib/api";
 
 type ViewTypePreference = "통로 선호" | "중앙 선호" | "무관";
 type EnvPreference = "그늘 선호" | "햇빛 무관" | "무관";
@@ -201,37 +202,26 @@ export default function SeatStyleOnboardingOptionPage() {
     console.log("body: ", body);
 
     try {
-      const res = await saveOnboardingPreferences(accessToken, body as any);
-
-      if (res.status === 401) {
-        router.replace("/login");
-        return;
-      }
-
-      if (res.status === 403) {
-        router.replace("/login");
-        return;
-      }
-
-      if (res.status === 409) {
-        router.replace("/");
-        return;
-      }
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => null);
-        console.error("❌ onboarding/preferences failed:", res.status, err);
-        return;
-      }
-
-      const json = await res.json().catch(() => null);
-      console.log("✅ onboarding/preferences success:", json);
+      await saveOnboardingPreferences(body as any);
+      console.log("✅ onboarding/preferences success");
 
       setIsFinishing(true);
       router.replace("/");
       setTimeout(() => reset(), 0);
     } catch (e) {
-      console.error("⚠️ onboarding/preferences error:", e);
+      if (e instanceof ApiError) {
+        if (e.status === 401 || e.status === 403) {
+          router.replace("/login");
+          return;
+        }
+        if (e.status === 409) {
+          router.replace("/");
+          return;
+        }
+        console.error("❌ onboarding/preferences failed:", e.message);
+      } else {
+        console.error("⚠️ onboarding/preferences error:", e);
+      }
     }
   };
 
