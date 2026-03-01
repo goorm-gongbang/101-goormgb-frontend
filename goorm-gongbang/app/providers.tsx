@@ -29,7 +29,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
 
       /* [2] 유저 정보 가져오기: /api/me */
       if (token) {
-        const meRes = await getMe(token);
+        const meRes = await getMe();
         if (meRes.ok) {
           const meJson = await meRes.json().catch(() => null);
           const user = meJson?.data ?? null;
