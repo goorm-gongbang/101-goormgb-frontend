@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, useRef } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useAuthStore } from "@/stores/authStore";
-import { ChipButton } from "@/components/common/ChipButton";
+import { ChipButton, PrimaryButton } from "@/components/common/Button";
 import { UiCheckbox } from "@/components/common/UiCheckbox";
 import { cn } from "@/lib/utils";
 import type {
@@ -13,7 +13,6 @@ import type {
   PreferenceBase,
 } from "@/stores/onboardingPrefStore";
 import { useOnboardingPrefStore } from "@/stores/onboardingPrefStore";
-import { PrimaryButton } from "@/components/common/PrimaryButton";
 import { getOnboardingStatus } from "@/lib/services";
 import { ApiError } from "@/lib/api";
 
@@ -426,7 +425,7 @@ export default function SeatStyleOnboardingPage() {
             {/* Bottom CTA */}
             <div className="self-stretch flex flex-col items-end gap-2 pt-6">
               <PrimaryButton
-                uiSize="lg"
+                size="lg"
                 tone="base"
                 onClick={handleNext}
                 disabled={!canGoNext}

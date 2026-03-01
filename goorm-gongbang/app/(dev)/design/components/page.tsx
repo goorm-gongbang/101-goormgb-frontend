@@ -1,28 +1,21 @@
 "use client";
 import * as React from "react";
 import { useState } from "react";
-import { PrimaryButton } from "@/components/common/PrimaryButton";
-import { SecondaryButton } from "@/components/common/SecondaryButton";
-import { TertiaryButton } from "@/components/common/TertiaryButton";
 import {
-  PrimaryButtonWithIcon,
-  SecondaryButtonWithIcon,
-  TertiaryButtonWithIcon,
-} from "@/components/common/ButtonWithIcon";
-import { Plus, MapPin } from "lucide-react";
-import { DestructiveButton } from "@/components/common/ButtonDestructive";
+  ActionButton,
+  PrimaryButton,
+  SecondaryButton,
+  TertiaryButton,
+  DestructiveButton,
+  ChipButton,
+} from "@/components/common/Button";
+import { Plus } from "lucide-react";
 import { KakaoButton } from "@/components/login/KakaoButton";
 import { GoogleButton } from "@/components/login/GoogleButton";
-import { ButtonSpinner } from "@/components/common/ButtonLoading";
 import { Toggle } from "@/components/common/Toggle";
-import { ChipButton } from "@/components/common/ChipButton";
 import { UiCheckbox } from "@/components/common/UiCheckbox";
-import { RankChipButton } from "@/components/common/RankChipButton";
 import { TicketingNavigator } from "@/components/common/TicketingNavigator";
-import { ChipBlackButton } from "@/components/common/ChipBlackButton";
-import { ButtonReload } from "@/components/common/ButtonReload";
 import { SeatPreferenceRecommendCard } from "@/components/common/SeatPreferenceRecommendCard";
-import { ChipDropButton } from "@/components/common/ChipDropButton";
 import { DropDown } from "@/components/common/DropDown";
 import { Header } from "@/components/layout/Header";
 import { SeatRecommendSummaryCard } from "@/components/common/SeatRecommendSummaryCard";
@@ -95,73 +88,73 @@ export default function Components() {
       {/* Primary */}
       <Section title="Primary Button">
         <ToneRow title="Strong">
-          <PrimaryButton uiSize="lg" tone="strong">
+          <PrimaryButton size="lg" tone="strong">
             LG
           </PrimaryButton>
-          <PrimaryButton uiSize="md" tone="strong">
+          <PrimaryButton size="md" tone="strong">
             MD
           </PrimaryButton>
-          <PrimaryButton uiSize="sm" tone="strong">
+          <PrimaryButton size="sm" tone="strong">
             SM
           </PrimaryButton>
 
           <div className="mx-2 h-8 w-px bg-border" />
 
-          <PrimaryButton uiSize="lg" tone="strong" disabled>
+          <PrimaryButton size="lg" tone="strong" disabled>
             LG Disabled
           </PrimaryButton>
-          <PrimaryButton uiSize="md" tone="strong" disabled>
+          <PrimaryButton size="md" tone="strong" disabled>
             MD Disabled
           </PrimaryButton>
-          <PrimaryButton uiSize="sm" tone="strong" disabled>
+          <PrimaryButton size="sm" tone="strong" disabled>
             SM Disabled
           </PrimaryButton>
         </ToneRow>
 
         <ToneRow title="Base">
-          <PrimaryButton uiSize="lg" tone="base">
+          <PrimaryButton size="lg" tone="base">
             LG
           </PrimaryButton>
-          <PrimaryButton uiSize="md" tone="base">
+          <PrimaryButton size="md" tone="base">
             MD
           </PrimaryButton>
-          <PrimaryButton uiSize="sm" tone="base">
+          <PrimaryButton size="sm" tone="base">
             SM
           </PrimaryButton>
 
           <div className="mx-2 h-8 w-px bg-border" />
 
-          <PrimaryButton uiSize="lg" tone="base" disabled>
+          <PrimaryButton size="lg" tone="base" disabled>
             LG Disabled
           </PrimaryButton>
-          <PrimaryButton uiSize="md" tone="base" disabled>
+          <PrimaryButton size="md" tone="base" disabled>
             MD Disabled
           </PrimaryButton>
-          <PrimaryButton uiSize="sm" tone="base" disabled>
+          <PrimaryButton size="sm" tone="base" disabled>
             SM Disabled
           </PrimaryButton>
         </ToneRow>
 
         <ToneRow title="Soft">
-          <PrimaryButton uiSize="lg" tone="soft">
+          <PrimaryButton size="lg" tone="soft">
             LG
           </PrimaryButton>
-          <PrimaryButton uiSize="md" tone="soft">
+          <PrimaryButton size="md" tone="soft">
             MD
           </PrimaryButton>
-          <PrimaryButton uiSize="sm" tone="soft">
+          <PrimaryButton size="sm" tone="soft">
             SM
           </PrimaryButton>
 
           <div className="mx-2 h-8 w-px bg-border" />
 
-          <PrimaryButton uiSize="lg" tone="soft" disabled>
+          <PrimaryButton size="lg" tone="soft" disabled>
             LG Disabled
           </PrimaryButton>
-          <PrimaryButton uiSize="md" tone="soft" disabled>
+          <PrimaryButton size="md" tone="soft" disabled>
             MD Disabled
           </PrimaryButton>
-          <PrimaryButton uiSize="sm" tone="soft" disabled>
+          <PrimaryButton size="sm" tone="soft" disabled>
             SM Disabled
           </PrimaryButton>
         </ToneRow>
@@ -170,73 +163,73 @@ export default function Components() {
       {/* Secondary */}
       <Section title="Secondary Button">
         <ToneRow title="Strong">
-          <SecondaryButton uiSize="lg" tone="strong">
+          <SecondaryButton size="lg" tone="strong">
             LG
           </SecondaryButton>
-          <SecondaryButton uiSize="md" tone="strong">
+          <SecondaryButton size="md" tone="strong">
             MD
           </SecondaryButton>
-          <SecondaryButton uiSize="sm" tone="strong">
+          <SecondaryButton size="sm" tone="strong">
             SM
           </SecondaryButton>
 
           <div className="mx-2 h-8 w-px bg-border" />
 
-          <SecondaryButton uiSize="lg" tone="strong" disabled>
+          <SecondaryButton size="lg" tone="strong" disabled>
             LG Disabled
           </SecondaryButton>
-          <SecondaryButton uiSize="md" tone="strong" disabled>
+          <SecondaryButton size="md" tone="strong" disabled>
             MD Disabled
           </SecondaryButton>
-          <SecondaryButton uiSize="sm" tone="strong" disabled>
+          <SecondaryButton size="sm" tone="strong" disabled>
             SM Disabled
           </SecondaryButton>
         </ToneRow>
 
         <ToneRow title="Base">
-          <SecondaryButton uiSize="lg" tone="base">
+          <SecondaryButton size="lg" tone="base">
             LG
           </SecondaryButton>
-          <SecondaryButton uiSize="md" tone="base">
+          <SecondaryButton size="md" tone="base">
             MD
           </SecondaryButton>
-          <SecondaryButton uiSize="sm" tone="base">
+          <SecondaryButton size="sm" tone="base">
             SM
           </SecondaryButton>
 
           <div className="mx-2 h-8 w-px bg-border" />
 
-          <SecondaryButton uiSize="lg" tone="base" disabled>
+          <SecondaryButton size="lg" tone="base" disabled>
             LG Disabled
           </SecondaryButton>
-          <SecondaryButton uiSize="md" tone="base" disabled>
+          <SecondaryButton size="md" tone="base" disabled>
             MD Disabled
           </SecondaryButton>
-          <SecondaryButton uiSize="sm" tone="base" disabled>
+          <SecondaryButton size="sm" tone="base" disabled>
             SM Disabled
           </SecondaryButton>
         </ToneRow>
 
         <ToneRow title="Soft">
-          <SecondaryButton uiSize="lg" tone="soft">
+          <SecondaryButton size="lg" tone="soft">
             LG
           </SecondaryButton>
-          <SecondaryButton uiSize="md" tone="soft">
+          <SecondaryButton size="md" tone="soft">
             MD
           </SecondaryButton>
-          <SecondaryButton uiSize="sm" tone="soft">
+          <SecondaryButton size="sm" tone="soft">
             SM
           </SecondaryButton>
 
           <div className="mx-2 h-8 w-px bg-border" />
 
-          <SecondaryButton uiSize="lg" tone="soft" disabled>
+          <SecondaryButton size="lg" tone="soft" disabled>
             LG Disabled
           </SecondaryButton>
-          <SecondaryButton uiSize="md" tone="soft" disabled>
+          <SecondaryButton size="md" tone="soft" disabled>
             MD Disabled
           </SecondaryButton>
-          <SecondaryButton uiSize="sm" tone="soft" disabled>
+          <SecondaryButton size="sm" tone="soft" disabled>
             SM Disabled
           </SecondaryButton>
         </ToneRow>
@@ -245,73 +238,73 @@ export default function Components() {
       {/* Tertiary */}
       <Section title="Tertiary Button">
         <ToneRow title="Strong">
-          <TertiaryButton uiSize="lg" tone="strong">
+          <TertiaryButton size="lg" tone="strong">
             LG
           </TertiaryButton>
-          <TertiaryButton uiSize="md" tone="strong">
+          <TertiaryButton size="md" tone="strong">
             MD
           </TertiaryButton>
-          <TertiaryButton uiSize="sm" tone="strong">
+          <TertiaryButton size="sm" tone="strong">
             SM
           </TertiaryButton>
 
           <div className="mx-2 h-8 w-px bg-border" />
 
-          <TertiaryButton uiSize="lg" tone="strong" disabled>
+          <TertiaryButton size="lg" tone="strong" disabled>
             LG Disabled
           </TertiaryButton>
-          <TertiaryButton uiSize="md" tone="strong" disabled>
+          <TertiaryButton size="md" tone="strong" disabled>
             MD Disabled
           </TertiaryButton>
-          <TertiaryButton uiSize="sm" tone="strong" disabled>
+          <TertiaryButton size="sm" tone="strong" disabled>
             SM Disabled
           </TertiaryButton>
         </ToneRow>
 
         <ToneRow title="Base">
-          <TertiaryButton uiSize="lg" tone="base">
+          <TertiaryButton size="lg" tone="base">
             LG
           </TertiaryButton>
-          <TertiaryButton uiSize="md" tone="base">
+          <TertiaryButton size="md" tone="base">
             MD
           </TertiaryButton>
-          <TertiaryButton uiSize="sm" tone="base">
+          <TertiaryButton size="sm" tone="base">
             SM
           </TertiaryButton>
 
           <div className="mx-2 h-8 w-px bg-border" />
 
-          <TertiaryButton uiSize="lg" tone="base" disabled>
+          <TertiaryButton size="lg" tone="base" disabled>
             LG Disabled
           </TertiaryButton>
-          <TertiaryButton uiSize="md" tone="base" disabled>
+          <TertiaryButton size="md" tone="base" disabled>
             MD Disabled
           </TertiaryButton>
-          <TertiaryButton uiSize="sm" tone="base" disabled>
+          <TertiaryButton size="sm" tone="base" disabled>
             SM Disabled
           </TertiaryButton>
         </ToneRow>
 
         <ToneRow title="Soft">
-          <TertiaryButton uiSize="lg" tone="soft">
+          <TertiaryButton size="lg" tone="soft">
             LG
           </TertiaryButton>
-          <TertiaryButton uiSize="md" tone="soft">
+          <TertiaryButton size="md" tone="soft">
             MD
           </TertiaryButton>
-          <TertiaryButton uiSize="sm" tone="soft">
+          <TertiaryButton size="sm" tone="soft">
             SM
           </TertiaryButton>
 
           <div className="mx-2 h-8 w-px bg-border" />
 
-          <TertiaryButton uiSize="lg" tone="soft" disabled>
+          <TertiaryButton size="lg" tone="soft" disabled>
             LG Disabled
           </TertiaryButton>
-          <TertiaryButton uiSize="md" tone="soft" disabled>
+          <TertiaryButton size="md" tone="soft" disabled>
             MD Disabled
           </TertiaryButton>
-          <TertiaryButton uiSize="sm" tone="soft" disabled>
+          <TertiaryButton size="sm" tone="soft" disabled>
             SM Disabled
           </TertiaryButton>
         </ToneRow>
@@ -319,178 +312,27 @@ export default function Components() {
 
       {/* Button with icon */}
       <Section title="Button with icon">
-        {/* Primary */}
-        <ToneRow title="Primary / Strong">
-          <PrimaryButtonWithIcon
-            tone="strong"
-            leftIcon={<Plus className="h-full w-full" />}
-          >
-            Strong
-          </PrimaryButtonWithIcon>
-
-          <div className="mx-2 h-8 w-px bg-border" />
-
-          <PrimaryButtonWithIcon
-            tone="strong"
-            disabled
-            leftIcon={<Plus className="h-full w-full" />}
-          >
-            Strong Disabled
-          </PrimaryButtonWithIcon>
+        <ToneRow title="Primary with Icon">
+          <ActionButton variant="primary" leftIcon={<Plus size={16} />}>
+            Primary
+          </ActionButton>
+          <ActionButton variant="primary" leftIcon={<Plus size={16} />} disabled>
+            Disabled
+          </ActionButton>
         </ToneRow>
 
-        <ToneRow title="Primary / Base">
-          <PrimaryButtonWithIcon
-            tone="base"
-            leftIcon={<Plus className="h-full w-full" />}
-          >
-            Base
-          </PrimaryButtonWithIcon>
-
-          <div className="mx-2 h-8 w-px bg-border" />
-
-          <PrimaryButtonWithIcon
-            tone="base"
-            disabled
-            leftIcon={<Plus className="h-full w-full" />}
-          >
-            Base Disabled
-          </PrimaryButtonWithIcon>
+        <ToneRow title="Secondary with Icon">
+          <ActionButton variant="secondary" leftIcon={<Plus size={16} />}>
+            Secondary
+          </ActionButton>
+          <ActionButton variant="secondary" leftIcon={<Plus size={16} />} disabled>
+            Disabled
+          </ActionButton>
         </ToneRow>
 
-        <ToneRow title="Primary / Soft">
-          <PrimaryButtonWithIcon
-            tone="soft"
-            leftIcon={<Plus className="h-full w-full" />}
-          >
-            Soft
-          </PrimaryButtonWithIcon>
-
-          <div className="mx-2 h-8 w-px bg-border" />
-
-          <PrimaryButtonWithIcon
-            tone="soft"
-            disabled
-            leftIcon={<Plus className="h-full w-full" />}
-          >
-            Soft Disabled
-          </PrimaryButtonWithIcon>
-        </ToneRow>
-
-        {/* Secondary */}
-        <ToneRow title="Secondary / Strong">
-          <SecondaryButtonWithIcon
-            tone="strong"
-            leftIcon={<Plus className="h-full w-full" />}
-          >
-            Strong
-          </SecondaryButtonWithIcon>
-
-          <div className="mx-2 h-8 w-px bg-border" />
-
-          <SecondaryButtonWithIcon
-            tone="strong"
-            disabled
-            leftIcon={<Plus className="h-full w-full" />}
-          >
-            Strong Disabled
-          </SecondaryButtonWithIcon>
-        </ToneRow>
-
-        <ToneRow title="Secondary / Base">
-          <SecondaryButtonWithIcon
-            tone="base"
-            leftIcon={<Plus className="h-full w-full" />}
-          >
-            Base
-          </SecondaryButtonWithIcon>
-
-          <div className="mx-2 h-8 w-px bg-border" />
-
-          <SecondaryButtonWithIcon
-            tone="base"
-            disabled
-            leftIcon={<Plus className="h-full w-full" />}
-          >
-            Base Disabled
-          </SecondaryButtonWithIcon>
-        </ToneRow>
-
-        <ToneRow title="Secondary / Soft">
-          <SecondaryButtonWithIcon
-            tone="soft"
-            leftIcon={<Plus className="h-full w-full" />}
-          >
-            Soft
-          </SecondaryButtonWithIcon>
-
-          <div className="mx-2 h-8 w-px bg-border" />
-
-          <SecondaryButtonWithIcon
-            tone="soft"
-            disabled
-            leftIcon={<Plus className="h-full w-full" />}
-          >
-            Soft Disabled
-          </SecondaryButtonWithIcon>
-        </ToneRow>
-
-        {/* Tertiary */}
-        <ToneRow title="Tertiary / Strong">
-          <TertiaryButtonWithIcon
-            tone="strong"
-            leftIcon={<Plus className="h-full w-full" />}
-          >
-            Strong
-          </TertiaryButtonWithIcon>
-
-          <div className="mx-2 h-8 w-px bg-border" />
-
-          <TertiaryButtonWithIcon
-            tone="strong"
-            disabled
-            leftIcon={<Plus className="h-full w-full" />}
-          >
-            Strong Disabled
-          </TertiaryButtonWithIcon>
-        </ToneRow>
-
-        <ToneRow title="Tertiary / Base">
-          <TertiaryButtonWithIcon
-            tone="base"
-            leftIcon={<Plus className="h-full w-full" />}
-          >
-            Base
-          </TertiaryButtonWithIcon>
-
-          <div className="mx-2 h-8 w-px bg-border" />
-
-          <TertiaryButtonWithIcon
-            tone="base"
-            disabled
-            leftIcon={<Plus className="h-full w-full" />}
-          >
-            Base Disabled
-          </TertiaryButtonWithIcon>
-        </ToneRow>
-
-        <ToneRow title="Tertiary / Soft">
-          <TertiaryButtonWithIcon
-            tone="soft"
-            leftIcon={<Plus className="h-full w-full" />}
-          >
-            Soft
-          </TertiaryButtonWithIcon>
-
-          <div className="mx-2 h-8 w-px bg-border" />
-
-          <TertiaryButtonWithIcon
-            tone="soft"
-            disabled
-            leftIcon={<Plus className="h-full w-full" />}
-          >
-            Soft Disabled
-          </TertiaryButtonWithIcon>
+        <ToneRow title="Loading State">
+          <ActionButton loading>Loading...</ActionButton>
+          <ActionButton variant="secondary" loading>Loading...</ActionButton>
         </ToneRow>
       </Section>
 
@@ -508,9 +350,6 @@ export default function Components() {
           <DestructiveButton tone="soft">취소하기</DestructiveButton>
         </ToneRow>
 
-        <ToneRow title="Lighter">
-          <DestructiveButton tone="lighter">취소하기</DestructiveButton>
-        </ToneRow>
       </Section>
 
       {/* Login Button */}
@@ -526,13 +365,6 @@ export default function Components() {
           <GoogleButton fixedWidth="w-52" theme="light" />
           <GoogleButton fixedWidth="w-80" theme="dark" />
           <GoogleButton fixedWidth="w-52" theme="dark" />
-        </ToneRow>
-      </Section>
-
-      {/* Button Loading */}
-      <Section title="Button Loading">
-        <ToneRow title="Button Loading">
-          <ButtonSpinner />
         </ToneRow>
       </Section>
 
@@ -680,17 +512,6 @@ export default function Components() {
         </ToneRow>
       </Section>
 
-      {/* Rank Chip Button */}
-      <Section title="Rank Chip Button">
-        <ToneRow title="Rank Chip Button">
-          <RankChipButton rank={1} />
-          <RankChipButton rank={2} />
-          <RankChipButton rank={3} />
-          <RankChipButton rank={4} />
-          <RankChipButton rank={5} />
-        </ToneRow>
-      </Section>
-
       {/* Ticket Navigator */}
       <Section title="Ticket Navigator">
         <ToneRow title="Ticket Navigator">
@@ -700,24 +521,6 @@ export default function Components() {
         </ToneRow>
       </Section>
 
-      {/* Chip Black Button */}
-      <Section title="Chip Black Button">
-        <ToneRow title="Chip Black Button">
-          <ChipBlackButton variant="outlineStrong">Button</ChipBlackButton>
-          <ChipBlackButton variant="outline">Button</ChipBlackButton>
-          <ChipBlackButton variant="filled">Button</ChipBlackButton>
-          <ChipBlackButton variant="dark">Button</ChipBlackButton>
-        </ToneRow>
-      </Section>
-
-      {/* Reload Button */}
-      <Section title="Reload Button">
-        <ToneRow title="Reload Button">
-          <ButtonReload state="default" />
-          <ButtonReload state="hover" />
-          <ButtonReload state="pressed" />
-        </ToneRow>
-      </Section>
 
       {/* DropButton */}
       <Section title="DropButton">
@@ -736,41 +539,6 @@ export default function Components() {
         </ToneRow>
       </Section>
 
-      {/* ChipDropButton */}
-      <Section title="ChipDropButton">
-        <ToneRow title="ChipDropButton">
-          <ChipDropButton label="버튼" variant="neutral" uiState="default" />
-          <ChipDropButton
-            label="버튼"
-            variant="neutral"
-            uiState="default"
-            leftIcon={<MapPin />}
-          />
-
-          <ChipDropButton label="버튼" variant="primary" uiState="default" />
-          <ChipDropButton
-            label="버튼"
-            variant="primary"
-            uiState="default"
-            leftIcon={<MapPin />}
-          />
-
-          <ChipDropButton label="버튼" variant="neutral" uiState="hover" />
-          <ChipDropButton
-            label="버튼"
-            variant="neutral"
-            uiState="hover"
-            leftIcon={<MapPin />}
-          />
-
-          <ChipDropButton label="버튼" uiState="disabled" />
-          <ChipDropButton
-            label="버튼"
-            uiState="disabled"
-            leftIcon={<MapPin />}
-          />
-        </ToneRow>
-      </Section>
 
       <Section title="Header">
         <ToneRow title="Header">

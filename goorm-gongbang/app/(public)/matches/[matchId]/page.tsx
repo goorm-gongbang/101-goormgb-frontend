@@ -4,8 +4,7 @@ import * as React from "react";
 import { useState, useMemo, useEffect } from "react";
 import { SeatPreferenceRecommendCard } from "@/components/common/SeatPreferenceRecommendCard"
 import { DesiredPriceCard } from "@/components/common/DesiredPriceCard"
-import { BookingButton } from "@/components/common/BookingButton";
-import { TabButton } from "@/components/common/TabButton";
+import { BookingButton, TabButton } from "@/components/common/Button";
 import { MatchInfoTab } from "@/components/common/match-detail/tabs/MatchInfoTab";
 import { MatchRecommendTab } from "@/components/common/match-detail/tabs/MatchRecommendTab";
 import { MatchRefundTab } from "@/components/common/match-detail/tabs/MatchRefundTab";

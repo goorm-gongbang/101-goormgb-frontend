@@ -1,11 +1,8 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { ChipButton } from "@/components/common/ChipButton";
+import { ChipButton, PrimaryButton, SecondaryButton, TertiaryButton } from "@/components/common/Button";
 import { useRouter } from "next/navigation";
-import { TertiaryButton } from "@/components/common/TertiaryButton";
-import { PrimaryButton } from "@/components/common/PrimaryButton";
-import { SecondaryButton } from "@/components/common/SecondaryButton";
 import { InfoTooltip } from "@/components/common/InfoTooltip";
 
 import { useAuthStore } from "@/stores/authStore";
@@ -438,19 +435,19 @@ export default function SeatStyleOnboardingOptionPage() {
               {/* Bottom CTA */}
               <div className="w-full inline-flex justify-between items-center">
                 <div>
-                  <TertiaryButton uiSize="md" tone="base" onClick={handlePrev}>
+                  <TertiaryButton size="md" tone="base" onClick={handlePrev}>
                     이전
                   </TertiaryButton>
                 </div>
                 <div className="self-stretch flex justify-center items-center gap-4">
                   <div>
-                    <PrimaryButton uiSize="lg" tone="base" onClick={handleNext}>
+                    <PrimaryButton size="lg" tone="base" onClick={handleNext}>
                       시작하기
                     </PrimaryButton>
                   </div>
                   <div>
                     <SecondaryButton
-                      uiSize="lg"
+                      size="lg"
                       tone="base"
                       onClick={handleSkip}
                     >
