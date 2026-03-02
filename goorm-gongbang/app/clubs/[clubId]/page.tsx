@@ -91,6 +91,13 @@ const MOCK_API_RESPONSE = {
   },
 };
 
+const SALE_STATUS_CONFIG = {
+  ON_SALE: { label: "예매 가능", color: "text-emerald-500" },
+  SOLD_OUT: { label: "매진", color: "text-slate-500" },
+  UPCOMING: { label: "판매 예정", color: "text-blue-500" },
+  ENDED: { label: "판매 종료", color: "text-slate-400" }, // 종료는 조금 더 흐리게 처리 가능
+} as const;
+
 export default function ClubDetailPage() {
   const params = useParams();
   const [currentMonth, setCurrentMonth] = useState(new Date(2026, 2, 1));
@@ -181,9 +188,9 @@ export default function ClubDetailPage() {
             </div>
             <div className="grid grid-cols-1 gap-y-8">
               <div className="grid grid-cols-4 w-full">
-                {seasonStats.map((stat, idx) => (
+                {seasonStats.map((stat) => (
                   <div
-                    key={idx}
+                    key={stat.label}
                     className="border-r border-red-400/30 last:border-none px-4"
                   >
                     <div className="text-red-200 text-xs mb-1 opacity-80">
@@ -196,9 +203,9 @@ export default function ClubDetailPage() {
                 ))}
               </div>
               <div className="grid grid-cols-4 w-full">
-                {detailedStats.map((stat, idx) => (
+                {detailedStats.map((stat) => (
                   <div
-                    key={idx}
+                    key={stat.label}
                     className="border-r border-red-400/30 last:border-none px-4"
                   >
                     <div className="text-red-200 text-xs mb-1 opacity-80">
@@ -274,6 +281,9 @@ export default function ClubDetailPage() {
                 const dateKey = format(day, "yyyy-MM-dd");
                 const match = matchMap[dateKey];
                 const isCurrentMonth = isSameMonth(day, currentMonth);
+                const config = match
+                  ? SALE_STATUS_CONFIG[match.saleStatus]
+                  : null;
 
                 return (
                   <div
@@ -320,7 +330,7 @@ export default function ClubDetailPage() {
 
                     {/* 하단 경기 정보 영역 */}
                     <div className="flex-1 w-full p-3 flex flex-col items-center">
-                      {match ? (
+                      {match && config ? (
                         <Link
                           href={`/matches/${match.matchId}`}
                           className="w-full h-full flex flex-col items-center gap-3 group cursor-pointer"
@@ -340,18 +350,10 @@ export default function ClubDetailPage() {
                           <div
                             className={cn(
                               "mt-auto text-[10px] font-bold w-full py-1.5 transition-all text-center",
-                              match.saleStatus === "ON_SALE"
-                                ? "text-emerald-500"
-                                : match.saleStatus === "SOLD_OUT"
-                                  ? "text-slate-500"
-                                  : "text-blue-500",
+                              config.color,
                             )}
                           >
-                            {match.saleStatus === "ON_SALE"
-                              ? "예매 가능"
-                              : match.saleStatus === "SOLD_OUT"
-                                ? "매진"
-                                : "판매 예정"}
+                            {config.label}
                           </div>
                         </Link>
                       ) : (
