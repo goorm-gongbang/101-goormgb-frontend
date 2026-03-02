@@ -1,6 +1,5 @@
 "use client";
 
-import * as React from "react";
 import { useState, useMemo, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
@@ -19,7 +18,6 @@ import {
   isSameDay,
   eachDayOfInterval,
 } from "date-fns";
-import { ko } from "date-fns/locale";
 import { ChevronLeft, ChevronRight, Copy } from "lucide-react";
 
 /* ===========================
@@ -53,7 +51,6 @@ const detailedStats = [
   { label: "승차", value: "0.0" },
 ];
 
-// 제공해주신 API 응답 데이터 (달력 렌더링용)
 const MOCK_API_RESPONSE = {
   data: {
     matches: [
@@ -134,7 +131,7 @@ export default function ClubDetailPage() {
 
   return (
     <div className="w-full min-h-screen bg-white">
-      {/* ===== Hero Section: 사용자 요청대로 이전 사이즈/스타일 완전 복원 ===== */}
+      {/* ===== Hero Section ===== */}
       <div className="w-full bg-[#a32c41] py-16 px-4 flex justify-center items-center">
         <div className="max-w-6xl w-full flex flex-row items-center gap-16">
           {/* 1. 로고 영역 */}
@@ -177,7 +174,7 @@ export default function ClubDetailPage() {
             </a>
           </div>
 
-          {/* 3. 시즌 성적 영역 (이전 디자인 그대로) */}
+          {/* 3. 시즌 성적 영역 */}
           <div className="flex flex-col gap-8 flex-1 ml-10">
             <div className="text-red-300 font-semibold tracking-wider text-sm">
               2026 시즌
@@ -282,64 +279,89 @@ export default function ClubDetailPage() {
                   <div
                     key={dateKey}
                     className={cn(
-                      "min-h-[200px] p-3 border border-slate-200 rounded-lg flex flex-col items-center transition-all",
-                      !match && "bg-slate-50", // 경기가 없으면 회색 배경 처리
+                      "min-h-[200px] border border-slate-200 rounded-lg flex flex-col items-center transition-all overflow-hidden",
+                      !match && "bg-[var(--background-grey)]", // 경기가 없으면 회색 배경 처리
                       !isCurrentMonth && "opacity-30",
                     )}
                   >
-                    <div className="w-full flex items-center gap-1 mb-6">
-                      <span className="text-[11px] font-bold text-slate-400">
-                        {format(day, "d")}
-                      </span>
-                      <span className="text-[10px] text-slate-200">-</span>
+                    {/* 날짜 및 시간 헤더 영역 */}
+                    <div className="w-full flex items-center px-3 py-2 border-b border-slate-300">
+                      <div className="flex items-center gap-1.5">
+                        <span
+                          className={cn(
+                            "text-[11px] font-bold",
+                            match
+                              ? "text-[var(--text-normal-n240)]"
+                              : "text-slate-400",
+                          )}
+                        >
+                          {format(day, "d")}
+                        </span>
+                        <span
+                          className={cn(
+                            "text-[11px] font-bold",
+                            match
+                              ? "text-[var(--text-normal-n240)]"
+                              : "text-slate-400",
+                          )}
+                        >
+                          {/* 경기가 있으면 시간(14:00), 없으면 '-' 표시 */}
+                          {match
+                            ? format(new Date(match.matchAt), "HH:mm")
+                            : "-"}
+                        </span>
+                      </div>
+
+                      {/* 홈 경기일 경우 우측 상단 초록색 점 */}
                       {match?.isHomeMatch && (
                         <div className="ml-auto w-1.5 h-1.5 rounded-full bg-emerald-500" />
                       )}
                     </div>
 
-                    {match ? (
-                      <Link
-                        href={`/matches/${match.matchId}`}
-                        className="w-full flex-1 flex flex-col items-center gap-3 group cursor-pointer"
-                      >
-                        <div className="text-[11px] font-bold text-slate-800">
-                          {format(new Date(match.matchAt), "HH:mm")}
-                        </div>
-                        <div className="relative w-16 h-14 transition-transform group-hover:scale-110">
-                          <Image
-                            src={match.opponentClub.logoImg}
-                            alt={match.opponentClub.koName}
-                            fill
-                            className="object-contain"
-                          />
-                        </div>
-                        <div className="text-[12px] font-black text-slate-900">
-                          {match.opponentClub.koName}
-                        </div>
-                        <div
-                          className={cn(
-                            "mt-auto text-[10px] font-bold w-full py-1.5 transition-all text-center",
-                            match.saleStatus === "ON_SALE"
-                              ? "text-emerald-500"
-                              : match.saleStatus === "SOLD_OUT"
-                                ? "text-slate-500"
-                                : "text-blue-500",
-                          )}
+                    {/* 하단 경기 정보 영역 */}
+                    <div className="flex-1 w-full p-3 flex flex-col items-center">
+                      {match ? (
+                        <Link
+                          href={`/matches/${match.matchId}`}
+                          className="w-full h-full flex flex-col items-center gap-3 group cursor-pointer"
                         >
-                          {match.saleStatus === "ON_SALE"
-                            ? "예매 가능"
-                            : match.saleStatus === "SOLD_OUT"
-                              ? "매진"
-                              : "판매 예정"}
+                          {/* 로고와 팀명 표시 */}
+                          <div className="relative w-16 h-14 mt-2 transition-transform group-hover:scale-110">
+                            <Image
+                              src={match.opponentClub.logoImg}
+                              alt={match.opponentClub.koName}
+                              fill
+                              className="object-contain"
+                            />
+                          </div>
+                          <div className="text-[12px] font-black text-slate-900">
+                            {match.opponentClub.koName}
+                          </div>
+                          <div
+                            className={cn(
+                              "mt-auto text-[10px] font-bold w-full py-1.5 transition-all text-center",
+                              match.saleStatus === "ON_SALE"
+                                ? "text-emerald-500"
+                                : match.saleStatus === "SOLD_OUT"
+                                  ? "text-slate-500"
+                                  : "text-blue-500",
+                            )}
+                          >
+                            {match.saleStatus === "ON_SALE"
+                              ? "예매 가능"
+                              : match.saleStatus === "SOLD_OUT"
+                                ? "매진"
+                                : "판매 예정"}
+                          </div>
+                        </Link>
+                      ) : (
+                        <div className="h-full flex items-center justify-center text-center">
+                          <span className="text-[10px] text-slate-400 font-medium leading-tight">
+                            경기가 없습니다
+                          </span>
                         </div>
-                      </Link>
-                    ) : (
-                      <div className="flex-1 flex items-center justify-center text-center">
-                        <span className="text-[10px] text-slate-400 font-medium leading-tight">
-                          경기가 없습니다
-                        </span>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
                 );
               })}
