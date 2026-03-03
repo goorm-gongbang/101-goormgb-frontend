@@ -6,41 +6,18 @@ import { useAuthStore } from "@/stores/authStore";
 import { ChipButton, PrimaryButton } from "@/components/common/Button";
 import { UiCheckbox } from "@/components/common/UiCheckbox";
 import { cn } from "@/lib/utils";
-import type {
-  Viewpoint,
-  SeatHeight,
-  Section,
-  PreferenceBase,
-} from "@/stores/onboardingPrefStore";
+import type { Viewpoint, SeatHeight, Section, PreferenceBase } from "@/stores/onboardingPrefStore";
 import { useOnboardingPrefStore } from "@/stores/onboardingPrefStore";
 import { getOnboardingStatus } from "@/lib/services";
 import { ApiError } from "@/lib/api";
 
-type ViewPreference =
-  | "중앙"
-  | "1루 내야"
-  | "3루 내야"
-  | "외야(좌)"
-  | "외야(중)"
-  | "외야(우)";
+type ViewPreference = "중앙" | "1루 내야" | "3루 내야" | "외야(좌)" | "외야(중)" | "외야(우)";
 type HeightPreference = "하단" | "중단" | "상단" | "무관";
 type ZonePreference = "중앙쪽" | "중간" | "코너(파울라인)" | "무관";
 
-const viewOptions: ViewPreference[] = [
-  "중앙",
-  "1루 내야",
-  "3루 내야",
-  "외야(좌)",
-  "외야(중)",
-  "외야(우)",
-];
+const viewOptions: ViewPreference[] = ["중앙", "1루 내야", "3루 내야", "외야(좌)", "외야(중)", "외야(우)"];
 const heightOptions: HeightPreference[] = ["하단", "중단", "상단", "무관"];
-const zoneOptions: ZonePreference[] = [
-  "중앙쪽",
-  "중간",
-  "코너(파울라인)",
-  "무관",
-];
+const zoneOptions: ZonePreference[] = ["중앙쪽","중간","코너(파울라인)", "무관"];
 
 /* priority Badge */
 function PriorityBadge({ n }: { n: number }) {

@@ -12,47 +12,9 @@ import { useParams } from "next/navigation";
 import { Spinner } from "@/components/ui/spinner";
 import Image from "next/image";
 import { getMatchById } from "@/lib/services";
+import { SaleStatus, PurchaseStatus, MatchDetail } from "@/lib/types";
 import { CDN_CLUBS_BASE_URL } from "@/lib/api/config";
 import { ApiError } from "@/lib/api";
-
-/* ===========================
-    API TYPES
-=========================== */
-type SaleStatus = "ON_SALE" | "UPCOMING" | "SOLD_OUT" | "ENDED";
-type PurchaseStatus = "PURCHASABLE" | "NOT_PURCHASABLE";
-
-type club = {
-  clubId: number; // 구단 식별자
-  koName: string; // 구단명(한국어)
-  enName: string; // 구단명(영어)
-  logoImg: string; // 로고 이미지
-  clubColor: string; // 브랜드 컬러 
-}
-
-type MatchGuide = {
-  teamsDisplay: string; // “국문 vs 국문” 문자열
-  ageLimit: string; // 이용연령(예: 전체관람가)
-  placeDisplay: string; // 장소 표기(구장명)
-  addressDisplay: string; // 구장 주소
-  datetimeDisplay: string; // UI 표기용 날짜/시간 문자열
-  purchaseStatus: PurchaseStatus; // 화면 표시용 구매 상태 (카드 내부 기능 구현 전이라도 배지 노출에 필요)
-  matchDdayLabel: string; // 카드 상단에 노출되는 D-day 표기 문자열 (예: "D-1", "D-3", "D-DAY")
-}
-
-type MatchDetailData = {
-  matchId: number; // 경기 식별자
-  matchAt: string; // 경기 일시 (ISO-8601 형식)
-  saleStatus: SaleStatus; // 경기 판매 상태
-  homeClub: club; // 홈
-  awayClub: club; // 어웨이
-  matchGuide: MatchGuide;
-}
-
-type ApiResponse<T> = {
-  code: string;
-  message: string;
-  data: T | null;
-};
 
 /* ===========================
     UI TYPES
@@ -154,7 +116,7 @@ export default function MatchDetailSectionResponsive({
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [data, setData] = useState<MatchDetailData | null>(null);
+  const [data, setData] = useState<MatchDetail | null>(null);
 
   useEffect(() => {
     if (!matchId) return;
@@ -169,7 +131,7 @@ export default function MatchDetailSectionResponsive({
         const data = await getMatchById(matchId);
         if (!alive) return;
 
-        setData((data as MatchDetailData) ?? null);
+        setData((data as MatchDetail) ?? null);
         console.log("응답 DATA: ", data);
       } catch (e) {
         if (!alive) return;

@@ -22,33 +22,13 @@ type ViewTypePreference = "통로 선호" | "중앙 선호" | "무관";
 type EnvPreference = "그늘 선호" | "햇빛 무관" | "무관";
 type MoodPreference = "열정적인 응원" | "조용한 관람" | "무관";
 type DistPreference = "안전망 민감" | "난간·기둥 민감" | "보통" | "둔감";
-type PricePreference =
-  | "~ 13,000원"
-  | "14,000원 ~ 17,000원"
-  | "18,000원 ~ 29,000원"
-  | "30,000원 ~ "
-  | "무관";
+type PricePreference = "~ 13,000원" | "14,000원 ~ 17,000원" | "18,000원 ~ 29,000원" | "30,000원 ~ " | "무관";
 
-const viewTypeOptions: ViewTypePreference[] = [
-  "통로 선호",
-  "중앙 선호",
-  "무관",
-];
+const viewTypeOptions: ViewTypePreference[] = ["통로 선호", "중앙 선호", "무관"];
 const envOptions: EnvPreference[] = ["그늘 선호", "햇빛 무관", "무관"];
 const moodOptions: MoodPreference[] = ["열정적인 응원", "조용한 관람", "무관"];
-const distOptions: DistPreference[] = [
-  "안전망 민감",
-  "난간·기둥 민감",
-  "보통",
-  "둔감",
-];
-const priceOptions: PricePreference[] = [
-  "~ 13,000원",
-  "14,000원 ~ 17,000원",
-  "18,000원 ~ 29,000원",
-  "30,000원 ~ ",
-  "무관",
-];
+const distOptions: DistPreference[] = ["안전망 민감", "난간·기둥 민감", "보통", "둔감"];
+const priceOptions: PricePreference[] = ["~ 13,000원", "14,000원 ~ 17,000원", "18,000원 ~ 29,000원", "30,000원 ~ ", "무관"];
 
 /* Chip */
 function Chip({

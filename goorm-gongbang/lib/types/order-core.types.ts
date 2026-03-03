@@ -5,11 +5,11 @@
 
 /** 구단 정보 */
 export type Club = {
-  clubId: number;
-  koName: string;
-  enName: string;
-  logoImg: string;
-  clubColor?: string;
+  clubId: number; // 구단 식별자
+  koName: string; // 구단명(한국어)
+  enName: string; // 구단명(영어)
+  logoImg: string; // 로고 이미지
+  clubColor?: string; // 브랜드 컬러 
 };
 
 /** 경기장 정보 */
@@ -27,13 +27,13 @@ export type PurchaseStatus = "PURCHASABLE" | "NOT_PURCHASABLE";
 
 /** 경기 정보 */
 export type Match = {
-  matchId: number;
-  matchAt: string;
-  saleStatus: SaleStatus;
+  matchId: number; // 경기 식별자
+  matchAt: string; // 경기 일시 (ISO-8601 형식)
+  saleStatus: SaleStatus; // 경기 판매 상태
   salesOpenAt: string;
-  homeClub: Club;
-  awayClub: Club;
-  stadium: Stadium;
+  homeClub: Club; // 홈
+  awayClub: Club; // 어웨이
+  stadium: Stadium; // 경기장
 };
 
 /** 경기 목록 응답 데이터 */
@@ -56,11 +56,11 @@ export type MatchGuide = {
 
 /** 경기 상세 정보 */
 export type MatchDetail = {
-  matchId: number;
-  matchAt: string;
-  saleStatus: SaleStatus;
-  homeClub: Club;
-  awayClub: Club;
+  matchId: number; // 경기 식별자
+  matchAt: string; // 경기 일시 (ISO-8601 형식)
+  saleStatus: SaleStatus; // 경기 판매 상태
+  homeClub: Club; // 홈
+  awayClub: Club; // 어웨이
   matchGuide: MatchGuide;
 };
 

@@ -52,6 +52,6 @@ export const kakaoLogin = (body: KakaoLoginRequest) =>
 export const getKakaoLoginUrl = () =>
   pub.get<{ loginUrl: string }>(`${API_BASE_URL}/auth/kakao/login-url`);
 
-/* 내 정보 조회 (NOTE: 백엔드에 /auth/me 엔드포인트 필요) */
+/* 내 정보 조회 (/auth/me) */
 export const getMe = () =>
   auth.get<User | null>(`${API_BASE_URL}/auth/me`);

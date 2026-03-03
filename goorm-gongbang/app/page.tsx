@@ -14,12 +14,6 @@ import { ApiError } from "@/lib/api";
 /* ===========================
    API TYPES
 =========================== */
-type ApiResponse<T> = {
-  code: string;
-  message: string;
-  data: T;
-}
-
 // 경기 목록 조회 API
 type ApiSaleStatus = "ON_SALE" | "UPCOMING" | "SOLD_OUT" | "ENDED";
 

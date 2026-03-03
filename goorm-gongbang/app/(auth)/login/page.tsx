@@ -7,11 +7,7 @@ import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { KakaoButton } from "@/components/login/KakaoButton";
 import { toast } from "sonner";
-import {
-  login,
-  getMe,
-  getKakaoLoginUrl,
-} from "@/lib/services";
+import { login, getMe, getKakaoLoginUrl } from "@/lib/services";
 import { ApiError } from "@/lib/api";
 
 export default function LoginPage() {
