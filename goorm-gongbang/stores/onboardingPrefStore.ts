@@ -1,33 +1,31 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
+import type {
+    Viewpoint,
+    SeatHeight,
+    Section,
+    SeatPositionPref,
+    EnvironmentPref,
+    MoodPref,
+    ObstructionSensitivity,
+    PriceMode,
+    Preference,
+    PreferenceBase,
+} from "@/lib/types";
 
-export type Viewpoint = "CENTER" | "INFIELD_1B" | "INFIELD_3B" | "OUTFIELD_L" | "OUTFIELD_C" | "OUTFIELD_R";
-export type SeatHeight = "LOW" | "MID" | "HIGH" | "ANY";
-export type Section = "CENTER_SIDE" | "MIDDLE" | "CORNER" | "ANY";
-export type SeatPositionPref = "AISLE" | "MIDDLE" | "ANY";
-export type EnvironmentPref = "SHADE" | "SUN_OK" | "ANY";
-export type MoodPref = "CHEERFUL" | "QUIET" | "ANY";
-export type ObstructionSensitivity = "NET_SENSITIVE" | "RAIL_PILLAR_SENSITIVE" | "NORMAL" | "ANY";
-export type PriceMode = "ANY" | "RANGE";
-
-export type Preference = {
-    priority: 1 | 2 | 3;
-    viewpoint: Viewpoint;
-    seatHeight: SeatHeight;
-    section: Section;
-
-    seatPositionPref: SeatPositionPref;
-    environmentPref: EnvironmentPref;
-    moodPref: MoodPref;
-    obstructionSensitivity: ObstructionSensitivity;
-
-    priceMode: PriceMode;
-    priceMin?: number | null;
-    priceMax?: number | null;
+// Re-export types for convenience
+export type {
+    Viewpoint,
+    SeatHeight,
+    Section,
+    SeatPositionPref,
+    EnvironmentPref,
+    MoodPref,
+    ObstructionSensitivity,
+    PriceMode,
+    Preference,
+    PreferenceBase,
 };
-
-/* 1단계에서 받는 값 */
-export type PreferenceBase = Pick<Preference, "priority" | "viewpoint" | "seatHeight" | "section">;
 
 type OnboardingPrefState = {
     preferences: Preference[];

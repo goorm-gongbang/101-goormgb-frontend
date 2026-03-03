@@ -3,6 +3,7 @@
 =========================== */
 
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 
 type User = {
   id: string;
@@ -21,14 +22,25 @@ type AuthState = {
 };
 
 /* Zustand store을 만드는 함수 */
-export const useAuthStore = create<AuthState>((set) => ({
-  accessToken: null,
-  user: null,
-  bootstrapped: false,
+export const useAuthStore = create<AuthState>()(
+  persist(
+    (set) => ({
+      accessToken: null,
+      user: null,
+      bootstrapped: false,
 
-  /* 액션 함수들 동작 방식 */
-  setBootstrapped: (v) => set({ bootstrapped: v }), // 완료시 True로 변경
-  setAccessToken: (t) => set({ accessToken: t }), // refresh 성공 시 호출
-  setUser: (u) => set({ user: u }), // refresh 성공 시 호출
-  logout: () => set({ accessToken: null, user: null }), // 로그아웃 시 초기화
-}));
+      /* 액션 함수들 동작 방식 */
+      setBootstrapped: (v) => set({ bootstrapped: v }), // 완료시 True로 변경
+      setAccessToken: (t) => set({ accessToken: t }), // refresh 성공 시 호출
+      setUser: (u) => set({ user: u }), // refresh 성공 시 호출
+      logout: () => set({ accessToken: null, user: null }), // 로그아웃 시 초기화
+    }),
+    {
+      name: "auth-storage", // localStorage 키 이름
+      partialize: (state) => ({
+        accessToken: state.accessToken,
+        user: state.user,
+      }), // bootstrapped는 persist 안 함
+    }
+  )
+);

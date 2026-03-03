@@ -11,8 +11,7 @@
 
 import { useEffect } from "react";
 import { useAuthStore } from "@/stores/authStore";
-import { refreshAccessToken } from "@/lib/auth";
-import { authFetch } from "@/lib/authFetch";
+import { refreshAccessToken, getMe } from "@/lib/services";
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   const setAccessToken = useAuthStore((s) => s.setAccessToken);
@@ -30,13 +29,10 @@ export default function Providers({ children }: { children: React.ReactNode }) {
 
       /* [2] 유저 정보 가져오기: /api/me */
       if (token) {
-        const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
-        const meRes = await authFetch(`${API_BASE_URL}/api/me`); // ★ 추후 실제 api 문서에 맞게 변경해야함.
-        if (meRes.ok) {
-          const meJson = await meRes.json().catch(() => null);
-          const user = meJson?.data ?? null;
-          if (mounted) setUser(user);
-        } else {
+        try {
+          const user = await getMe();
+          if (mounted) setUser(user ?? null);
+        } catch {
           if (mounted) setUser(null); // 토큰은 있는데 me가 실패하면 세션 문제 가능 → 정리
         }
       }
