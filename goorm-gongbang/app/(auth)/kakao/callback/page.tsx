@@ -38,8 +38,12 @@ export default function KakaoCallbackPage() {
         setAccessToken(accessToken);
 
         // 온보딩 분기
+        // if (data?.onboardingRequired) router.replace("/onboarding");
+        // else router.replace("/");
+        if (data?.user) {
+          setUser({ id: String(data.user.userId), status: data.user.status });
+        }
         if (data?.onboardingRequired) router.replace("/onboarding");
-        else router.replace("/");
 
         toast.success("로그인 성공");
       } catch (e) {
