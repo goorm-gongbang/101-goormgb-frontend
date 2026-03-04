@@ -31,7 +31,7 @@ export const login = (body: LoginRequest) =>
 
 /* 로그아웃 */
 export const logout = () =>
-  pub.post<void>(`${API_BASE_URL}/auth/logout`);
+  auth.post<void>(`${API_BASE_URL}/auth/logout`);
 
 /* 토큰 Refresh */
 export async function refreshAccessToken(): Promise<string | null> {
@@ -46,11 +46,26 @@ export async function refreshAccessToken(): Promise<string | null> {
 
 /* 카카오 OAuth 로그인 */
 export const kakaoLogin = (body: KakaoLoginRequest) =>
-  pub.post<KakaoLoginResponse>(`${API_BASE_URL}/auth/kakao/login`, { authorizationCode: body.code });
+  pub.post<KakaoLoginResponse>(`${API_BASE_URL}/auth/kakao/login`, { authorizationCode: body.authorizationCode });
 
 /* 카카오 로그인 URL 조회 */
-export const getKakaoLoginUrl = () =>
-  pub.get<{ loginUrl: string }>(`${API_BASE_URL}/auth/kakao/login-url`);
+export const getKakaoLoginUrl = () => {
+  const isLocal =
+    typeof window !== "undefined" &&
+    (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
+
+  const url = new URL(`${API_BASE_URL}/auth/kakao/login-url`);
+
+  // 로컬 환경일 때만 redirectUri 추가
+  if (isLocal) {
+    url.searchParams.set(
+      "redirectUri",
+      "http://localhost:3000/kakao/callback"
+    );
+  }
+
+  return pub.get<{ loginUrl: string }>(url.toString());
+};
 
 /* 내 정보 조회 (/auth/me) */
 export const getMe = () =>

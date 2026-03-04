@@ -11,13 +11,9 @@ export type LoginRequest = {
 
 /** 로그인 응답 */
 export type LoginResponse = {
-  code: string;
-  message: string;
-  data: {
-    accessToken: string;
-    agreementRequired?: boolean;
-    onboardingRequired?: boolean;
-  };
+  accessToken: string;
+  agreementRequired?: boolean;
+  onboardingRequired?: boolean;
 };
 
 /** 토큰 갱신 응답 */
@@ -29,7 +25,7 @@ export type RefreshResponse = {
 
 /** 카카오 로그인 요청 */
 export type KakaoLoginRequest = {
-  code: string;
+  authorizationCode: string;
 };
 
 /** 카카오 로그인 응답 */

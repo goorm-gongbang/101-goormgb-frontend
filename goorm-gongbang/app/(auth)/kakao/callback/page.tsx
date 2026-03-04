@@ -16,8 +16,8 @@ export default function KakaoCallbackPage() {
   const setUser = useAuthStore((s) => s.setUser);
 
   useEffect(() => {
-    const code = sp.get("code");
-    if (!code) {
+    const authorizationCode = sp.get("code");
+    if (!authorizationCode) {
       toast.error("카카오 로그인 검증 실패");
       router.replace("/login");
       return;
@@ -26,7 +26,7 @@ export default function KakaoCallbackPage() {
 
     (async () => {
       try {
-        const data = await kakaoLogin({ code });
+        const data = await kakaoLogin({ authorizationCode });
 
         const accessToken = data?.data?.accessToken;
         if (!accessToken) {
