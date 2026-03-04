@@ -33,9 +33,9 @@ export default function LoginPage() {
 
       const data = await login({ loginId, password });
       console.log("✅ LOGIN SUCCESS:", data);
-      toast(data?.message ?? "로그인 성공");
+      toast("로그인 성공");
 
-      const token = data?.data?.accessToken;
+      const token = data?.accessToken;
       if (token) {
         setAccessToken(token);
 
@@ -50,13 +50,13 @@ export default function LoginPage() {
         console.warn("⚠️ accessToken이 응답에 없습니다.");
       }
 
-      const agreementRequired = Boolean(data?.data?.agreementRequired);
-      const onboardingRequired = Boolean(data?.data?.onboardingRequired);
+      // const agreementRequired = Boolean(data?.agreementRequired); 현재는 안쓰이지만 나중에 쓰일 수 있음.
+      const onboardingRequired = Boolean(data?.onboardingRequired);
 
-      if (agreementRequired) {
-        router.push("/login");
-        return;
-      }
+      // if (agreementRequired) {
+      //   router.push("/login");
+      //   return;
+      // }
 
       if (onboardingRequired) {
         router.push("/onboarding");
