@@ -152,56 +152,6 @@ export function MatchCard({
                             </div>
 
                             <div className="h-28 flex justify-center items-center gap-3 md:gap-4 min-w-0">
-                                {/* Away name */}
-                                <div className="hidden sm:inline-flex w-20 sm:w-24 md:w-28 lg:w-32 self-stretch flex-col justify-center items-center min-w-0">
-                                    <div className="self-stretch h-12 min-w-0">
-                                        <div
-                                            className={cn(textPrimary, "text-sm font-semibold font-['Pretendard'] leading-5 truncate")}
-                                            title={away.ko}
-                                        >
-                                            {away.ko}
-                                        </div>
-                                        <div
-                                            className={cn(textSecondary, "text-xs font-normal font-['Pretendard'] leading-4 truncate")}
-                                            title={away.en}
-                                        >
-                                            {away.en}
-                                        </div>
-                                    </div>
-                                </div>
-
-
-                                <div
-                                    data-logo={away.dataLogo ?? away.ko}
-                                    data-mode="Color"
-                                    data-size="small"
-                                    className={cn(
-                                        "h-28 px-[3.13px] py-9 bg-white inline-flex flex-col justify-center items-center gap-1.5 overflow-hidden shrink-0",
-                                        isDisabledLook && "opacity-30"
-                                    )}
-                                >
-                                    <div className="w-24 flex flex-col justify-center items-center gap-2">
-                                        {renderLogo(away, "w-24 h-14")}
-                                    </div>
-                                </div>
-
-                                <div className={cn("text-center text-xs font-normal font-['Pretendard'] leading-4 shrink-0", textPrimary)}>
-                                    VS
-                                </div>
-
-                                <div
-                                    data-logo={home.dataLogo ?? home.ko}
-                                    data-mode="Color"
-                                    data-size="small"
-                                    className={cn(
-                                        "h-28 px-[3.13px] py-6 bg-white inline-flex flex-col justify-center items-center gap-1.5 overflow-hidden shrink-0",
-                                        isDisabledLook && "opacity-30"
-                                    )}
-                                >
-                                    <div className="w-24 flex flex-col justify-center items-center gap-2">
-                                        {renderLogo(home, "self-stretch h-20")}
-                                    </div>
-                                </div>
 
                                 {/* Home name */}
                                 <div className="hidden sm:flex w-20 sm:w-24 md:w-28 lg:w-32 self-stretch justify-center items-center min-w-0">
@@ -219,6 +169,56 @@ export function MatchCard({
                                             >
                                                 {home.en}
                                             </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div
+                                    data-logo={home.dataLogo ?? home.ko}
+                                    data-mode="Color"
+                                    data-size="small"
+                                    className={cn(
+                                        "h-28 px-[3.13px] py-6 bg-white inline-flex flex-col justify-center items-center gap-1.5 overflow-hidden shrink-0",
+                                        isDisabledLook && "opacity-30"
+                                    )}
+                                >
+                                    <div className="w-24 flex flex-col justify-center items-center gap-2">
+                                        {renderLogo(home, "self-stretch h-20")}
+                                    </div>
+                                </div>
+
+                                <div className={cn("text-center text-xs font-normal font-['Pretendard'] leading-4 shrink-0", textPrimary)}>
+                                    VS
+                                </div>
+
+                                <div
+                                    data-logo={away.dataLogo ?? away.ko}
+                                    data-mode="Color"
+                                    data-size="small"
+                                    className={cn(
+                                        "h-28 px-[3.13px] py-9 bg-white inline-flex flex-col justify-center items-center gap-1.5 overflow-hidden shrink-0",
+                                        isDisabledLook && "opacity-30"
+                                    )}
+                                >
+                                    <div className="w-24 flex flex-col justify-center items-center gap-2">
+                                        {renderLogo(away, "w-24 h-14")}
+                                    </div>
+                                </div>
+
+                                {/* Away name */}
+                                <div className="hidden sm:inline-flex w-20 sm:w-24 md:w-28 lg:w-32 self-stretch flex-col justify-center items-center min-w-0">
+                                    <div className="self-stretch h-12 min-w-0">
+                                        <div
+                                            className={cn(textPrimary, "text-sm font-semibold font-['Pretendard'] leading-5 truncate")}
+                                            title={away.ko}
+                                        >
+                                            {away.ko}
+                                        </div>
+                                        <div
+                                            className={cn(textSecondary, "text-xs font-normal font-['Pretendard'] leading-4 truncate")}
+                                            title={away.en}
+                                        >
+                                            {away.en}
                                         </div>
                                     </div>
                                 </div>
