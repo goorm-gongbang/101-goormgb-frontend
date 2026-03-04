@@ -9,46 +9,8 @@ import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRouter } from "next/navigation";
 import { getMatches, getClubs } from "@/lib/services";
+import { SaleStatus, Club, MatchesData, ClubsData } from "@/lib/types";
 import { ApiError } from "@/lib/api";
-
-/* ===========================
-   API TYPES
-=========================== */
-// 경기 목록 조회 API
-type ApiSaleStatus = "ON_SALE" | "UPCOMING" | "SOLD_OUT" | "ENDED";
-
-type ApiMatchFromApi = {
-  matchId: number;
-  matchAt: string; // "2026-03-28T18:30:00"
-  saleStatus: ApiSaleStatus;
-  salesOpenAt: string; // "2026-02-13T11:00:00"
-  homeClub: ApiClub;
-  awayClub: ApiClub;
-  stadium: ApiStadium;
-};
-
-type ApiStadium = {
-  koName: string;
-  enName: string;
-};
-
-type MatchesPayloadFromApi = {
-  date: string; // YYYY-MM-DD
-  matchCount: number;
-  matches: ApiMatchFromApi[];
-};
-
-// 구단 목록 조회 API
-type ApiClub = {
-  clubId: number;
-  koName: string;
-  enName: string;
-  logoImg: string;
-}
-
-type TeamsPayload = {
-  clubs: ApiClub[];
-}
 
 /* ===========================
    UTIL
@@ -97,7 +59,7 @@ function formatSalesOpenAtKorean(salesOpenAt: string) {
   return `${m}월 ${d}일 ${hh}:${mi}`;
 }
 
-function toMatchCardVariant(saleState?: ApiSaleStatus) {
+function toMatchCardVariant(saleState?: SaleStatus) {
   // MatchCard variant: comingSoon / soldOut / undefined
   if (saleState === "UPCOMING") return "comingSoon" as const;
   if (saleState === "SOLD_OUT") return "soldOut" as const;
@@ -105,7 +67,7 @@ function toMatchCardVariant(saleState?: ApiSaleStatus) {
   return undefined;
 }
 
-function overlayTexts(saleState: ApiSaleStatus, salesOpenAt?: string) {
+function overlayTexts(saleState: SaleStatus, salesOpenAt?: string) {
   switch (saleState) {
     case "UPCOMING": {
       const openText = salesOpenAt ? `${formatSalesOpenAtKorean(salesOpenAt)} 오픈` : "오픈 예정";
@@ -123,7 +85,7 @@ function overlayTexts(saleState: ApiSaleStatus, salesOpenAt?: string) {
   }
 }
 
-function TeamLogo({ club }: { club: ApiClub }) {
+function TeamLogo({ club }: { club: Club }) {
   return <IconPreview logoImg={club.logoImg} size="md" />;
 }
 
@@ -207,8 +169,8 @@ export default function Home() {
   }, []);
 
   const [selectedDate, setSelectedDate] = useState<string>(todayISO); // 날짜(달력)
-  const [matchesPayload, setMatchesPayload] = useState<MatchesPayloadFromApi | null>(null); // 경기 일정
-  const [teamsPayload, setTeamsPayload] = useState<TeamsPayload | null>(null); // 팀 리스트
+  const [matchesPayload, setMatchesPayload] = useState<MatchesData | null>(null); // 경기 일정
+  const [teamsPayload, setTeamsPayload] = useState<ClubsData | null>(null); // 팀 리스트
   const [loadingMatches, setLoadingMatches] = useState(false); // 로딩(spinner) - 경기 일정
   const [loadingTeams, setLoadingTeams] = useState(false); // 로딩(spinner) - 팀 리스트
 
