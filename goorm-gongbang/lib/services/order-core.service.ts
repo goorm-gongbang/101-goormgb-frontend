@@ -6,7 +6,7 @@
 =========================== */
 
 import { API_BASE_URL } from "@/lib/api/config";
-import { auth } from "@/lib/api/fetch";
+import { auth, pub } from "@/lib/api/fetch";
 import type {
   Club,
   Stadium,
@@ -15,6 +15,7 @@ import type {
   MatchesData,
   MatchDetail,
   ClubsData,
+  ClubDetail,
   OnboardingStatusResponse,
   OnboardingPreferencesRequest,
 } from "@/lib/types";
@@ -28,6 +29,7 @@ export type {
   MatchesData,
   MatchDetail,
   ClubsData,
+  ClubDetail,
   OnboardingStatusResponse,
   OnboardingPreferencesRequest,
 };
@@ -35,16 +37,20 @@ export type {
 /* 경기 목록 조회 */
 export const getMatches = (date?: string) => {
   const params = date ? `?date=${date}` : "";
-  return auth.get<MatchesData>(`${API_BASE_URL}/order/matches${params}`);
+  return pub.get<MatchesData>(`${API_BASE_URL}/order/matches${params}`);
 };
 
 /* 경기 상세 조회 */
 export const getMatchById = (matchId: string | number) =>
-  auth.get<MatchDetail>(`${API_BASE_URL}/order/matches/${matchId}`);
+  pub.get<MatchDetail>(`${API_BASE_URL}/order/matches/${matchId}`);
 
 /* 구단 목록 조회 */
 export const getClubs = () =>
-  auth.get<ClubsData>(`${API_BASE_URL}/order/clubs`);
+  pub.get<ClubsData>(`${API_BASE_URL}/order/clubs`);
+
+/* 구단 상세 조회 */
+export const getClubById = (clubId: string | number) =>
+  pub.get<ClubDetail>(`${API_BASE_URL}/order/clubs/${clubId}`);
 
 /* 온보딩 선호도 조회 */
 export const getOnboardingStatus = () =>
