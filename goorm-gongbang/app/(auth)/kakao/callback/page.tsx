@@ -28,7 +28,7 @@ export default function KakaoCallbackPage() {
       try {
         const data = await kakaoLogin({ authorizationCode });
 
-        const accessToken = data?.data?.accessToken;
+        const accessToken = data?.accessToken;
         if (!accessToken) {
           toast.error("accessToken이 응답에 없습니다.");
           router.replace("/login");
@@ -38,10 +38,10 @@ export default function KakaoCallbackPage() {
         setAccessToken(accessToken);
 
         // 온보딩 분기
-        if (data?.data?.onboardingRequired) router.replace("/onboarding");
+        if (data?.onboardingRequired) router.replace("/onboarding");
         else router.replace("/");
 
-        toast.success(data?.message ?? "로그인 성공");
+        toast.success("로그인 성공");
       } catch (e) {
         if (e instanceof ApiError) {
           toast.error(e.message);

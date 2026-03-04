@@ -30,13 +30,9 @@ export type KakaoLoginRequest = {
 
 /** 카카오 로그인 응답 */
 export type KakaoLoginResponse = {
-  code: string;
-  message: string;
-  data: {
-    accessToken: string;
-    user?: { userId: number; status: "ACTIVE" | "DEACTIVE" | string };
-    onboardingRequired?: boolean;
-  };
+  accessToken: string;
+  user?: { userId: number; status: "ACTIVE" | "DEACTIVE" | string };
+  onboardingRequired?: boolean;
 };
 
 /** 사용자 정보 */
