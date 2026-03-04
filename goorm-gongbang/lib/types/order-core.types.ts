@@ -3,7 +3,7 @@
  * 경기, 구단, 온보딩 관련 타입 정의
  */
 
-/** 구단 정보 */
+/** 구단 정보 (리스트용) */
 export type Club = {
   clubId: number; // 구단 식별자
   koName: string; // 구단명(한국어)
@@ -17,6 +17,36 @@ export type Stadium = {
   koName: string;
   enName: string;
   address?: string;
+};
+
+/** 구단 상세 조회용 경기장 정보 */
+export type ClubStadium = {
+  stadiumId: number;
+  koName: string;
+};
+
+/** 구단 현재 시즌 성적 */
+export type ClubSeasonStats = {
+  rank: number;
+  win: number;
+  draw: number;
+  lose: number;
+  winningRate: number;
+  battingAvg: number;
+  era: number;
+  gamesBehind: number;
+};
+
+/** 구단 상세 정보 */
+export type ClubDetail = {
+  clubId: number;
+  koName: string;
+  enName?: string;
+  logoImg: string;
+  clubColor?: string;
+  stadium: ClubStadium;
+  homepageRedirectUrl: string | null;
+  currentSeasonStats: ClubSeasonStats | null;
 };
 
 /** 판매 상태 */

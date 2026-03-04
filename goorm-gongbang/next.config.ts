@@ -12,6 +12,17 @@ const nextConfig = {
   // 개발(Dev) 환경에서는 undefined가 되어 서버(Pod)가 직접 서빙합니다.
   assetPrefix: isProd ? CDN_URL : undefined,
 
+  // 외부 이미지 도메인 허용 (S3 클럽 로고)
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'goormgb-assets.s3.ap-northeast-2.amazonaws.com',
+        pathname: '/static/clubs/**',
+      },
+    ],
+  },
+
   // 기존 OTel 및 권장 설정 유지
   compress: true,
   poweredByHeader: false,
@@ -41,6 +52,8 @@ const nextConfig = {
     OTEL_EXPORTER_OTLP_ENDPOINT: process.env.OTEL_EXPORTER_OTLP_ENDPOINT || "http://otel-collector:4318/v1/traces",
   },
 };
+
+export default nextConfig;
 
 // /** @type {import('next').NextConfig} */
 // const nextConfig = {
