@@ -15,6 +15,7 @@ import { getMatchById } from "@/lib/services";
 import { SaleStatus, PurchaseStatus, MatchDetail } from "@/lib/types";
 import { CDN_CLUBS_BASE_URL } from "@/lib/api/config";
 import { ApiError } from "@/lib/api";
+import { useRouter } from "next/navigation";
 
 /* ===========================
     UI TYPES
@@ -101,6 +102,7 @@ export default function MatchDetailSectionResponsive({
   seatPrices = DEFAULT_SEAT_PRICES,
   outfieldPrices = DEFAULT_OUTFIELD_PRICES,
 }: Props) {
+  const router = useRouter();
   const params = useParams();
 
   const matchId = useMemo(() => {
@@ -210,6 +212,10 @@ export default function MatchDetailSectionResponsive({
 
   // BookingButton에 넘길 Date (offset 없으면 KST로 보정)
   const matchAtDate = new Date(ensureKstOffset(data.matchAt));
+
+  const handleLogin = () => {
+    router.push("/recommend")
+  }
 
   return (
     <div className="w-full">
@@ -445,7 +451,7 @@ export default function MatchDetailSectionResponsive({
                     disabled={saleBadgeText === "매진" || saleBadgeText === "경기 종료"}
                     disabledReason={saleBadgeText === "매진" ? "SOLD_OUT" : saleBadgeText === "경기 종료" ? "ENDED" : "ETC"}
                     countdownFormatter={mmssTwoDigitsMinutes}
-                    onClick={() => console.log("예매하기!")}
+                    onClick={handleLogin}
                   />
                 </div>
               </div>

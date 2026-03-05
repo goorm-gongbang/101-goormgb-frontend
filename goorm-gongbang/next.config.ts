@@ -18,7 +18,7 @@ const nextConfig = {
       {
         protocol: 'https',
         hostname: 'goormgb-assets.s3.ap-northeast-2.amazonaws.com',
-        pathname: '/static/clubs/**',
+        pathname: "/**",
       },
     ],
   },
