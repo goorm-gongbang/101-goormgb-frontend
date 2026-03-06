@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, type CSSProperties } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -57,14 +57,29 @@ export default function ClubDetailPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [club, setClub] = useState<ClubDetail | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyStadium = async () => {
+    try {
+      await navigator.clipboard.writeText(stadiumName);
+      setCopied(true);
+
+      setTimeout(() => {
+        setCopied(false);
+      }, 2000); // 2초 후 원복
+    } catch (err) {
+      console.error("복사 실패", err);
+    }
+  };
 
   const clubId = useMemo(() => {
-    const raw = (params as Record<string, string | string[] | undefined>)?.clubId;
+    const raw = (params as Record<string, string | string[] | undefined>)
+      ?.clubId;
     const str = Array.isArray(raw) ? raw[0] : raw;
     const n = str ? Number(str) : NaN;
     return Number.isFinite(n) && n > 0 ? n : null;
   }, [params]);
-
+  console.log("clubId", clubId);
   useEffect(() => {
     if (!clubId) return;
 
@@ -142,6 +157,8 @@ export default function ClubDetailPage() {
   const bgColor = club.clubColor || "#121130";
   const stadiumName = club.stadium?.koName ?? "";
 
+  const isYellowClub = clubId === 4;
+
   return (
     <div className="w-full min-h-screen bg-white">
       {/* ===== Hero Section ===== */}
@@ -149,7 +166,7 @@ export default function ClubDetailPage() {
         className="w-full px-4 py-10 sm:px-6 sm:py-12 lg:px-8 lg:py-16 flex justify-center"
         style={{ background: bgColor }}
       >
-        <div className="w-full max-w-6xl flex flex-col lg:flex-row items-center lg:items-stretch gap-8 lg:gap-12 xl:gap-16">
+        <div className="w-full max-w-6xl flex flex-col lg:flex-row  lg:items-start gap-8 lg:gap-12 xl:gap-16">
           {/* 1. 로고 영역 */}
           <div className="flex-shrink-0 w-36 h-36 sm:w-48 sm:h-48 lg:w-56 lg:h-56 xl:w-64 xl:h-64 bg-white rounded-2xl flex items-center justify-center shadow-lg">
             <div className="relative w-24 h-24 sm:w-32 sm:h-32 lg:w-40 lg:h-40 xl:w-48 xl:h-48">
@@ -163,20 +180,31 @@ export default function ClubDetailPage() {
           </div>
 
           {/* 2. 팀 정보 영역 */}
-          <div className="flex flex-col gap-4 sm:gap-5 lg:gap-6 text-white min-w-0 w-full lg:w-auto text-center lg:text-left">
+          <div className="flex flex-col justify-end  h-full gap-4 sm:gap-5 lg:gap-6 text-white min-w-0 w-full lg:w-auto text-center lg:text-left ">
             <div>
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight mb-2 break-words">
                 {club.koName}
               </h1>
 
-              <div className="flex flex-wrap items-center justify-center lg:justify-start gap-2 text-red-200 text-xs sm:text-sm">
+              <div
+                className={cn(
+                  "flex flex-wrap  justify-center lg:justify-start gap-2  text-xs sm:text-sm",
+                  isYellowClub
+                    ? "text-[var(--foundation-yellow-300)]"
+                    : "text-[var(--foundation-red-300)]",
+                )}
+              >
                 <span className="opacity-80">구장</span>
                 <span className="text-white font-medium">{stadiumName}</span>
                 <button
                   type="button"
-                  className="flex items-center gap-1 hover:text-white transition-colors border-b border-red-200"
+                  onClick={handleCopyStadium}
+                  className={cn(
+                    "flex items-center gap-1 hover:text-white transition-colors border-b ",
+                    isYellowClub ? "border-yellow-200" : "border-red-200",
+                  )}
                 >
-                  주소 <Copy size={14} />
+                  {copied ? "복사됨" : "주소"} <Copy size={14} />
                 </button>
               </div>
             </div>
@@ -198,9 +226,16 @@ export default function ClubDetailPage() {
           </div>
 
           {/* 3. 시즌 성적 영역 */}
-          <div className="flex flex-col gap-6 sm:gap-8 flex-1 w-full lg:min-w-0 lg:ml-4 xl:ml-10">
-            <div className="text-red-300 font-semibold tracking-wider text-xs sm:text-sm text-center lg:text-left">
-              2026 시즌
+          <div className="flex flex-col justify-end h-full gap-6 sm:gap-8 flex-1 w-full lg:min-w-0 lg:ml-4 xl:ml-10 mb-2">
+            <div
+              className={cn(
+                " font-semibold tracking-wider text-xs sm:text-sm text-center lg:text-left",
+                isYellowClub
+                  ? "text-[var(--foundation-yellow-300)]"
+                  : "text-[var(--foundation-red-300)]",
+              )}
+            >
+              {club.currentSeasonStats?.seasonYear ?? "2026"} 시즌
             </div>
 
             <div className="grid grid-cols-1 gap-y-6 sm:gap-y-8">
@@ -208,20 +243,34 @@ export default function ClubDetailPage() {
                 <>
                   <div className="grid grid-cols-2 lg:grid-cols-4 w-full gap-y-4">
                     {[
-                      { label: "순위", value: club.currentSeasonStats.rank },
-                      { label: "승", value: club.currentSeasonStats.win },
-                      { label: "무", value: club.currentSeasonStats.draw },
-                      { label: "패", value: club.currentSeasonStats.lose },
+                      {
+                        label: "순위",
+                        value: club.currentSeasonStats.seasonRanking,
+                      },
+                      { label: "승", value: club.currentSeasonStats.wins },
+                      { label: "무", value: club.currentSeasonStats.draws },
+                      { label: "패", value: club.currentSeasonStats.losses },
                     ].map((stat, idx) => (
                       <div
                         key={stat.label}
                         className={cn(
                           "px-3 sm:px-4",
-                          "lg:border-r lg:border-red-400/30 lg:last:border-none",
-                          idx % 2 === 0 ? "border-r border-red-400/20 lg:border-r" : "border-r-0"
+                          isYellowClub
+                            ? "lg:border-yellow-400/30"
+                            : "lg:border-red-400/30",
+                          "lg:border-r lg:last:border-none",
+                          idx % 2 === 0
+                            ? cn(
+                                "border-r",
+                                isYellowClub
+                                  ? "border-yellow-400/20"
+                                  : "border-red-400/20",
+                                "lg:border-r",
+                              )
+                            : "border-r-0",
                         )}
                       >
-                        <div className="text-red-200 text-[11px] sm:text-xs mb-1 opacity-80">
+                        <div className="text-white text-[11px] sm:text-xs mb-1 opacity-80">
                           {stat.label}
                         </div>
                         <div className="text-2xl sm:text-3xl font-bold text-white">
@@ -233,20 +282,40 @@ export default function ClubDetailPage() {
 
                   <div className="grid grid-cols-2 lg:grid-cols-4 w-full gap-y-4">
                     {[
-                      { label: "승률", value: club.currentSeasonStats.winningRate },
-                      { label: "타율", value: club.currentSeasonStats.battingAvg },
+                      {
+                        label: "승률",
+                        value: club.currentSeasonStats.winRate,
+                      },
+                      {
+                        label: "타율",
+                        value: club.currentSeasonStats.battingAverage,
+                      },
                       { label: "평균자책", value: club.currentSeasonStats.era },
-                      { label: "승차", value: club.currentSeasonStats.gamesBehind },
+                      {
+                        label: "승차",
+                        value: club.currentSeasonStats.gamesBehind,
+                      },
                     ].map((stat, idx) => (
                       <div
                         key={stat.label}
                         className={cn(
                           "px-3 sm:px-4",
-                          "lg:border-r lg:border-red-400/30 lg:last:border-none",
-                          idx % 2 === 0 ? "border-r border-red-400/20 lg:border-r" : "border-r-0"
+                          isYellowClub
+                            ? "lg:border-yellow-400/30"
+                            : "lg:border-red-400/30",
+                          "lg:border-r lg:last:border-none",
+                          idx % 2 === 0
+                            ? cn(
+                                "border-r",
+                                isYellowClub
+                                  ? "border-yellow-400/20"
+                                  : "border-red-400/20",
+                                "lg:border-r",
+                              )
+                            : "border-r-0",
                         )}
                       >
-                        <div className="text-red-200 text-[11px] sm:text-xs mb-1 opacity-80">
+                        <div className="text-white text-[11px] sm:text-xs mb-1 opacity-80">
                           {stat.label}
                         </div>
                         <div className="text-2xl sm:text-3xl font-bold text-white break-words">
@@ -257,7 +326,12 @@ export default function ClubDetailPage() {
                   </div>
                 </>
               ) : (
-                <div className="text-sm text-red-100 text-center lg:text-left">
+                <div
+                  className={cn(
+                    "text-sm text-center lg:text-left",
+                    isYellowClub ? "text-yellow-100" : "text-red-100",
+                  )}
+                >
                   현재 시즌 정보가 준비 중입니다.
                 </div>
               )}
@@ -316,7 +390,7 @@ export default function ClubDetailPage() {
                     key={day}
                     className={cn(
                       "text-center",
-                      i === 1 ? "text-emerald-500" : "text-slate-600"
+                      i === 1 ? "text-emerald-500" : "text-slate-600",
                     )}
                   >
                     {day}
@@ -329,7 +403,9 @@ export default function ClubDetailPage() {
                   const dateKey = format(day, "yyyy-MM-dd");
                   const match = matchMap[dateKey];
                   const isCurrentMonth = isSameMonth(day, currentMonth);
-                  const config = match ? SALE_STATUS_CONFIG[match.saleStatus] : null;
+                  const config = match
+                    ? SALE_STATUS_CONFIG[match.saleStatus]
+                    : null;
 
                   return (
                     <div
@@ -338,7 +414,7 @@ export default function ClubDetailPage() {
                         "min-h-[160px] sm:min-h-[180px] lg:min-h-[200px]",
                         "border border-slate-200 rounded-lg flex flex-col items-center transition-all overflow-hidden",
                         !match && "bg-[var(--background-grey)]",
-                        !isCurrentMonth && "opacity-30"
+                        !isCurrentMonth && "opacity-30",
                       )}
                     >
                       <div className="w-full flex items-center px-2 sm:px-3 py-2 border-b border-slate-300">
@@ -348,7 +424,7 @@ export default function ClubDetailPage() {
                               "text-[11px] font-bold",
                               match
                                 ? "text-[var(--text-normal-n240)]"
-                                : "text-slate-400"
+                                : "text-slate-400",
                             )}
                           >
                             {format(day, "d")}
@@ -358,10 +434,12 @@ export default function ClubDetailPage() {
                               "text-[11px] font-bold",
                               match
                                 ? "text-[var(--text-normal-n240)]"
-                                : "text-slate-400"
+                                : "text-slate-400",
                             )}
                           >
-                            {match ? format(new Date(match.matchAt), "HH:mm") : "-"}
+                            {match
+                              ? format(new Date(match.matchAt), "HH:mm")
+                              : "-"}
                           </span>
                         </div>
 
@@ -392,7 +470,7 @@ export default function ClubDetailPage() {
                             <div
                               className={cn(
                                 "mt-auto text-[10px] font-bold w-full py-1.5 transition-all text-center",
-                                config.color
+                                config.color,
                               )}
                             >
                               {config.label}

@@ -9,7 +9,7 @@ export type Club = {
   koName: string; // 구단명(한국어)
   enName: string; // 구단명(영어)
   logoImg: string; // 로고 이미지
-  clubColor?: string; // 브랜드 컬러 
+  clubColor?: string; // 브랜드 컬러
 };
 
 /** 경기장 정보 */
@@ -27,14 +27,15 @@ export type ClubStadium = {
 
 /** 구단 현재 시즌 성적 */
 export type ClubSeasonStats = {
-  rank: number;
-  win: number;
-  draw: number;
-  lose: number;
-  winningRate: number;
-  battingAvg: number;
+  battingAverage: number;
+  draws: number;
   era: number;
   gamesBehind: number;
+  losses: number;
+  seasonRanking: number;
+  seasonYear: number;
+  winRate: number;
+  wins: number;
 };
 
 /** 구단 상세 정보 */
@@ -109,7 +110,13 @@ export type OnboardingStatusResponse = {
 };
 
 /** 온보딩 선호도 - 시점 */
-export type Viewpoint = "CENTER" | "INFIELD_1B" | "INFIELD_3B" | "OUTFIELD_L" | "OUTFIELD_C" | "OUTFIELD_R";
+export type Viewpoint =
+  | "CENTER"
+  | "INFIELD_1B"
+  | "INFIELD_3B"
+  | "OUTFIELD_L"
+  | "OUTFIELD_C"
+  | "OUTFIELD_R";
 
 /** 온보딩 선호도 - 좌석 높이 */
 export type SeatHeight = "LOW" | "MID" | "HIGH" | "ANY";
@@ -127,7 +134,11 @@ export type EnvironmentPref = "SHADE" | "SUN_OK" | "ANY";
 export type MoodPref = "CHEERFUL" | "QUIET" | "ANY";
 
 /** 온보딩 선호도 - 시야 방해 민감도 */
-export type ObstructionSensitivity = "NET_SENSITIVE" | "RAIL_PILLAR_SENSITIVE" | "NORMAL" | "ANY";
+export type ObstructionSensitivity =
+  | "NET_SENSITIVE"
+  | "RAIL_PILLAR_SENSITIVE"
+  | "NORMAL"
+  | "ANY";
 
 /** 온보딩 선호도 - 가격 모드 */
 export type PriceMode = "ANY" | "RANGE";
@@ -148,7 +159,10 @@ export type Preference = {
 };
 
 /** 온보딩 선호도 기본값 (1단계) */
-export type PreferenceBase = Pick<Preference, "priority" | "viewpoint" | "seatHeight" | "section">;
+export type PreferenceBase = Pick<
+  Preference,
+  "priority" | "viewpoint" | "seatHeight" | "section"
+>;
 
 /** 온보딩 선호도 저장 요청 */
 export type OnboardingPreferencesRequest = {
