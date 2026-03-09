@@ -169,3 +169,28 @@ export type OnboardingPreferencesRequest = {
   marketingConsent: { marketingAgreed: boolean };
   preferences: Preference[];
 };
+
+/** 구단 월별 경기 조회  - 상대팀 정보 */
+export type OpponentClub = {
+  clubId: number;
+  koName: string;
+  logoImg: string;
+};
+
+/** 구단 월별 경기 조회 - 경기 정보 */
+export type Matches = {
+  matchId: number;
+  matchAt: string;
+  opponentClub: OpponentClub;
+  saleStatus: SaleStatus;
+  isHomeMatch: boolean;
+};
+
+/** 구단 월별 경기 조회 */
+export type ClubMonthMatches = {
+  clubId: number;
+  year: number;
+  month: number;
+  totalMatchCount: number;
+  matches: Matches[];
+};

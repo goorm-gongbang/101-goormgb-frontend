@@ -18,8 +18,8 @@ import {
   eachDayOfInterval,
 } from "date-fns";
 import { ChevronLeft, ChevronRight, Copy } from "lucide-react";
-import { getClubById } from "@/lib/services";
-import type { ClubDetail, SaleStatus } from "@/lib/types";
+import { getClubById, getClubSchedule } from "@/lib/services";
+import type { ClubDetail, SaleStatus, ClubMonthMatches } from "@/lib/types";
 import { CDN_CLUBS_BASE_URL } from "@/lib/api/config";
 import { ApiError } from "@/lib/api";
 
@@ -58,7 +58,10 @@ export default function ClubDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [club, setClub] = useState<ClubDetail | null>(null);
   const [copied, setCopied] = useState(false);
+  const [matches, setMatches] = useState<CalendarMatch[]>([]);
+  const [matchLoading, setMatchLoading] = useState(false);
 
+  // 주소 복사
   const handleCopyStadium = async () => {
     try {
       await navigator.clipboard.writeText(stadiumName);
@@ -79,7 +82,7 @@ export default function ClubDetailPage() {
     const n = str ? Number(str) : NaN;
     return Number.isFinite(n) && n > 0 ? n : null;
   }, [params]);
-  console.log("clubId", clubId);
+
   useEffect(() => {
     if (!clubId) return;
 
@@ -93,7 +96,7 @@ export default function ClubDetailPage() {
         if (!alive) return;
         setClub((data as ClubDetail) ?? null);
 
-        console.log("detail data:", data);
+        //console.log("detail data:", data);
       } catch (e) {
         if (!alive) return;
         if (e instanceof ApiError) {
@@ -113,16 +116,46 @@ export default function ClubDetailPage() {
     };
   }, [clubId]);
 
+  // 월별 경기 데이터 호출
+  useEffect(() => {
+    if (!clubId) return;
+
+    const fetchSchedule = async () => {
+      setMatchLoading(true);
+      try {
+        const year = currentMonth.getFullYear();
+
+        const month = currentMonth.getMonth() + 1;
+        const res = await getClubSchedule(clubId, year, month);
+        if (res && res.matches) {
+          setMatches(res.matches);
+        }
+      } catch (err) {
+        console.error("일정 로드 실패:", err);
+      } finally {
+        setMatchLoading(false);
+      }
+    };
+
+    fetchSchedule();
+  }, [clubId, currentMonth]); // 달이 바뀌거나 clubId가 바뀌면 다시 호출
+
   const days = useMemo(() => {
     const start = startOfWeek(startOfMonth(currentMonth));
     const end = endOfWeek(endOfMonth(currentMonth));
     return eachDayOfInterval({ start, end });
   }, [currentMonth]);
 
+  // matchMap을 matches 데이터를 기반으로 재구성
   const matchMap = useMemo(() => {
     const map: Record<string, CalendarMatch> = {};
+    matches.forEach((m) => {
+      // "2026-03-28T18:30:00" -> "2026-03-28" 키 생성
+      const dateKey = format(new Date(m.matchAt), "yyyy-MM-dd");
+      map[dateKey] = m;
+    });
     return map;
-  }, []);
+  }, [matches]);
 
   const nextMonth = () => setCurrentMonth(addMonths(currentMonth, 1));
   const prevMonth = () => setCurrentMonth(subMonths(currentMonth, 1));
@@ -456,7 +489,7 @@ export default function ClubDetailPage() {
                           >
                             <div className="relative w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-14 mt-1 sm:mt-2 transition-transform group-hover:scale-110">
                               <Image
-                                src={match.opponentClub.logoImg}
+                                src={resolveLogoSrc(match.opponentClub.logoImg)}
                                 alt={match.opponentClub.koName}
                                 fill
                                 className="object-contain"
