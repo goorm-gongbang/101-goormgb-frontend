@@ -32,6 +32,10 @@ function resolveLogoSrc(input: string) {
   return new URL(input.replace(/^\//, ""), CDN_CLUBS_BASE_URL).toString();
 }
 
+const COPIED_STATE_RESET_DELAY_MS = 2000;
+const HANHWA_EAGLES_CLUB_ID = 4; // 한화 이글스 클럽 ID 상수화
+const CURRENT_YEAR = new Date().getFullYear(); // 현재 연도 동적 추출
+
 interface CalendarMatch {
   matchId: number;
   matchAt: string;
@@ -53,27 +57,15 @@ const SALE_STATUS_CONFIG = {
 
 export default function ClubDetailPage() {
   const params = useParams();
-  const [currentMonth, setCurrentMonth] = useState(new Date(2026, 2, 1));
+  const [currentMonth, setCurrentMonth] = useState(
+    new Date(CURRENT_YEAR, 2, 1),
+  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [club, setClub] = useState<ClubDetail | null>(null);
   const [copied, setCopied] = useState(false);
   const [matches, setMatches] = useState<CalendarMatch[]>([]);
   const [matchLoading, setMatchLoading] = useState(false);
-
-  // 주소 복사
-  const handleCopyStadium = async () => {
-    try {
-      await navigator.clipboard.writeText(stadiumName);
-      setCopied(true);
-
-      setTimeout(() => {
-        setCopied(false);
-      }, 2000); // 2초 후 원복
-    } catch (err) {
-      console.error("복사 실패", err);
-    }
-  };
 
   const clubId = useMemo(() => {
     const raw = (params as Record<string, string | string[] | undefined>)
@@ -190,7 +182,21 @@ export default function ClubDetailPage() {
   const bgColor = club.clubColor || "#121130";
   const stadiumName = club.stadium?.koName ?? "";
 
-  const isYellowClub = clubId === 4;
+  const isYellowClub = clubId === HANHWA_EAGLES_CLUB_ID;
+
+  // 주소 복사
+  const handleCopyStadium = async () => {
+    try {
+      await navigator.clipboard.writeText(stadiumName);
+      setCopied(true);
+
+      setTimeout(() => {
+        setCopied(false);
+      }, COPIED_STATE_RESET_DELAY_MS); // 2초 후 원복
+    } catch (err) {
+      console.error("복사 실패", err);
+    }
+  };
 
   return (
     <div className="w-full min-h-screen bg-white">
@@ -268,7 +274,7 @@ export default function ClubDetailPage() {
                   : "text-[var(--foundation-red-300)]",
               )}
             >
-              {club.currentSeasonStats?.seasonYear ?? "2026"} 시즌
+              {club.currentSeasonStats?.seasonYear ?? CURRENT_YEAR} 시즌
             </div>
 
             <div className="grid grid-cols-1 gap-y-6 sm:gap-y-8">
