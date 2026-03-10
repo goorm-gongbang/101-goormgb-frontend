@@ -51,9 +51,9 @@ interface CalendarMatch {
 
 const SALE_STATUS_CONFIG = {
   ON_SALE: { label: "예매 가능", color: "text-emerald-500" },
-  SOLD_OUT: { label: "매진", color: "text-slate-500" },
+  SOLD_OUT: { label: "매진", color: "text-slate-800" },
   UPCOMING: { label: "판매 예정", color: "text-blue-500" },
-  ENDED: { label: "판매 종료", color: "text-slate-400" },
+  ENDED: { label: "판매 종료", color: "text-slate-500" },
 } as const;
 
 export default function ClubDetailPage() {
@@ -508,32 +508,78 @@ export default function ClubDetailPage() {
 
                       <div className="flex-1 w-full p-2 sm:p-3 flex flex-col items-center">
                         {match && config ? (
-                          <Link
-                            href={`/matches/${match.matchId}`}
-                            className="w-full h-full flex flex-col items-center gap-2 sm:gap-3 group cursor-pointer"
-                          >
-                            <div className="relative w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-14 mt-1 sm:mt-2 transition-transform group-hover:scale-110">
-                              <Image
-                                src={resolveLogoSrc(match.opponentClub.logoImg)}
-                                alt={match.opponentClub.koName}
-                                fill
-                                className="object-contain"
-                              />
-                            </div>
+                          // <Link
+                          //   href={`/matches/${match.matchId}`}
+                          //   className="w-full h-full flex flex-col items-center gap-2 sm:gap-3 group cursor-pointer"
+                          // >
+                          //   <div className="relative w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-14 mt-1 sm:mt-2 transition-transform group-hover:scale-110">
+                          //     <Image
+                          //       src={resolveLogoSrc(match.opponentClub.logoImg)}
+                          //       alt={match.opponentClub.koName}
+                          //       fill
+                          //       className="object-contain"
+                          //     />
+                          //   </div>
 
-                            <div className="text-[11px] sm:text-[12px] font-black text-slate-900 text-center break-words">
-                              {match.opponentClub.koName}
-                            </div>
+                          //   <div className="text-[11px] sm:text-[12px] font-black text-slate-900 text-center break-words">
+                          //     {match.opponentClub.koName}
+                          //   </div>
 
-                            <div
-                              className={cn(
-                                "mt-auto text-[10px] font-bold w-full py-1.5 transition-all text-center",
-                                config.color,
-                              )}
-                            >
-                              {config.label}
-                            </div>
-                          </Link>
+                          //   <div
+                          //     className={cn(
+                          //       "mt-auto text-[10px] font-bold w-full py-1.5 transition-all text-center",
+                          //       config.color,
+                          //     )}
+                          //   >
+                          //     {config.label}
+                          //   </div>
+                          // </Link>
+                          (() => {
+                            // 예매 가능 상태일 때만 링크 활성화
+                            const isClickable = match.saleStatus === "ON_SALE";
+
+                            const CardContent = (
+                              <div
+                                className={cn(
+                                  "w-full h-full flex flex-col items-center gap-2 sm:gap-3 group transition-opacity",
+                                  !isClickable && "cursor-default",
+                                )}
+                              >
+                                <div className="relative w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-14 mt-1 sm:mt-2 transition-transform group-hover:scale-105">
+                                  <Image
+                                    src={resolveLogoSrc(
+                                      match.opponentClub.logoImg,
+                                    )}
+                                    alt={match.opponentClub.koName}
+                                    fill
+                                    className="object-contain"
+                                  />
+                                </div>
+                                <div className="text-[11px] sm:text-[12px] font-black text-slate-900 text-center break-words leading-tight">
+                                  {match.opponentClub.koName}
+                                </div>
+                                <div
+                                  className={cn(
+                                    "mt-auto text-[10px] font-bold w-full py-1.5 transition-all text-center ",
+                                    config.color,
+                                  )}
+                                >
+                                  {config.label}
+                                </div>
+                              </div>
+                            );
+
+                            return isClickable ? (
+                              <Link
+                                href={`/matches/${match.matchId}`}
+                                className="w-full h-full cursor-pointer"
+                              >
+                                {CardContent}
+                              </Link>
+                            ) : (
+                              <div className="w-full h-full">{CardContent}</div>
+                            );
+                          })()
                         ) : (
                           <div className="h-full flex items-center justify-center text-center">
                             <span className="text-[10px] text-slate-400 font-medium leading-tight">
