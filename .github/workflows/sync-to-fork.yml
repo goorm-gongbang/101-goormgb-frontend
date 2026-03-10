@@ -1,5 +1,5 @@
 # .github/workflows/sync-to-fork.yml
-name: Sync to Fork
+name: Trigger Fork Sync
 
 on:
     push:
@@ -9,15 +9,18 @@ on:
             - prod
 
 jobs:
-    sync:
+    trigger:
         runs-on: ubuntu-latest
         steps:
-            - name: Checkout
-              uses: actions/checkout@v4
-              with:
-                  fetch-depth: 0
-
-            - name: Push to forked repo
+            - name: Trigger fork sync
+              env:
+                  FORK_PAT: ${{ secrets.FORK_PAT }}
+                  BRANCH: ${{ github.ref_name }}
+                  COMMIT: ${{ github.sha }}
+                  MESSAGE: ${{ github.event.head_commit.message }}
               run: |
-                  git remote add fork https://x-access-token:${{ secrets.FORK_PAT }}@github.com/techupgrgbcn-crypto/goormgb-frontend.git
-                  git push fork ${{ github.ref_name }} --force
+                  curl -X POST \
+                    -H "Authorization: token $FORK_PAT" \
+                    -H "Accept: application/vnd.github.v3+json" \
+                    https://api.github.com/repos/techupgrgbcn-crypto/goormgb-frontend/dispatches \
+                    -d "{\"event_type\":\"sync\",\"client_payload\":{\"branch\":\"$BRANCH\",\"commit\":\"$COMMIT\",\"message\":\"$MESSAGE\"}}"
