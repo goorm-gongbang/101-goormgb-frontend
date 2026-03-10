@@ -11,53 +11,12 @@ import { useRouter } from "next/navigation";
 import { getMatches, getClubs } from "@/lib/services";
 import { SaleStatus, Club, MatchesData, ClubsData } from "@/lib/types";
 import { ApiError } from "@/lib/api";
+import { formatKST } from "@/lib/datetime";
 
 /* ===========================
    UTIL
 =========================== */
-function formatKoreanDateLabel(isoDate: string) {
-  // "2026-03-28" -> "3월 28일"
-  const [, m, d] = isoDate.split("-").map((v) => Number(v));
-  if (!m || !d) return isoDate;
-  return `${m}월 ${d}일`;
-}
-
 const DOW_KO = ["일", "월", "화", "수", "목", "금", "토"] as const;
-
-function formatMatchAt(matchAt: string) {
-  // matchAt: "2026-03-28T18:30:00" -> 3월 28일, 토 · 14 : 00
-  const dt = new Date(matchAt);
-
-  const yyyy = dt.getFullYear();
-  const mm = String(dt.getMonth() + 1).padStart(2, "0");
-  const dd = String(dt.getDate()).padStart(2, "0");
-
-  const hh = String(dt.getHours()).padStart(2, "0");
-  const mi = String(dt.getMinutes()).padStart(2, "0");
-
-  const dateISO = `${yyyy}-${mm}-${dd}`;
-  const dateText = formatKoreanDateLabel(dateISO);
-  const weekdayKo = DOW_KO[dt.getDay()];
-  const timeText = `${weekdayKo} · ${hh}:${mi}`;
-
-  return { dateISO, dateText, timeText };
-}
-
-function formatSalesOpenAtKorean(salesOpenAt: string) {
-  // salesOpenAt: "2026-03-21T16:00:00" -> 3월 21일 16:00
-  if (!salesOpenAt) return "";
-
-  const dt = new Date(salesOpenAt);
-
-  if (Number.isNaN(dt.getTime())) return salesOpenAt; // 혹시 파싱 실패하면 원문 방어
-
-  const m = dt.getMonth() + 1;
-  const d = dt.getDate();
-  const hh = String(dt.getHours()).padStart(2, "0");
-  const mi = String(dt.getMinutes()).padStart(2, "0");
-
-  return `${m}월 ${d}일 ${hh}:${mi}`;
-}
 
 function toMatchCardVariant(saleState?: SaleStatus) {
   // MatchCard variant: comingSoon / soldOut / undefined
@@ -68,9 +27,18 @@ function toMatchCardVariant(saleState?: SaleStatus) {
 }
 
 function overlayTexts(saleState: SaleStatus, salesOpenAt?: string) {
+  console.log("overlayTexts", saleState, salesOpenAt);
   switch (saleState) {
     case "UPCOMING": {
-      const openText = salesOpenAt ? `${formatSalesOpenAtKorean(salesOpenAt)} 오픈` : "오픈 예정";
+      const openText = salesOpenAt
+        ? `${formatKST(salesOpenAt, {
+            month: "numeric",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+            year: undefined,
+          })} 오픈`
+        : "오픈 예정";
       return { top: "Coming Soon", main: openText };
     }
 
@@ -97,7 +65,7 @@ function MatchCardSkeleton({ elevated }: { elevated?: boolean }) {
         elevated
           ? "outline outline-1 outline-offset-[-1px] outline-[var(--foundation-neutral-880)] shadow-sm"
           : "outline outline-1 outline-offset-[-1px] outline-[var(--foundation-neutral-880)]",
-        "px-6 py-5"
+        "px-6 py-5",
       )}
     >
       {/* 상단: 날짜/시간 + 상태 뱃지 자리 */}
@@ -156,8 +124,6 @@ function TeamCardSkeleton() {
   );
 }
 
-
-
 export default function Home() {
   const router = useRouter();
   const todayISO = useMemo(() => {
@@ -169,7 +135,9 @@ export default function Home() {
   }, []);
 
   const [selectedDate, setSelectedDate] = useState<string>(todayISO); // 날짜(달력)
-  const [matchesPayload, setMatchesPayload] = useState<MatchesData | null>(null); // 경기 일정
+  const [matchesPayload, setMatchesPayload] = useState<MatchesData | null>(
+    null,
+  ); // 경기 일정
   const [teamsPayload, setTeamsPayload] = useState<ClubsData | null>(null); // 팀 리스트
   const [loadingMatches, setLoadingMatches] = useState(false); // 로딩(spinner) - 경기 일정
   const [loadingTeams, setLoadingTeams] = useState(false); // 로딩(spinner) - 팀 리스트
@@ -196,7 +164,9 @@ export default function Home() {
       }
     })();
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [selectedDate]);
 
   /* 팀 리스트 요청 - 1회 요청 */
@@ -220,14 +190,22 @@ export default function Home() {
       }
     })();
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   /* 3월 28일은 총 5개의 경기가 있습니다. */
   const countText = useMemo(() => {
-    const dateLabel = formatKoreanDateLabel(selectedDate); // 날짜
+    const dateLabel = formatKST(selectedDate, {
+      month: "numeric",
+      day: "numeric",
+      year: undefined,
+      hour: undefined,
+      minute: undefined,
+    }); // 날짜
     const count = matchesPayload?.matchCount ?? 0; // 개수
-    return `${dateLabel}은 총 ${count}개의 경기가 있습니다.`
+    return `${dateLabel}은 총 ${count}개의 경기가 있습니다.`;
   }, [selectedDate, matchesPayload]);
 
   const matchCards = matchesPayload?.matches ?? []; // 경기 일정
@@ -268,7 +246,9 @@ export default function Home() {
               {/* count text */}
               <div className="w-full max-w-[1088px]">
                 <div className="w-full text-left text-[var(--foundation-primary-500)] text-sm font-medium font-['Pretendard'] leading-5">
-                  {loadingMatches ? "0월 00일은 총 0개의 경기가 있습니다." : countText}
+                  {loadingMatches
+                    ? "0월 00일은 총 0개의 경기가 있습니다."
+                    : countText}
                 </div>
               </div>
 
@@ -282,13 +262,36 @@ export default function Home() {
                   </div>
                 ) : (
                   matchCards.map((m, idx) => {
-                    const { dateText, timeText } = formatMatchAt(m.matchAt); // 3월 28일, 토 · 14 : 00
+                    const dateText = formatKST(m.matchAt, {
+                      month: "numeric",
+                      day: "numeric",
+                      year: undefined,
+                      hour: undefined,
+                      minute: undefined,
+                    });
+                    const timeText = `${DOW_KO[new Date(m.matchAt).getDay()]} · ${formatKST(
+                      m.matchAt,
+                      {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        year: undefined,
+                        month: undefined,
+                        day: undefined,
+                      },
+                    )}`;
+
                     const variant = toMatchCardVariant(m.saleStatus); // comming soon, soild out, ended
                     const overlay = overlayTexts(m.saleStatus, m.salesOpenAt); // 예매 중(ON_SALE), 판매 예정(UPCOMING), 매진(SOLD_OUT), 경기 종료(ENDED)
                     const isClickable = m.saleStatus === "ON_SALE";
 
                     return (
-                      <button key={m.matchId} type="button" disabled={!isClickable} onClick={() => router.push(`/matches/${m.matchId}`)} className="w-full max-w-[1074px] text-left cursor-pointer">
+                      <button
+                        key={m.matchId}
+                        type="button"
+                        disabled={!isClickable}
+                        onClick={() => router.push(`/matches/${m.matchId}`)}
+                        className="w-full max-w-[1074px] text-left cursor-pointer"
+                      >
                         <MatchCard
                           elevated={idx === 0}
                           withOutline={idx === 0}
@@ -344,22 +347,24 @@ export default function Home() {
                     className={cn(
                       "w-full max-w-[1088px]",
                       "grid gap-3.5",
-                      "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5"
+                      "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5",
                     )}
                   >
-                    {loadingTeams ? (
-                      Array.from({ length: 10 }).map((_, i) => <TeamCardSkeleton key={i} />)
-                    ) : (
-                      clubs.map((t) => (
-                        <TeamInfoCard
-                          key={t.clubId}
-                          dataLogo={t.koName} // 두산 베어스
-                          teamName={t.koName} // 두산 베어스
-                          logo={<TeamLogo club={t} />} // <IconPreview index={7} size="md" />
-                          onButtonClick={() => router.push(`/clubs/${t.clubId}`)}
-                        />
-                      ))
-                    )}
+                    {loadingTeams
+                      ? Array.from({ length: 10 }).map((_, i) => (
+                          <TeamCardSkeleton key={i} />
+                        ))
+                      : clubs.map((t) => (
+                          <TeamInfoCard
+                            key={t.clubId}
+                            dataLogo={t.koName} // 두산 베어스
+                            teamName={t.koName} // 두산 베어스
+                            logo={<TeamLogo club={t} />} // <IconPreview index={7} size="md" />
+                            onButtonClick={() =>
+                              router.push(`/clubs/${t.clubId}`)
+                            }
+                          />
+                        ))}
                   </div>
                 </div>
               </div>

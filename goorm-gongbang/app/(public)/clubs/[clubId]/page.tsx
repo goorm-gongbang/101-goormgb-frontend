@@ -22,6 +22,7 @@ import { getClubById, getClubSchedule } from "@/lib/services";
 import type { ClubDetail, SaleStatus, ClubMonthMatches } from "@/lib/types";
 import { CDN_CLUBS_BASE_URL } from "@/lib/api/config";
 import { ApiError } from "@/lib/api";
+import { formatKST } from "@/lib/datetime";
 
 /* ===========================
    Helpers
@@ -142,9 +143,21 @@ export default function ClubDetailPage() {
   const matchMap = useMemo(() => {
     const map: Record<string, CalendarMatch> = {};
     matches.forEach((m) => {
-      // "2026-03-28T18:30:00" -> "2026-03-28" 키 생성
-      const dateKey = format(new Date(m.matchAt), "yyyy-MM-dd");
-      map[dateKey] = m;
+      // 1. formatKST를 사용하여 한국 기준 '2026. 03. 28.' 문자열 생성
+      const kstString = formatKST(m.matchAt, {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: undefined, // 시간은 제외
+        minute: undefined, // 분도 제외
+      });
+
+      // 2. '2026-03-28' 형식으로 변환 (date-fns의 format 결과와 일치시키기 위함)
+      const kstDateKey = kstString
+        .replace(/\. /g, "-") // ". "을 "-"로
+        .replace(/\./g, ""); // 마지막 남은 "." 제거
+
+      map[kstDateKey] = m;
     });
     return map;
   }, [matches]);
@@ -477,7 +490,13 @@ export default function ClubDetailPage() {
                             )}
                           >
                             {match
-                              ? format(new Date(match.matchAt), "HH:mm")
+                              ? formatKST(match.matchAt, {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                  year: undefined,
+                                  month: undefined,
+                                  day: undefined,
+                                })
                               : "-"}
                           </span>
                         </div>
