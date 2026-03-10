@@ -1,0 +1,23 @@
+# .github/workflows/sync-to-fork.yml
+name: Sync to Fork
+
+on:
+    push:
+        branches:
+            - dev
+            - staging
+            - prod
+
+jobs:
+    sync:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+
+            - name: Push to forked repo
+              run: |
+                  git remote add fork https://x-access-token:${{ secrets.FORK_PAT }}@github.com/techupgrgbcn-crypto/goormgb-frontend.git
+                  git push fork ${{ github.ref_name }} --force
