@@ -194,3 +194,16 @@ export type ClubMonthMatches = {
   totalMatchCount: number;
   matches: Matches[];
 };
+
+/** 구단 월별 경기 조회 응답 */
+export interface CalendarMatch {
+  matchId: number;
+  matchAt: string;
+  opponentClub: {
+    clubId: number;
+    koName: string;
+    logoImg: string;
+  };
+  saleStatus: SaleStatus;
+  isHomeMatch: boolean;
+}

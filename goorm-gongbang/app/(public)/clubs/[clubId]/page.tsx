@@ -19,10 +19,16 @@ import {
 } from "date-fns";
 import { ChevronLeft, ChevronRight, Copy } from "lucide-react";
 import { getClubById, getClubSchedule } from "@/lib/services";
-import type { ClubDetail, SaleStatus, ClubMonthMatches } from "@/lib/types";
+import type {
+  ClubDetail,
+  SaleStatus,
+  ClubMonthMatches,
+  CalendarMatch,
+} from "@/lib/types";
 import { CDN_CLUBS_BASE_URL } from "@/lib/api/config";
 import { ApiError } from "@/lib/api";
 import { formatKST } from "@/lib/datetime";
+import { ClubMatchCard } from "@/components/club-detail/ClubMatchCard";
 
 /* ===========================
    Helpers
@@ -36,18 +42,6 @@ function resolveLogoSrc(input: string) {
 const COPIED_STATE_RESET_DELAY_MS = 2000;
 const HANHWA_EAGLES_CLUB_ID = 4; // 한화 이글스 클럽 ID 상수화
 const CURRENT_YEAR = new Date().getFullYear(); // 현재 연도 동적 추출
-
-interface CalendarMatch {
-  matchId: number;
-  matchAt: string;
-  opponentClub: {
-    clubId: number;
-    koName: string;
-    logoImg: string;
-  };
-  saleStatus: SaleStatus;
-  isHomeMatch: boolean;
-}
 
 const SALE_STATUS_CONFIG = {
   ON_SALE: { label: "예매 가능", color: "text-emerald-500" },
@@ -508,78 +502,53 @@ export default function ClubDetailPage() {
 
                       <div className="flex-1 w-full p-2 sm:p-3 flex flex-col items-center">
                         {match && config ? (
-                          // <Link
-                          //   href={`/matches/${match.matchId}`}
-                          //   className="w-full h-full flex flex-col items-center gap-2 sm:gap-3 group cursor-pointer"
-                          // >
-                          //   <div className="relative w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-14 mt-1 sm:mt-2 transition-transform group-hover:scale-110">
-                          //     <Image
-                          //       src={resolveLogoSrc(match.opponentClub.logoImg)}
-                          //       alt={match.opponentClub.koName}
-                          //       fill
-                          //       className="object-contain"
-                          //     />
-                          //   </div>
+                          // (() => {
+                          //   // 예매 가능 상태일 때만 링크 활성화
+                          //   const isClickable = match.saleStatus === "ON_SALE";
 
-                          //   <div className="text-[11px] sm:text-[12px] font-black text-slate-900 text-center break-words">
-                          //     {match.opponentClub.koName}
-                          //   </div>
+                          //   const CardContent = (
+                          //     <div
+                          //       className={cn(
+                          //         "w-full h-full flex flex-col items-center gap-2 sm:gap-3 group transition-opacity",
+                          //         !isClickable && "cursor-default",
+                          //       )}
+                          //     >
+                          //       <div className="relative w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-14 mt-1 sm:mt-2 transition-transform group-hover:scale-105">
+                          //         <Image
+                          //           src={resolveLogoSrc(
+                          //             match.opponentClub.logoImg,
+                          //           )}
+                          //           alt={match.opponentClub.koName}
+                          //           fill
+                          //           className="object-contain"
+                          //         />
+                          //       </div>
+                          //       <div className="text-[11px] sm:text-[12px] font-black text-slate-900 text-center break-words leading-tight">
+                          //         {match.opponentClub.koName}
+                          //       </div>
+                          //       <div
+                          //         className={cn(
+                          //           "mt-auto text-[10px] font-bold w-full py-1.5 transition-all text-center ",
+                          //           config.color,
+                          //         )}
+                          //       >
+                          //         {config.label}
+                          //       </div>
+                          //     </div>
+                          //   );
 
-                          //   <div
-                          //     className={cn(
-                          //       "mt-auto text-[10px] font-bold w-full py-1.5 transition-all text-center",
-                          //       config.color,
-                          //     )}
-                          //   >
-                          //     {config.label}
-                          //   </div>
-                          // </Link>
-                          (() => {
-                            // 예매 가능 상태일 때만 링크 활성화
-                            const isClickable = match.saleStatus === "ON_SALE";
-
-                            const CardContent = (
-                              <div
-                                className={cn(
-                                  "w-full h-full flex flex-col items-center gap-2 sm:gap-3 group transition-opacity",
-                                  !isClickable && "cursor-default",
-                                )}
-                              >
-                                <div className="relative w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-14 mt-1 sm:mt-2 transition-transform group-hover:scale-105">
-                                  <Image
-                                    src={resolveLogoSrc(
-                                      match.opponentClub.logoImg,
-                                    )}
-                                    alt={match.opponentClub.koName}
-                                    fill
-                                    className="object-contain"
-                                  />
-                                </div>
-                                <div className="text-[11px] sm:text-[12px] font-black text-slate-900 text-center break-words leading-tight">
-                                  {match.opponentClub.koName}
-                                </div>
-                                <div
-                                  className={cn(
-                                    "mt-auto text-[10px] font-bold w-full py-1.5 transition-all text-center ",
-                                    config.color,
-                                  )}
-                                >
-                                  {config.label}
-                                </div>
-                              </div>
-                            );
-
-                            return isClickable ? (
-                              <Link
-                                href={`/matches/${match.matchId}`}
-                                className="w-full h-full cursor-pointer"
-                              >
-                                {CardContent}
-                              </Link>
-                            ) : (
-                              <div className="w-full h-full">{CardContent}</div>
-                            );
-                          })()
+                          //   return isClickable ? (
+                          //     <Link
+                          //       href={`/matches/${match.matchId}`}
+                          //       className="w-full h-full cursor-pointer"
+                          //     >
+                          //       {CardContent}
+                          //     </Link>
+                          //   ) : (
+                          //     <div className="w-full h-full">{CardContent}</div>
+                          //   );
+                          // })()
+                          <ClubMatchCard match={match} config={config} />
                         ) : (
                           <div className="h-full flex items-center justify-center text-center">
                             <span className="text-[10px] text-slate-400 font-medium leading-tight">

@@ -27,7 +27,6 @@ function toMatchCardVariant(saleState?: SaleStatus) {
 }
 
 function overlayTexts(saleState: SaleStatus, salesOpenAt?: string) {
-  console.log("overlayTexts", saleState, salesOpenAt);
   switch (saleState) {
     case "UPCOMING": {
       const openText = salesOpenAt
@@ -269,7 +268,7 @@ export default function Home() {
                       hour: undefined,
                       minute: undefined,
                     });
-                    const timeText = `${DOW_KO[new Date(m.matchAt).getDay()]} · ${formatKST(
+                    const timeText = `${new Intl.DateTimeFormat("ko-KR", { weekday: "short", timeZone: "Asia/Seoul" }).format(new Date(m.matchAt))} · ${formatKST(
                       m.matchAt,
                       {
                         hour: "2-digit",
