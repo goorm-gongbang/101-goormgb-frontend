@@ -35,7 +35,7 @@ export default function Page() {
     };
 
     /* 남은 결제 시간 */
-    const [remainingSeconds, setRemainingSeconds] = useState(1000 * 60); // ★ 이부분 나중에 5 * 60 으로 변경
+    const [remainingSeconds, setRemainingSeconds] = useState(5 * 60); // ★ 이부분 나중에 5 * 60 으로 변경
 
     /* 티켓 선택 */
     const PRICE = {
@@ -122,6 +122,8 @@ export default function Page() {
     const canSubmitPayment = agreeTerms && agreeCancelFee;
 
     const [receiptPurpose, setReceiptPurpose] = useState<"personal" | "business">("personal");
+
+    const cashReceiptPhoneDigits = onlyDigits(cashReceiptPhone);
 
     useEffect(() => {
         if (isPaymentTimeoutModalOpen) return;
@@ -649,7 +651,7 @@ export default function Page() {
                                                                 <input
                                                                     type="text"
                                                                     inputMode="numeric"
-                                                                    value={cashReceiptPhone}
+                                                                    value={formatPhone(cashReceiptPhone)}
                                                                     onChange={(e) => setCashReceiptPhone(formatPhone(e.target.value))}
                                                                     placeholder="010-0000-0000"
                                                                     className="self-stretch w-full h-10 p-2 bg-[var(--foundation-neutral-white)] rounded-md outline outline-1 outline-offset-[-1px] outline-[var(--foundation-neutral-900)] text-[var(--foundation-neutral-680)] text-sm font-medium font-['Pretendard'] leading-5"
@@ -726,11 +728,18 @@ export default function Page() {
                                                                 size="lg"
                                                                 tone="base"
                                                                 onClick={() => {
-                                                                    if (!/^01[0-9]\d{7,8}$/.test(phoneDigits) || phoneDigits.length !== 11) return;
-                                                                    setIsCashReceiptEditing(false)
+                                                                    const cashReceiptPhoneDigits = onlyDigits(cashReceiptPhone);
+
+                                                                    if (
+                                                                        !/^01[0-9]\d{7,8}$/.test(cashReceiptPhoneDigits) ||
+                                                                        cashReceiptPhoneDigits.length !== 11
+                                                                    ) { return; }
+
+                                                                    setCashReceiptPhone(cashReceiptPhoneDigits);
+                                                                    setIsCashReceiptEditing(false);
                                                                 }}
                                                                 className="flex-1 min-w-20"
-                                                            >
+                                                                >
                                                                 확인
                                                             </PrimaryButton>
                                                         </div>
@@ -953,7 +962,7 @@ export default function Page() {
                                     <div className="self-stretch inline-flex justify-start items-center gap-2">
                                         <div className="w-20 justify-center text-[var(--foundation-neutral-600)] text-sm font-medium font-['Pretendard'] leading-5">취소 수수료</div>
                                         <div className="flex-1 justify-center text-[var(--foundation-neutral-240)] text-sm font-medium font-['Pretendard'] leading-5">티켓 금액의 0~10%</div>
-                                        
+
                                         <SecondaryButton
                                             type="button"
                                             size="sm"
