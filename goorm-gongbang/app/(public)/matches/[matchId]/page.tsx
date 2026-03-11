@@ -15,6 +15,7 @@ import { getMatchById } from "@/lib/services";
 import { SaleStatus, PurchaseStatus, MatchDetail } from "@/lib/types";
 import { CDN_CLUBS_BASE_URL } from "@/lib/api/config";
 import { ApiError } from "@/lib/api";
+import { useRouter } from "next/navigation";
 import { toDate, formatKST } from "@/lib/datetime";
 
 /* ===========================
@@ -115,6 +116,7 @@ export default function MatchDetailSectionResponsive({
   seatPrices = DEFAULT_SEAT_PRICES,
   outfieldPrices = DEFAULT_OUTFIELD_PRICES,
 }: Props) {
+  const router = useRouter();
   const params = useParams();
 
   const matchId = useMemo(() => {
@@ -241,8 +243,16 @@ export default function MatchDetailSectionResponsive({
     },
   };
 
-  // BookingButton에 넘길 Date
-  const matchAtDate = toDate(data.matchAt);
+  // BookingButton에 넘길 Date (offset 없으면 KST로 보정) ★ 시연님 해결 부탁드립니다.
+  const matchAtDate = new Date(ensureKstOffset(data.matchAt));
+  const saleAtDate = new Date(matchAtDate);
+  saleAtDate.setDate(saleAtDate.getDate() - 7);
+  saleAtDate.setHours(11, 0, 0, 0);
+
+  const handleRev = () => {
+    if(!matchId) return;
+    router.push(`/recommend/${matchId}`);
+  };
 
   return (
     <div className="w-full">
@@ -467,19 +477,11 @@ export default function MatchDetailSectionResponsive({
 
                 <div className="w-full">
                   <BookingButton
-                    saleAt={matchAtDate}
-                    disabled={
-                      saleBadgeText === "매진" || saleBadgeText === "경기 종료"
-                    }
-                    disabledReason={
-                      saleBadgeText === "매진"
-                        ? "SOLD_OUT"
-                        : saleBadgeText === "경기 종료"
-                          ? "ENDED"
-                          : "ETC"
-                    }
+                    saleAt={saleAtDate}
+                    disabled={saleBadgeText === "매진" || saleBadgeText === "경기 종료"}
+                    disabledReason={saleBadgeText === "매진" ? "SOLD_OUT" : saleBadgeText === "경기 종료" ? "ENDED" : "ETC"}
                     countdownFormatter={mmssTwoDigitsMinutes}
-                    onClick={() => console.log("예매하기!")}
+                    onClick={handleRev}
                   />
                 </div>
               </div>
