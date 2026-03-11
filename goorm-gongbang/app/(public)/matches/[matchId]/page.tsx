@@ -2,8 +2,8 @@
 
 import * as React from "react";
 import { useState, useMemo, useEffect } from "react";
-import { SeatPreferenceRecommendCard } from "@/components/common/SeatPreferenceRecommendCard"
-import { DesiredPriceCard } from "@/components/common/DesiredPriceCard"
+import { SeatPreferenceRecommendCard } from "@/components/common/SeatPreferenceRecommendCard";
+import { DesiredPriceCard } from "@/components/common/DesiredPriceCard";
 import { BookingButton, TabButton } from "@/components/common/Button";
 import { MatchInfoTab } from "@/components/common/match-detail/tabs/MatchInfoTab";
 import { MatchRecommendTab } from "@/components/common/match-detail/tabs/MatchRecommendTab";
@@ -16,6 +16,7 @@ import { SaleStatus, PurchaseStatus, MatchDetail } from "@/lib/types";
 import { CDN_CLUBS_BASE_URL } from "@/lib/api/config";
 import { ApiError } from "@/lib/api";
 import { useRouter } from "next/navigation";
+import { toDate, formatKST } from "@/lib/datetime";
 
 /* ===========================
     UI TYPES
@@ -41,7 +42,7 @@ type Props = {
   heroBgImageUrl?: string;
   seatPrices?: SeatPriceRow[];
   outfieldPrices?: OutfieldPriceRow[];
-}
+};
 
 const DEFAULT_SEAT_PRICES: SeatPriceRow[] = [
   { seatType: "중앙석", weekday: "80,000", weekend: "80,000" },
@@ -55,8 +56,18 @@ const DEFAULT_SEAT_PRICES: SeatPriceRow[] = [
 
 const DEFAULT_OUTFIELD_PRICES: OutfieldPriceRow[] = [
   { groupLabel: "", category: "일반", weekday: "9,000", weekend: "10,000" },
-  { groupLabel: "외야 지정석", category: "청소년, 군경", weekday: "7,000", weekend: "8,000" },
-  { groupLabel: "", category: "어린이, 유공자, 경로자", weekday: "4,500", weekend: "5,000" },
+  {
+    groupLabel: "외야 지정석",
+    category: "청소년, 군경",
+    weekday: "7,000",
+    weekend: "8,000",
+  },
+  {
+    groupLabel: "",
+    category: "어린이, 유공자, 경로자",
+    weekday: "4,500",
+    weekend: "5,000",
+  },
 ];
 
 /** =========================
@@ -68,15 +79,18 @@ function resolveLogoSrc(input: string) {
   return new URL(input.replace(/^\//, ""), CDN_CLUBS_BASE_URL).toString(); // base + 상대경로 결합
 }
 
-function ensureKstOffset(iso: string) {
+/* function ensureKstOffset(iso: string) {
   // API 예시가 "2026-03-29T14:00:00" 처럼 오프셋이 없을 수 있어요.
   // UI/카운트다운용 Date 생성은 KST로 해석되게 +09:00을 붙여줍니다(오프셋/UTC 있으면 그대로).
   if (!iso) return iso;
   if (/[zZ]|[+\-]\d{2}:\d{2}$/.test(iso)) return iso;
   return `${iso}+09:00`;
-}
+} */
 
-function toSaleBadgeText(saleStatus: SaleStatus, purchaseStatus: PurchaseStatus): SaleBadgeText {
+function toSaleBadgeText(
+  saleStatus: SaleStatus,
+  purchaseStatus: PurchaseStatus,
+): SaleBadgeText {
   // 명세의 purchaseStatus 규칙을 우선 반영
   if (purchaseStatus === "PURCHASABLE") return "구매 가능";
   if (saleStatus === "SOLD_OUT") return "매진";
@@ -95,7 +109,7 @@ function mmssTwoDigitsMinutes(sec: number) {
   const ssShown = mmRaw > 99 ? 59 : ss;
 
   return `${String(mm).padStart(2, "0")} : ${String(ssShown).padStart(2, "0")}`;
-};
+}
 
 export default function MatchDetailSectionResponsive({
   heroBgImageUrl = "/match/match-detail.png",
@@ -106,7 +120,8 @@ export default function MatchDetailSectionResponsive({
   const params = useParams();
 
   const matchId = useMemo(() => {
-    const raw = (params as Record<string, string | string[] | undefined>)?.matchId;
+    const raw = (params as Record<string, string | string[] | undefined>)
+      ?.matchId;
     const str = Array.isArray(raw) ? raw[0] : raw;
     const n = str ? Number(str) : NaN;
     return Number.isFinite(n) && n > 0 ? n : null;
@@ -155,7 +170,11 @@ export default function MatchDetailSectionResponsive({
   }, [matchId]);
 
   if (!matchId) {
-    return <div className="p-6 text-sm text-[var(--foundation-neutral-720)]">잘못된 matchId 입니다.</div>;
+    return (
+      <div className="p-6 text-sm text-[var(--foundation-neutral-720)]">
+        잘못된 matchId 입니다.
+      </div>
+    );
   }
   if (loading) {
     return (
@@ -167,7 +186,11 @@ export default function MatchDetailSectionResponsive({
     );
   }
   if (error) {
-    return <div className="p-6 text-sm text-[var(--foundation-neutral-720)]">{error}</div>;
+    return (
+      <div className="p-6 text-sm text-[var(--foundation-neutral-720)]">
+        {error}
+      </div>
+    );
   }
   if (!data) return null;
 
@@ -188,29 +211,39 @@ export default function MatchDetailSectionResponsive({
   const homeLogoUrl = resolveLogoSrc(data.homeClub.logoImg);
   const awayLogoUrl = resolveLogoSrc(data.awayClub.logoImg);
 
-  const saleBadgeText = toSaleBadgeText(data.saleStatus, data.matchGuide.purchaseStatus);
+  const saleBadgeText = toSaleBadgeText(
+    data.saleStatus,
+    data.matchGuide.purchaseStatus,
+  );
   const dDayText = `경기 ${data.matchGuide.matchDdayLabel}`;
 
-  const SALE_BADGE_STYLE: Record<SaleBadgeText, { wrapper: string; text: string }> = {
+  const SALE_BADGE_STYLE: Record<
+    SaleBadgeText,
+    { wrapper: string; text: string }
+  > = {
     "구매 가능": {
-      wrapper: "bg-[var(--foundation-red-100)] outline-[var(--foundation-red-400)]",
+      wrapper:
+        "bg-[var(--foundation-red-100)] outline-[var(--foundation-red-400)]",
       text: "text-[var(--foundation-red-500)]",
     },
     "구매 불가": {
-      wrapper: "bg-[var(--foundation-neutral-900)] outline-[var(--foundation-neutral-720)]",
+      wrapper:
+        "bg-[var(--foundation-neutral-900)] outline-[var(--foundation-neutral-720)]",
       text: "text-[var(--foundation-neutral-720)]",
     },
-    "매진": {
-      wrapper: "bg-[var(--foundation-brown-50)] outline-[var(--foundation-neutral-720)]",
+    매진: {
+      wrapper:
+        "bg-[var(--foundation-brown-50)] outline-[var(--foundation-neutral-720)]",
       text: "text-[var(--foundation-neutral-720)]",
     },
     "경기 종료": {
-      wrapper: "bg-[var(--foundation-neutral-900)] outline-[var(--foundation-neutral-720)]",
+      wrapper:
+        "bg-[var(--foundation-neutral-900)] outline-[var(--foundation-neutral-720)]",
       text: "text-[var(--foundation-neutral-720)]",
     },
   };
 
-  // BookingButton에 넘길 Date (offset 없으면 KST로 보정)
+  // BookingButton에 넘길 Date (offset 없으면 KST로 보정) ★ 시연님 해결 부탁드립니다.
   const matchAtDate = new Date(ensureKstOffset(data.matchAt));
   const saleAtDate = new Date(matchAtDate);
   saleAtDate.setDate(saleAtDate.getDate() - 7);
@@ -318,13 +351,10 @@ export default function MatchDetailSectionResponsive({
                               alt="away logo"
                             />
                           </div>
-
                         </div>
                       </div>
                     </div>
                   </div>
-
-
                 </div>
               </div>
             </div>
@@ -371,15 +401,10 @@ export default function MatchDetailSectionResponsive({
             )}
 
             {/* 추천죄석 안내 */}
-            {activeTab === "RECOMMEND" && (
-              <MatchRecommendTab />
-            )}
+            {activeTab === "RECOMMEND" && <MatchRecommendTab />}
 
             {/* 취소/환불 */}
-            {activeTab === "REFUND" && (
-              <MatchRefundTab />
-            )}
-
+            {activeTab === "REFUND" && <MatchRefundTab />}
           </div>
 
           {/* Right (sticky on desktop) */}
@@ -393,26 +418,27 @@ export default function MatchDetailSectionResponsive({
                         {saleBadgeText &&
                           (saleBadgeText === "구매 가능" ||
                             saleBadgeText === "매진" ||
-                            saleBadgeText === "경기 종료") && (() => {
-                              const s = SALE_BADGE_STYLE[saleBadgeText];
-                              return (
+                            saleBadgeText === "경기 종료") &&
+                          (() => {
+                            const s = SALE_BADGE_STYLE[saleBadgeText];
+                            return (
+                              <div
+                                className={[
+                                  "h-6 px-2 rounded-[100px] outline outline-1 outline-offset-[-1px] flex items-center",
+                                  s.wrapper,
+                                ].join(" ")}
+                              >
                                 <div
                                   className={[
-                                    "h-6 px-2 rounded-[100px] outline outline-1 outline-offset-[-1px] flex items-center",
-                                    s.wrapper,
+                                    "text-xs font-semibold font-['Pretendard'] leading-4",
+                                    s.text,
                                   ].join(" ")}
                                 >
-                                  <div
-                                    className={[
-                                      "text-xs font-semibold font-['Pretendard'] leading-4",
-                                      s.text,
-                                    ].join(" ")}
-                                  >
-                                    {saleBadgeText}
-                                  </div>
+                                  {saleBadgeText}
                                 </div>
-                              );
-                            })()}
+                              </div>
+                            );
+                          })()}
                         <div className="text-[var(--foundation-red-500)] text-sm font-semibold font-['Pretendard'] leading-5">
                           {dDayText}
                         </div>

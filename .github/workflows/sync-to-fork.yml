@@ -1,0 +1,31 @@
+# .github/workflows/sync-to-fork.yml
+name: Trigger Fork Sync
+
+on:
+    push:
+        branches:
+            - dev
+            - staging
+            - prod
+
+jobs:
+    trigger:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Trigger fork sync
+              env:
+                  FORK_PAT: ${{ secrets.FORK_PAT }}
+                  BRANCH: ${{ github.ref_name }}
+                  COMMIT: ${{ github.sha }}
+                  MESSAGE: ${{ github.event.head_commit.message }}
+              run: |
+                  jq -n \
+                    --arg branch "$BRANCH" \
+                    --arg commit "$COMMIT" \
+                    --arg message "$MESSAGE" \
+                    '{event_type: "sync", client_payload: {branch: $branch, commit: $commit, message: $message}}' | \
+                  curl -X POST \
+                    -H "Authorization: token $FORK_PAT" \
+                    -H "Accept: application/vnd.github.v3+json" \
+                    https://api.github.com/repos/techupgrgbcn-crypto/goormgb-frontend/dispatches \
+                    -d @-

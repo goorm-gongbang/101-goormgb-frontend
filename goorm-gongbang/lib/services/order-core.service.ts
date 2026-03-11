@@ -18,6 +18,7 @@ import type {
   ClubDetail,
   OnboardingStatusResponse,
   OnboardingPreferencesRequest,
+  ClubMonthMatches,
 } from "@/lib/types";
 
 // Re-export types for convenience
@@ -45,17 +46,31 @@ export const getMatchById = (matchId: string | number) =>
   pub.get<MatchDetail>(`${API_BASE_URL}/order/matches/${matchId}`);
 
 /* 구단 목록 조회 */
-export const getClubs = () =>
-  pub.get<ClubsData>(`${API_BASE_URL}/order/clubs`);
+export const getClubs = () => pub.get<ClubsData>(`${API_BASE_URL}/order/clubs`);
 
 /* 구단 상세 조회 */
 export const getClubById = (clubId: string | number) =>
   pub.get<ClubDetail>(`${API_BASE_URL}/order/clubs/${clubId}`);
 
+/* 구단 경기 일정(월 단위) 조회 */
+export const getClubSchedule = (
+  clubId: string | number,
+  year: string | number,
+  month: string | number,
+) =>
+  pub.get<ClubMonthMatches>(
+    `${API_BASE_URL}/order/clubs/${clubId}/matches?year=${year}&month=${month}`,
+  );
+
 /* 온보딩 선호도 조회 */
 export const getOnboardingStatus = () =>
-  auth.get<{ onboardingStatus: boolean }>(`${API_BASE_URL}/order/onboarding/preferences`);
+  auth.get<{ onboardingStatus: boolean }>(
+    `${API_BASE_URL}/order/onboarding/preferences`,
+  );
 
 /* 온보딩 선호도 저장 */
 export const saveOnboardingPreferences = (body: OnboardingPreferencesRequest) =>
-  auth.post<void, OnboardingPreferencesRequest>(`${API_BASE_URL}/order/onboarding/preferences`, body);
+  auth.post<void, OnboardingPreferencesRequest>(
+    `${API_BASE_URL}/order/onboarding/preferences`,
+    body,
+  );
