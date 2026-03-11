@@ -1,41 +1,19 @@
+/* ===========================
+   마이페이지 루트
+   Route: /my
+   - MyPageLayout 컴포넌트를 렌더링
+   - 실제 UI/로직은 components/my/MyPageLayout.tsx 참조
+
+   [TODO] API 연동 시
+   - 현재 MyPageLayout 내 MOCK_USER → 실제 유저 정보 교체
+   - SECTIONS 내 href가 껍데기인 페이지들 구현 필요
+     (/my/notices, /my/faq, /my/support, /my/terms, /my/privacy)
+=========================== */
+
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useAuthStore } from "@/stores/authStore";
-import { toast } from "sonner";
-import { logout as logoutApi } from "@/lib/services";
-import { ApiError } from "@/lib/api";
+import { MyPageLayout } from "@/components/my/MyPageLayout";
 
-export default function Page() {
-  const router = useRouter();
-  const logoutStore = useAuthStore((s) => s.logout);
-
-  const handleLogout = async () => {
-    try {
-      await logoutApi();
-      toast.success("로그아웃 완료");
-    } catch (e) {
-      if (e instanceof ApiError) {
-        toast.error(e.message);
-      } else {
-        console.error("⚠️ LOGOUT ERROR:", e);
-        toast.error("네트워크 오류로 로그아웃 요청에 실패했습니다.");
-      }
-    } finally {
-      logoutStore();
-      router.replace("/login");
-    }
-  };
-
-  return (
-    <div className="p-6">
-      <button
-        type="button"
-        onClick={handleLogout}
-        className="h-10 px-4 rounded-md bg-black text-white"
-      >
-        로그아웃
-      </button>
-    </div>
-  );
+export default function MyPage() {
+  return <MyPageLayout />;
 }
