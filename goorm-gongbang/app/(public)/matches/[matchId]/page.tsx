@@ -212,10 +212,14 @@ export default function MatchDetailSectionResponsive({
 
   // BookingButton에 넘길 Date (offset 없으면 KST로 보정)
   const matchAtDate = new Date(ensureKstOffset(data.matchAt));
+  const saleAtDate = new Date(matchAtDate);
+  saleAtDate.setDate(saleAtDate.getDate() - 7);
+  saleAtDate.setHours(11, 0, 0, 0);
 
-  const handleLogin = () => {
-    router.push("/recommend")
-  }
+  const handleRev = () => {
+    if(!matchId) return;
+    router.push(`/recommend/${matchId}`);
+  };
 
   return (
     <div className="w-full">
@@ -447,11 +451,11 @@ export default function MatchDetailSectionResponsive({
 
                 <div className="w-full">
                   <BookingButton
-                    saleAt={matchAtDate}
+                    saleAt={saleAtDate}
                     disabled={saleBadgeText === "매진" || saleBadgeText === "경기 종료"}
                     disabledReason={saleBadgeText === "매진" ? "SOLD_OUT" : saleBadgeText === "경기 종료" ? "ENDED" : "ETC"}
                     countdownFormatter={mmssTwoDigitsMinutes}
-                    onClick={handleLogin}
+                    onClick={handleRev}
                   />
                 </div>
               </div>

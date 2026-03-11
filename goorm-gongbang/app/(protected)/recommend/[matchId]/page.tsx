@@ -1,13 +1,16 @@
 "use client";
 
+import { useState, useMemo } from "react";
 import { ChevronLeft, RotateCw } from "lucide-react";
 import { TicketingNavigator } from "@/components/common/TicketingNavigator";
 import { SeatPreferenceRecommendCard } from "@/components/common/SeatPreferenceRecommendCard";
 import { SeatRecommendSummaryCard } from "@/components/common/SeatRecommendSummaryCard";
 import SelectableSeatMapSvg from "@/components/common/SelectableSeatMapSvg";
-import { useState } from "react";
+import { useRouter, useParams } from "next/navigation";
 
 export default function Page() {
+  const router = useRouter();
+  const searchParams = useParams();
   const [enabled, setEnabled] = useState(true);
   const [loading, setLoading] = useState(false);
   const [isSummaryCardHovered, setIsSummaryCardHovered] = useState(false);
@@ -18,6 +21,19 @@ export default function Page() {
     setSelectedSeatIds((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
     );
+  };
+
+  const params = useParams();
+  const matchId = useMemo(() => {
+    const raw = (params as Record<string, string | string[] | undefined>)?.matchId;
+    const str = Array.isArray(raw) ? raw[0] : raw;
+    const n = str ? Number(str) : NaN;
+    return Number.isFinite(n) && n > 0 ? n : null;
+  }, [params]);
+
+  const handleRev = () => {
+    if(!matchId) return;
+    router.push(`/pay/${matchId}`);
   };
 
   return (
@@ -221,9 +237,10 @@ export default function Page() {
 
               <button
                 type="button"
+                onClick={handleRev}
                 data-size="Large"
                 data-state="Default"
-                className="flex-1 h-10 min-w-20 px-4 py-2 bg-[var(--foundation-primary-500)] rounded-md flex justify-center items-center"
+                className="cursor-pointer flex-1 h-10 min-w-20 px-4 py-2 bg-[var(--foundation-primary-500)] rounded-md flex justify-center items-center"
               >
                 <div className="text-white text-sm sm:text-base font-semibold leading-6">
                   예매하기

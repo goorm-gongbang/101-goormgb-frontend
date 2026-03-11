@@ -40,11 +40,10 @@ export function Header({ className, onMyInfoClick, onMyTicketClick }: Props) {
         onClick={() => router.push("/")}
         className="cursor-pointer self-stretch flex justify-start items-center"
       >
-        <div className="justify-start text-gray-900 text-lg font-bold font-['Pretendard'] leading-9">
-          Pyo
-        </div>
-        <div className="justify-start text-emerald-500 text-lg font-bold font-['Pretendard'] leading-9">
-          Go
+        <div className="self-stretch p-2 inline-flex justify-start items-center">
+            <div className="w-16 self-stretch">
+              <img className="" src="/logo.png" alt="logo"></img>
+            </div>
         </div>
       </div>
 
