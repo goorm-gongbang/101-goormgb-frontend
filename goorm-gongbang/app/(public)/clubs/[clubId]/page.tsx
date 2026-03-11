@@ -19,9 +19,16 @@ import {
 } from "date-fns";
 import { ChevronLeft, ChevronRight, Copy } from "lucide-react";
 import { getClubById, getClubSchedule } from "@/lib/services";
-import type { ClubDetail, SaleStatus, ClubMonthMatches } from "@/lib/types";
+import type {
+  ClubDetail,
+  SaleStatus,
+  ClubMonthMatches,
+  CalendarMatch,
+} from "@/lib/types";
 import { CDN_CLUBS_BASE_URL } from "@/lib/api/config";
 import { ApiError } from "@/lib/api";
+import { formatKST } from "@/lib/datetime";
+import { ClubMatchCard } from "@/components/club-detail/ClubMatchCard";
 
 /* ===========================
    Helpers
@@ -36,23 +43,11 @@ const COPIED_STATE_RESET_DELAY_MS = 2000;
 const HANHWA_EAGLES_CLUB_ID = 4; // 한화 이글스 클럽 ID 상수화
 const CURRENT_YEAR = new Date().getFullYear(); // 현재 연도 동적 추출
 
-interface CalendarMatch {
-  matchId: number;
-  matchAt: string;
-  opponentClub: {
-    clubId: number;
-    koName: string;
-    logoImg: string;
-  };
-  saleStatus: SaleStatus;
-  isHomeMatch: boolean;
-}
-
 const SALE_STATUS_CONFIG = {
   ON_SALE: { label: "예매 가능", color: "text-emerald-500" },
-  SOLD_OUT: { label: "매진", color: "text-slate-500" },
+  SOLD_OUT: { label: "매진", color: "text-slate-800" },
   UPCOMING: { label: "판매 예정", color: "text-blue-500" },
-  ENDED: { label: "판매 종료", color: "text-slate-400" },
+  ENDED: { label: "판매 종료", color: "text-slate-500" },
 } as const;
 
 export default function ClubDetailPage() {
@@ -142,9 +137,21 @@ export default function ClubDetailPage() {
   const matchMap = useMemo(() => {
     const map: Record<string, CalendarMatch> = {};
     matches.forEach((m) => {
-      // "2026-03-28T18:30:00" -> "2026-03-28" 키 생성
-      const dateKey = format(new Date(m.matchAt), "yyyy-MM-dd");
-      map[dateKey] = m;
+      // 1. formatKST를 사용하여 한국 기준 '2026. 03. 28.' 문자열 생성
+      const kstString = formatKST(m.matchAt, {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: undefined, // 시간은 제외
+        minute: undefined, // 분도 제외
+      });
+
+      // 2. '2026-03-28' 형식으로 변환 (date-fns의 format 결과와 일치시키기 위함)
+      const kstDateKey = kstString
+        .replace(/\. /g, "-") // ". "을 "-"로
+        .replace(/\./g, ""); // 마지막 남은 "." 제거
+
+      map[kstDateKey] = m;
     });
     return map;
   }, [matches]);
@@ -477,7 +484,13 @@ export default function ClubDetailPage() {
                             )}
                           >
                             {match
-                              ? format(new Date(match.matchAt), "HH:mm")
+                              ? formatKST(match.matchAt, {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                  year: undefined,
+                                  month: undefined,
+                                  day: undefined,
+                                })
                               : "-"}
                           </span>
                         </div>
@@ -489,32 +502,53 @@ export default function ClubDetailPage() {
 
                       <div className="flex-1 w-full p-2 sm:p-3 flex flex-col items-center">
                         {match && config ? (
-                          <Link
-                            href={`/matches/${match.matchId}`}
-                            className="w-full h-full flex flex-col items-center gap-2 sm:gap-3 group cursor-pointer"
-                          >
-                            <div className="relative w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-14 mt-1 sm:mt-2 transition-transform group-hover:scale-110">
-                              <Image
-                                src={resolveLogoSrc(match.opponentClub.logoImg)}
-                                alt={match.opponentClub.koName}
-                                fill
-                                className="object-contain"
-                              />
-                            </div>
+                          // (() => {
+                          //   // 예매 가능 상태일 때만 링크 활성화
+                          //   const isClickable = match.saleStatus === "ON_SALE";
 
-                            <div className="text-[11px] sm:text-[12px] font-black text-slate-900 text-center break-words">
-                              {match.opponentClub.koName}
-                            </div>
+                          //   const CardContent = (
+                          //     <div
+                          //       className={cn(
+                          //         "w-full h-full flex flex-col items-center gap-2 sm:gap-3 group transition-opacity",
+                          //         !isClickable && "cursor-default",
+                          //       )}
+                          //     >
+                          //       <div className="relative w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-14 mt-1 sm:mt-2 transition-transform group-hover:scale-105">
+                          //         <Image
+                          //           src={resolveLogoSrc(
+                          //             match.opponentClub.logoImg,
+                          //           )}
+                          //           alt={match.opponentClub.koName}
+                          //           fill
+                          //           className="object-contain"
+                          //         />
+                          //       </div>
+                          //       <div className="text-[11px] sm:text-[12px] font-black text-slate-900 text-center break-words leading-tight">
+                          //         {match.opponentClub.koName}
+                          //       </div>
+                          //       <div
+                          //         className={cn(
+                          //           "mt-auto text-[10px] font-bold w-full py-1.5 transition-all text-center ",
+                          //           config.color,
+                          //         )}
+                          //       >
+                          //         {config.label}
+                          //       </div>
+                          //     </div>
+                          //   );
 
-                            <div
-                              className={cn(
-                                "mt-auto text-[10px] font-bold w-full py-1.5 transition-all text-center",
-                                config.color,
-                              )}
-                            >
-                              {config.label}
-                            </div>
-                          </Link>
+                          //   return isClickable ? (
+                          //     <Link
+                          //       href={`/matches/${match.matchId}`}
+                          //       className="w-full h-full cursor-pointer"
+                          //     >
+                          //       {CardContent}
+                          //     </Link>
+                          //   ) : (
+                          //     <div className="w-full h-full">{CardContent}</div>
+                          //   );
+                          // })()
+                          <ClubMatchCard match={match} config={config} />
                         ) : (
                           <div className="h-full flex items-center justify-center text-center">
                             <span className="text-[10px] text-slate-400 font-medium leading-tight">
