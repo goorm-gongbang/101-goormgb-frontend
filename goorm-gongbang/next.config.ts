@@ -1,12 +1,11 @@
-
 /** @type {import('next').NextConfig} */
-const isProd = process.env.NEXT_PUBLIC_ENV === 'production';
+const isProd = process.env.NEXT_PUBLIC_ENV === "production";
 // 운영 환경일 때만 CDN 주소를 할당합니다.
-const CDN_URL = 'https://cdn.your-domain.com/'; 
+const CDN_URL = "https://cdn.your-domain.com/";
 
 const nextConfig = {
   // 1. EKS 배포를 위한 독립 실행형 빌드 설정
-  output: 'standalone',
+  output: "standalone",
 
   // 2. 운영 환경(Prod)에서만 정적 자산을 CDN에서 불러오도록 설정
   // 개발(Dev) 환경에서는 undefined가 되어 서버(Pod)가 직접 서빙합니다.
@@ -16,9 +15,9 @@ const nextConfig = {
   images: {
     remotePatterns: [
       {
-        protocol: 'https',
-        hostname: 'goormgb-assets.s3.ap-northeast-2.amazonaws.com',
-        pathname: '/static/clubs/**',
+        protocol: "https",
+        hostname: "assets.playball.one",
+        pathname: "/static/clubs/**",
       },
     ],
   },
@@ -47,9 +46,12 @@ const nextConfig = {
   },
 
   env: {
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api",
+    NEXT_PUBLIC_API_URL:
+      process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api",
     NEXT_PUBLIC_ENV: process.env.NEXT_PUBLIC_ENV || "development",
-    OTEL_EXPORTER_OTLP_ENDPOINT: process.env.OTEL_EXPORTER_OTLP_ENDPOINT || "http://otel-collector:4318/v1/traces",
+    OTEL_EXPORTER_OTLP_ENDPOINT:
+      process.env.OTEL_EXPORTER_OTLP_ENDPOINT ||
+      "http://otel-collector:4318/v1/traces",
   },
 };
 
@@ -92,4 +94,3 @@ export default nextConfig;
 // };
 
 // module.exports = nextConfig;
-

@@ -107,9 +107,9 @@ export default function LoginPage() {
             {/* Header */}
             <div className="flex w-full flex-col items-center gap-4">
               <div className="flex w-full justify-center">
-                <div className="inline-flex h-14 w-32 items-center justify-center gap-2 bg-gray-200 p-2 sm:h-16 sm:w-36">
+                <div className="inline-flex h-14 w-32 items-center justify-center gap-2 p-2 sm:h-16 sm:w-36">
                   <div className="text-center text-xs font-bold leading-5 tracking-tight text-black">
-                    로고
+                    <img src="/logo.png" alt="logo" />
                   </div>
                 </div>
               </div>

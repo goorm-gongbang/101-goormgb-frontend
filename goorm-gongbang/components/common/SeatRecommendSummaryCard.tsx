@@ -20,7 +20,7 @@ type Props = {
     tags: string[];             // "# 1루 내야" 등
 
     className?: string;
-};
+} & React.HTMLAttributes<HTMLDivElement>;
 
 function getCardStyles(variant: Variant) {
     const base =
@@ -77,9 +77,10 @@ export function SeatRecommendSummaryCard({
     seats,
     tags,
     className,
+    ...divProps
 }: Props) {
     return (
-        <div className={cn(getCardStyles(variant), className)}>
+        <div className={cn(getCardStyles(variant), className)} {...divProps}>
             {/* Top area */}
             <div className="self-stretch flex flex-col justify-start items-start gap-0.5">
                 <div className="self-stretch inline-flex justify-start items-center gap-2">
