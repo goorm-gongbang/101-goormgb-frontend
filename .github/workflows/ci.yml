@@ -22,8 +22,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-          npm ci
-          npm rebuild lightningcss
+          rm -rf node_modules package-lock.json
+          npm install
 
       - name: Type check & Build
         run: npm run build
