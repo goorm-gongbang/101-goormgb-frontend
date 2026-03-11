@@ -7,6 +7,7 @@ import { RefundPolicyModal } from "@/components/common/RefundPolicyModal";
 import { useRouter, useParams } from "next/navigation";
 import { ChevronRight } from "lucide-react";
 import { PaymentTimeoutModal } from "@/components/common/PaymentTimeoutModal";
+import { PrimaryButton, SecondaryButton } from "@/components/common/Button";
 
 export default function Page() {
     const router = useRouter();
@@ -574,15 +575,15 @@ export default function Page() {
                                                         <div className="text-[var(--foundation-neutral-240)] text-xs font-normal font-['Pretendard'] leading-4">
                                                             ({cashReceiptPhone ? formatPhone(cashReceiptPhone) : "010-0000-0000"})
                                                         </div>
-                                                        <button
+
+                                                        <SecondaryButton
                                                             type="button"
+                                                            size="sm"
+                                                            tone="base"
                                                             onClick={() => setIsCashReceiptEditing(true)}
-                                                            className="h-6 min-w-14 p-2 rounded-md outline outline-1 outline-offset-[-1px] outline-[var(--foundation-primary-500)] flex justify-center items-center"
                                                         >
-                                                            <span className="cursor-pointer text-[var(--foundation-primary-500)] text-xs font-normal font-['Pretendard_Variable'] leading-5">
-                                                                변경하기
-                                                            </span>
-                                                        </button>
+                                                            변경하기
+                                                        </SecondaryButton>
                                                     </div>
                                                 )}
 
@@ -710,26 +711,30 @@ export default function Page() {
                                                         </label>
 
                                                         <div className="self-stretch inline-flex justify-start items-center gap-2">
-                                                            <button
+                                                            <SecondaryButton
                                                                 type="button"
+                                                                size="lg"
+                                                                tone="base"
                                                                 onClick={() => setIsCashReceiptEditing(false)}
-                                                                className="cursor-pointer flex-1 h-10 min-w-20 px-4 py-2 rounded-md outline outline-1 outline-offset-[-1px] outline-[var(--foundation-primary-500)] flex justify-center items-center"
+                                                                className="flex-1 min-w-20"
                                                             >
-                                                                <span className="text-center justify-center text-[var(--foundation-primary-500)] text-sm font-semibold font-['Pretendard_Variable'] leading-5">취소</span>
-                                                            </button>
-                                                            <button
+                                                                취소
+                                                            </SecondaryButton>
+
+                                                            <PrimaryButton
                                                                 type="button"
+                                                                size="lg"
+                                                                tone="base"
                                                                 onClick={() => {
-                                                                    if (!cashReceiptPhone.trim()) return;
+                                                                    if (!/^01[0-9]\d{7,8}$/.test(phoneDigits) || phoneDigits.length !== 11) return;
                                                                     setIsCashReceiptEditing(false)
                                                                 }}
-                                                                className="cursor-pointer flex-1 h-10 min-w-20 px-4 py-2 bg-[var(--foundation-primary-500)] rounded-md flex justify-center items-center"
+                                                                className="flex-1 min-w-20"
                                                             >
-                                                                <span className="text-center justify-center text-[var(--foundation-neutral-white)] text-sm font-semibold font-['Pretendard_Variable'] leading-5">확인</span>
-                                                            </button>
+                                                                확인
+                                                            </PrimaryButton>
                                                         </div>
                                                     </div>
-
                                                 )}
 
                                             </div>
@@ -948,9 +953,16 @@ export default function Page() {
                                     <div className="self-stretch inline-flex justify-start items-center gap-2">
                                         <div className="w-20 justify-center text-[var(--foundation-neutral-600)] text-sm font-medium font-['Pretendard'] leading-5">취소 수수료</div>
                                         <div className="flex-1 justify-center text-[var(--foundation-neutral-240)] text-sm font-medium font-['Pretendard'] leading-5">티켓 금액의 0~10%</div>
-                                        <div onClick={() => setIsRefundModalOpen(true)} data-size="Small" data-state="Default" className="cursor-pointer h-6 min-w-14 p-2 rounded-md outline outline-1 outline-offset-[-1px] outline-[var(--foundation-primary-500)] flex justify-center items-center">
-                                            <div className="flex-1 text-center justify-center text-[var(--foundation-primary-500)] text-xs font-normal font-['Pretendard_Variable'] leading-5">자세히보기</div>
-                                        </div>
+                                        
+                                        <SecondaryButton
+                                            type="button"
+                                            size="sm"
+                                            tone="base"
+                                            onClick={() => setIsRefundModalOpen(true)}
+                                        >
+                                            자세히보기
+                                        </SecondaryButton>
+
                                         <RefundPolicyModal
                                             open={isRefundModalOpen}
                                             onClose={() => setIsRefundModalOpen(false)}
@@ -960,9 +972,17 @@ export default function Page() {
                             </div>
                             <div className="self-stretch p-6 flex flex-col justify-start items-start gap-6">
                                 <div className="self-stretch inline-flex justify-start items-center gap-2">
-                                    <div onClick={() => setIsCancelModalOpen(true)} data-size="Large" data-state="Default" className="cursor-pointer flex-1 h-10 min-w-20 px-4 py-2 rounded-md outline outline-1 outline-offset-[-1px] outline-[var(--foundation-primary-500)] flex justify-center items-center">
-                                        <div className="text-center justify-center text-[var(--foundation-primary-500)] text-sm font-semibold font-['Pretendard'] leading-5">이전</div>
-                                    </div>
+
+                                    <SecondaryButton
+                                        type="button"
+                                        size="lg"
+                                        tone="base"
+                                        onClick={() => setIsCancelModalOpen(true)}
+                                        className="flex-1 min-w-20"
+                                    >
+                                        이전
+                                    </SecondaryButton>
+
                                     <CancelOrderModal
                                         open={isCancelModalOpen}
                                         onClose={() => setIsCancelModalOpen(false)}
@@ -974,22 +994,17 @@ export default function Page() {
                                             router.back();
                                         }}
                                     />
-                                    <button
+
+                                    <PrimaryButton
                                         type="button"
+                                        size="lg"
+                                        tone="base"
                                         disabled={step === "ticket" ? !canProceed : !canSubmitPayment}
                                         onClick={step === "ticket" ? handleNextStep : handleSubmitPayment}
-                                        className={
-                                            step === "ticket"
-                                                ? canProceed
-                                                    ? "cursor-pointer flex-1 h-10 min-w-20 px-4 py-2 rounded-md flex justify-center items-center bg-[var(--foundation-primary-500)] text-[var(--foundation-neutral-white)] text-sm font-semibold font-['Pretendard'] leading-5"
-                                                    : "flex-1 h-10 min-w-20 px-4 py-2 rounded-md flex justify-center items-center bg-[var(--background-interactive-neutral-disabled)] text-[var(--foundation-neutral-720)] text-sm font-semibold font-['Pretendard'] leading-5"
-                                                : canSubmitPayment
-                                                    ? "cursor-pointer flex-1 h-10 min-w-20 px-4 py-2 rounded-md flex justify-center items-center bg-[var(--foundation-primary-500)] text-[var(--foundation-neutral-white)] text-sm font-semibold font-['Pretendard'] leading-5"
-                                                    : "flex-1 h-10 min-w-20 px-4 py-2 rounded-md flex justify-center items-center bg-[var(--background-interactive-neutral-disabled)] text-[var(--foundation-neutral-720)] text-sm font-semibold font-['Pretendard'] leading-5"
-                                        }
+                                        className="flex-1 min-w-20"
                                     >
                                         다음 단계
-                                    </button>
+                                    </PrimaryButton>
                                 </div>
                             </div>
                         </div>

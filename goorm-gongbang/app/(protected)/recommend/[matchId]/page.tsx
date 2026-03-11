@@ -31,7 +31,7 @@ export default function Page() {
     return Number.isFinite(n) && n > 0 ? n : null;
   }, [params]);
 
-  const handleRev = () => {
+  const handleProceedToPayment  = () => {
     if(!matchId) return;
     router.push(`/pay/${matchId}`);
   };
@@ -237,7 +237,7 @@ export default function Page() {
 
               <button
                 type="button"
-                onClick={handleRev}
+                onClick={handleProceedToPayment }
                 data-size="Large"
                 data-state="Default"
                 className="cursor-pointer flex-1 h-10 min-w-20 px-4 py-2 bg-[var(--foundation-primary-500)] rounded-md flex justify-center items-center"

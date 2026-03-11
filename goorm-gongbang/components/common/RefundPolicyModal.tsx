@@ -1,4 +1,5 @@
 "use client";
+import { PrimaryButton } from "@/components/common/Button";
 
 type RefundPolicyModalProps = {
   open: boolean;
@@ -64,15 +65,15 @@ export function RefundPolicyModal({ open, onClose }: RefundPolicyModalProps) {
         </div>
 
         <div className="self-stretch inline-flex justify-center items-center gap-2">
-          <button
+          <PrimaryButton
             type="button"
+            size="lg"
+            tone="base"
             onClick={onClose}
-            className="cursor-pointer w-44 h-10 min-w-20 px-4 py-2 bg-emerald-500 rounded-md flex justify-center items-center"
+            className="flex-1"
           >
-            <span className="text-center text-[var(--foundation-neutral-white)] text-sm font-semibold font-['Pretendard_Variable'] leading-5">
-              확인
-            </span>
-          </button>
+            확인
+          </PrimaryButton>
         </div>
       </div>
     </div>

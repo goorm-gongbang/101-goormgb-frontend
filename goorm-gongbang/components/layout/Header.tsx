@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { User, Ticket } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/authStore";
+import { PrimaryButton } from "@/components/common/Button";
 
 type Props = {
   className?: string;
@@ -40,28 +41,29 @@ export function Header({ className, onMyInfoClick, onMyTicketClick }: Props) {
         onClick={() => router.push("/")}
         className="cursor-pointer self-stretch flex justify-start items-center"
       >
-        <div className="self-stretch p-2 inline-flex justify-start items-center">
-            <div className="w-16 self-stretch">
-              <img className="" src="/logo.png" alt="logo"></img>
-            </div>
+        <div className="p-2 flex items-center">
+          <div className="w-16 h-10 overflow-hidden flex items-center">
+            <img
+              src="/logo.png"
+              alt="logo"
+              className="w-full h-full object-contain"
+            />
+          </div>
         </div>
       </div>
 
       {/* Right area */}
       {!isLoggedIn ? (
         // 로그인 버튼 상태
-        <button
+        <PrimaryButton
           type="button"
+          size="sm"
+          tone="base"
           onClick={handleLogin}
-          className={cn(
-            "h-6 min-w-14 p-2 bg-[var(--foundation-primary-500)] rounded-md",
-            "flex justify-center items-center",
-          )}
+          className=""
         >
-          <span className="flex-1 text-center justify-center text-[var(--foundation-neutral-white)] text-xs font-medium font-['Pretendard'] leading-5 cursor-pointer">
-            로그인
-          </span>
-        </button>
+          로그인
+        </PrimaryButton>
       ) : (
         // 로그인 후 메뉴 상태
         <div className="flex justify-start items-center gap-8">
