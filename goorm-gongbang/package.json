@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "postbuild": "javascript-obfuscator .next/static/chunks --output .next/static/chunks --compact true --string-array true --string-array-encoding base64",
+"obfuscate": "javascript-obfuscator .next/static/chunks --output .next/static/chunks --compact true --string-array true --string-array-encoding base64",
+  "build:prod": "npm run build && npm run obfuscate",
     "start": "next start",
     "lint": "eslint"
   },
