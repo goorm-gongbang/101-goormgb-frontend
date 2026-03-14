@@ -19,12 +19,12 @@ interface PreferredZoneSectionProps {
 export function PreferredZoneSection({ selectedBlocks, onToggle, onReset }: PreferredZoneSectionProps) {
     const MAX_SELECTION = 10;
 
-    const handleToggle = (index: number) => {
-        if (!selectedBlocks.includes(index) && selectedBlocks.length >= MAX_SELECTION) {
+    const handleToggle = (num: number) => {
+        if (!selectedBlocks.includes(num) && selectedBlocks.length >= MAX_SELECTION) {
             toast.error(`최대 ${MAX_SELECTION}개까지 선택 가능합니다.`);
             return;
         }
-        onToggle(index);
+        onToggle(num);
     };
 
     return (

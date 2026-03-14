@@ -11,12 +11,12 @@ import { STADIUM_PATHS } from "./StadiumMapData";
 
 interface StadiumMapProps {
     selectedIndices: number[];
-    onToggle: (index: number) => void;
+    onToggle: (num: number) => void;
 }
 
 export function StadiumMap({ selectedIndices, onToggle }: StadiumMapProps) {
-    const isBlock = (index: number) => {
-        const path = STADIUM_PATHS[index];
+    const isBlock = (num: number) => {
+        const path = STADIUM_PATHS[num];
         if (!path) return false;
 
         const fill = path.fill.toUpperCase();
@@ -34,13 +34,13 @@ export function StadiumMap({ selectedIndices, onToggle }: StadiumMapProps) {
         return SEAT_COLORS.includes(fill);
     };
 
-    const getFill = (index: number, originalFill: string) => {
+    const getFill = (num: number, originalFill: string) => {
         return originalFill;
     };
 
-    const getOpacity = (index: number) => {
-        if (!isBlock(index)) return 1;
-        return selectedIndices.includes(index) ? 1 : 0.25; // 비선택 시 25% 투명도로 색상을 살짝 살림
+    const getOpacity = (num: number) => {
+        if (!isBlock(num)) return 1;
+        return selectedIndices.includes(num) ? 1 : 0.25; // 비선택 시 25% 투명도로 색상을 살짝 살림
     };
 
     return (
@@ -54,7 +54,9 @@ export function StadiumMap({ selectedIndices, onToggle }: StadiumMapProps) {
                 className="max-w-full h-auto"
             >
                 {STADIUM_PATHS.map((path, idx) => {
-                    const active = isBlock(idx);
+                    const active = isBlock(idx) && path.num !== undefined;
+                    const isSelected =
+                        path.num !== undefined && selectedIndices.includes(path.num);
                     return (
                         <path
                             key={idx}
@@ -63,11 +65,18 @@ export function StadiumMap({ selectedIndices, onToggle }: StadiumMapProps) {
                             className={cn(
                                 "transition-all duration-300",
                                 active ? "cursor-pointer" : "pointer-events-none",
-                                active && !selectedIndices.includes(idx) && "opacity-25 hover:opacity-50",
-                                active && selectedIndices.includes(idx) && "opacity-100",
+                                active && !isSelected && "opacity-25 hover:opacity-50",
+                                active && isSelected && "opacity-100",
                                 !active && "opacity-100"
                             )}
-                            onClick={active ? () => onToggle(idx) : undefined}
+                            onClick={
+                                active
+                                    ? () => {
+                                        console.log("선택한 구역 번호:", path.num);
+                                        onToggle(path.num);
+                                    }
+                                    : undefined
+                            }
                         />
                     );
                 })}
