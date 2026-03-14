@@ -64,13 +64,13 @@ export const getClubSchedule = (
 
 /* 온보딩 선호도 조회 */
 export const getOnboardingStatus = () =>
-  auth.get<{ onboardingStatus: boolean }>(
-    `${API_BASE_URL}/order/onboarding/preferences`,
+  auth.get<{
+    onboardingStatus: boolean;
+    onboardingCompletedAt?: string | null;
+  }>(
+    `${API_BASE_URL}/order/onboarding/status`,
   );
 
 /* 온보딩 선호도 저장 */
 export const saveOnboardingPreferences = (body: OnboardingPreferencesRequest) =>
-  auth.post<void, OnboardingPreferencesRequest>(
-    `${API_BASE_URL}/order/onboarding/preferences`,
-    body,
-  );
+  auth.post(`${API_BASE_URL}/order/onboarding/preferences`, body);

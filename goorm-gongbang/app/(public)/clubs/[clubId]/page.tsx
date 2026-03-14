@@ -80,6 +80,8 @@ export default function ClubDetailPage() {
       setError(null);
       try {
         const data = await getClubById(clubId);
+        console.log("[clubs/${clubId}] data", data);
+
         if (!alive) return;
         setClub((data as ClubDetail) ?? null);
 
@@ -307,12 +309,12 @@ export default function ClubDetailPage() {
                           "lg:border-r lg:last:border-none",
                           idx % 2 === 0
                             ? cn(
-                                "border-r",
-                                isYellowClub
-                                  ? "border-yellow-400/20"
-                                  : "border-red-400/20",
-                                "lg:border-r",
-                              )
+                              "border-r",
+                              isYellowClub
+                                ? "border-yellow-400/20"
+                                : "border-red-400/20",
+                              "lg:border-r",
+                            )
                             : "border-r-0",
                         )}
                       >
@@ -352,12 +354,12 @@ export default function ClubDetailPage() {
                           "lg:border-r lg:last:border-none",
                           idx % 2 === 0
                             ? cn(
-                                "border-r",
-                                isYellowClub
-                                  ? "border-yellow-400/20"
-                                  : "border-red-400/20",
-                                "lg:border-r",
-                              )
+                              "border-r",
+                              isYellowClub
+                                ? "border-yellow-400/20"
+                                : "border-red-400/20",
+                              "lg:border-r",
+                            )
                             : "border-r-0",
                         )}
                       >
@@ -485,12 +487,12 @@ export default function ClubDetailPage() {
                           >
                             {match
                               ? formatKST(match.matchAt, {
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                  year: undefined,
-                                  month: undefined,
-                                  day: undefined,
-                                })
+                                hour: "2-digit",
+                                minute: "2-digit",
+                                year: undefined,
+                                month: undefined,
+                                day: undefined,
+                              })
                               : "-"}
                           </span>
                         </div>

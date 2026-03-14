@@ -59,7 +59,7 @@ export default function LoginPage() {
       // }
 
       if (onboardingRequired) {
-        router.push("/onboarding");
+        router.push("/onboarding/intro");
         return;
       }
 

@@ -41,7 +41,7 @@ export default function KakaoCallbackPage() {
         if (data?.user) {
           setUser({ id: String(data.user.userId), status: data.user.status });
         }
-        if (data?.onboardingRequired) router.replace("/onboarding");
+        if (data?.onboardingRequired) router.replace("/onboarding/intro");
         else router.replace("/");
 
         toast.success("로그인 성공");

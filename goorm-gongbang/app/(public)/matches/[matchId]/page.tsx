@@ -146,10 +146,11 @@ export default function MatchDetailSectionResponsive({
 
       try {
         const data = await getMatchById(matchId);
+        console.log("[matches/matchId] data", data);
+
         if (!alive) return;
 
         setData((data as MatchDetail) ?? null);
-        console.log("응답 DATA: ", data);
       } catch (e) {
         if (!alive) return;
         if (e instanceof ApiError) {

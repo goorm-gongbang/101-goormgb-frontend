@@ -106,6 +106,7 @@ export type OnboardingStatusResponse = {
   message: string;
   data: {
     onboardingStatus: boolean;
+    onboardingCompletedAt?: string | null;
   };
 };
 
@@ -147,13 +148,13 @@ export type PriceMode = "ANY" | "RANGE";
 export type Preference = {
   priority: 1 | 2 | 3;
   viewpoint: Viewpoint;
-  seatHeight: SeatHeight;
-  section: Section;
-  seatPositionPref: SeatPositionPref;
-  environmentPref: EnvironmentPref;
-  moodPref: MoodPref;
-  obstructionSensitivity: ObstructionSensitivity;
-  priceMode: PriceMode;
+  seatHeight?: SeatHeight;
+  section?: Section;
+  seatPositionPref?: SeatPositionPref;
+  environmentPref?: EnvironmentPref;
+  moodPref?: MoodPref;
+  obstructionSensitivity?: ObstructionSensitivity;
+  priceMode?: PriceMode;
   priceMin?: number | null;
   priceMax?: number | null;
 };
@@ -167,6 +168,9 @@ export type PreferenceBase = Pick<
 /** 온보딩 선호도 저장 요청 */
 export type OnboardingPreferencesRequest = {
   marketingConsent: { marketingAgreed: boolean };
+  favoriteClubId: number;
+  cheerProximityPref: "NEAR" | "FAR" | "ANY";
+  preferredBlockIds: number[];
   preferences: Preference[];
 };
 

@@ -31,12 +31,12 @@ function overlayTexts(saleState: SaleStatus, salesOpenAt?: string) {
     case "UPCOMING": {
       const openText = salesOpenAt
         ? `${formatKST(salesOpenAt, {
-            month: "numeric",
-            day: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-            year: undefined,
-          })} 오픈`
+          month: "numeric",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+          year: undefined,
+        })} 오픈`
         : "오픈 예정";
       return { top: "Coming Soon", main: openText };
     }
@@ -149,8 +149,10 @@ export default function Home() {
     (async () => {
       try {
         const data = await getMatches(selectedDate);
+        console.log("[matches${params}] data", data);
+
         if (cancelled) return;
-        console.log("응답 data", data);
+
         setMatchesPayload(data ?? null);
       } catch (e) {
         if (cancelled) return;
@@ -176,6 +178,8 @@ export default function Home() {
     (async () => {
       try {
         const data = await getClubs();
+        console.log("[clubs] data", data);
+
         if (cancelled) return;
         setTeamsPayload(data ?? null);
       } catch (e) {
@@ -351,19 +355,19 @@ export default function Home() {
                   >
                     {loadingTeams
                       ? Array.from({ length: 10 }).map((_, i) => (
-                          <TeamCardSkeleton key={i} />
-                        ))
+                        <TeamCardSkeleton key={i} />
+                      ))
                       : clubs.map((t) => (
-                          <TeamInfoCard
-                            key={t.clubId}
-                            dataLogo={t.koName} // 두산 베어스
-                            teamName={t.koName} // 두산 베어스
-                            logo={<TeamLogo club={t} />} // <IconPreview index={7} size="md" />
-                            onButtonClick={() =>
-                              router.push(`/clubs/${t.clubId}`)
-                            }
-                          />
-                        ))}
+                        <TeamInfoCard
+                          key={t.clubId}
+                          dataLogo={t.koName} // 두산 베어스
+                          teamName={t.koName} // 두산 베어스
+                          logo={<TeamLogo club={t} />} // <IconPreview index={7} size="md" />
+                          onButtonClick={() =>
+                            router.push(`/clubs/${t.clubId}`)
+                          }
+                        />
+                      ))}
                   </div>
                 </div>
               </div>
