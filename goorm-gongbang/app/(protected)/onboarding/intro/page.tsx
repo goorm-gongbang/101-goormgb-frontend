@@ -10,6 +10,7 @@ import { ApiError } from "@/lib/api";
 import { PreferredZoneSection } from "@/components/my/PreferredZoneSection";
 
 export default function OnboardingIntroPage() {
+  const router = useRouter();
   const pathname = usePathname();
   const sp = useSearchParams();
   const bootstrapped = useAuthStore((s) => s.bootstrapped);
@@ -17,7 +18,6 @@ export default function OnboardingIntroPage() {
   const user = useAuthStore((s) => s.user);
   const checkedRef = useRef(false);
 
-  const router = useRouter();
   const [selectedBlocks, setSelectedBlocks] = useState<number[]>([]);
   const setPreferredBlockIds = useOnboardingPrefStore((s) => s.setPreferredBlockIds);
 
@@ -81,7 +81,6 @@ export default function OnboardingIntroPage() {
 
   if (!bootstrapped) return null;
   if (!accessToken || !user) return null;
-
 
   return (
     <div

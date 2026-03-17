@@ -1,30 +1,14 @@
 "use client";
 
-import { useState, useMemo, useEffect, type CSSProperties } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useParams } from "next/navigation";
-import Link from "next/link";
 import Image from "next/image";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
-import {
-  format,
-  addMonths,
-  subMonths,
-  startOfMonth,
-  endOfMonth,
-  startOfWeek,
-  endOfWeek,
-  isSameMonth,
-  eachDayOfInterval,
-} from "date-fns";
+import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isSameMonth, eachDayOfInterval } from "date-fns";
 import { ChevronLeft, ChevronRight, Copy } from "lucide-react";
 import { getClubById, getClubSchedule } from "@/lib/services";
-import type {
-  ClubDetail,
-  SaleStatus,
-  ClubMonthMatches,
-  CalendarMatch,
-} from "@/lib/types";
+import type { ClubDetail, CalendarMatch } from "@/lib/types";
 import { CDN_CLUBS_BASE_URL } from "@/lib/api/config";
 import { ApiError } from "@/lib/api";
 import { formatKST } from "@/lib/datetime";
@@ -42,7 +26,6 @@ function resolveLogoSrc(input: string) {
 const COPIED_STATE_RESET_DELAY_MS = 2000;
 const HANHWA_EAGLES_CLUB_ID = 4; // 한화 이글스 클럽 ID 상수화
 const CURRENT_YEAR = new Date().getFullYear(); // 현재 연도 동적 추출
-
 const SALE_STATUS_CONFIG = {
   ON_SALE: { label: "예매 가능", color: "text-emerald-500" },
   SOLD_OUT: { label: "매진", color: "text-slate-800" },
@@ -52,9 +35,7 @@ const SALE_STATUS_CONFIG = {
 
 export default function ClubDetailPage() {
   const params = useParams();
-  const [currentMonth, setCurrentMonth] = useState(
-    new Date(CURRENT_YEAR, 2, 1),
-  );
+  const [currentMonth, setCurrentMonth] = useState(new Date(CURRENT_YEAR, 2, 1));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [club, setClub] = useState<ClubDetail | null>(null);
@@ -69,6 +50,38 @@ export default function ClubDetailPage() {
     const n = str ? Number(str) : NaN;
     return Number.isFinite(n) && n > 0 ? n : null;
   }, [params]);
+
+  const days = useMemo(() => {
+    const start = startOfWeek(startOfMonth(currentMonth));
+    const end = endOfWeek(endOfMonth(currentMonth));
+    return eachDayOfInterval({ start, end });
+  }, [currentMonth]);
+
+  // matchMap을 matches 데이터를 기반으로 재구성
+  const matchMap = useMemo(() => {
+    const map: Record<string, CalendarMatch> = {};
+    matches.forEach((m) => {
+      // 1. formatKST를 사용하여 한국 기준 '2026. 03. 28.' 문자열 생성
+      const kstString = formatKST(m.matchAt, {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: undefined, // 시간은 제외
+        minute: undefined, // 분도 제외
+      });
+
+      // 2. '2026-03-28' 형식으로 변환 (date-fns의 format 결과와 일치시키기 위함)
+      const kstDateKey = kstString
+        .replace(/\. /g, "-") // ". "을 "-"로
+        .replace(/\./g, ""); // 마지막 남은 "." 제거
+
+      map[kstDateKey] = m;
+    });
+    return map;
+  }, [matches]);
+
+  const nextMonth = () => setCurrentMonth(addMonths(currentMonth, 1));
+  const prevMonth = () => setCurrentMonth(subMonths(currentMonth, 1));
 
   useEffect(() => {
     if (!clubId) return;
@@ -105,6 +118,21 @@ export default function ClubDetailPage() {
     };
   }, [clubId]);
 
+  // 주소 복사
+  const handleCopyStadium = async () => {
+    try {
+      await navigator.clipboard.writeText(stadiumName);
+      setCopied(true);
+
+      setTimeout(() => {
+        setCopied(false);
+      }, COPIED_STATE_RESET_DELAY_MS); // 2초 후 원복
+    } catch (err) {
+      console.error("복사 실패", err);
+    }
+  };
+
+
   // 월별 경기 데이터 호출
   useEffect(() => {
     if (!clubId) return;
@@ -128,38 +156,6 @@ export default function ClubDetailPage() {
 
     fetchSchedule();
   }, [clubId, currentMonth]); // 달이 바뀌거나 clubId가 바뀌면 다시 호출
-
-  const days = useMemo(() => {
-    const start = startOfWeek(startOfMonth(currentMonth));
-    const end = endOfWeek(endOfMonth(currentMonth));
-    return eachDayOfInterval({ start, end });
-  }, [currentMonth]);
-
-  // matchMap을 matches 데이터를 기반으로 재구성
-  const matchMap = useMemo(() => {
-    const map: Record<string, CalendarMatch> = {};
-    matches.forEach((m) => {
-      // 1. formatKST를 사용하여 한국 기준 '2026. 03. 28.' 문자열 생성
-      const kstString = formatKST(m.matchAt, {
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-        hour: undefined, // 시간은 제외
-        minute: undefined, // 분도 제외
-      });
-
-      // 2. '2026-03-28' 형식으로 변환 (date-fns의 format 결과와 일치시키기 위함)
-      const kstDateKey = kstString
-        .replace(/\. /g, "-") // ". "을 "-"로
-        .replace(/\./g, ""); // 마지막 남은 "." 제거
-
-      map[kstDateKey] = m;
-    });
-    return map;
-  }, [matches]);
-
-  const nextMonth = () => setCurrentMonth(addMonths(currentMonth, 1));
-  const prevMonth = () => setCurrentMonth(subMonths(currentMonth, 1));
 
   if (!clubId) {
     return (
@@ -190,22 +186,7 @@ export default function ClubDetailPage() {
   const logoSrc = resolveLogoSrc(club.logoImg);
   const bgColor = club.clubColor || "#121130";
   const stadiumName = club.stadium?.koName ?? "";
-
   const isYellowClub = clubId === HANHWA_EAGLES_CLUB_ID;
-
-  // 주소 복사
-  const handleCopyStadium = async () => {
-    try {
-      await navigator.clipboard.writeText(stadiumName);
-      setCopied(true);
-
-      setTimeout(() => {
-        setCopied(false);
-      }, COPIED_STATE_RESET_DELAY_MS); // 2초 후 원복
-    } catch (err) {
-      console.error("복사 실패", err);
-    }
-  };
 
   return (
     <div className="w-full min-h-screen bg-white">
@@ -216,7 +197,7 @@ export default function ClubDetailPage() {
       >
         <div className="w-full max-w-6xl flex flex-col lg:flex-row  lg:items-start gap-8 lg:gap-12 xl:gap-16">
           {/* 1. 로고 영역 */}
-          <div className="flex-shrink-0 w-36 h-36 sm:w-48 sm:h-48 lg:w-56 lg:h-56 xl:w-64 xl:h-64 bg-white rounded-2xl flex items-center justify-center shadow-lg">
+          <div className="mx-auto lg:mx-0 flex-shrink-0 w-36 h-36 sm:w-48 sm:h-48 lg:w-56 lg:h-56 xl:w-64 xl:h-64 bg-white rounded-2xl flex items-center justify-center shadow-lg">
             <div className="relative w-24 h-24 sm:w-32 sm:h-32 lg:w-40 lg:h-40 xl:w-48 xl:h-48">
               <Image
                 src={logoSrc}

@@ -14,12 +14,7 @@ import { ChipButton, PrimaryButton, TertiaryButton } from "@/components/common/B
 import { getOnboardingStatus } from "@/lib/services";
 import { ApiError } from "@/lib/api";
 import { ChevronDown } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 type ViewPreference = "중앙" | "1루 내야" | "3루 내야" | "외야(좌)" | "외야(중)" | "외야(우)";
 type CheerPreference = "응원석 인접" | "응원석 비인접" | "무관";
@@ -148,6 +143,29 @@ export default function SeatStyleOnboardingPage() {
   const setViewpoints = useOnboardingPrefStore((s) => s.setViewpoints);
   const setOptionDraft = useOnboardingPrefStore((s) => s.setOptionDraft);
 
+  const canGoNext = useMemo(() => {
+    return preferredBlockIds.length >= 1 && view.length >= 1 && Boolean(selectedClub) && cheer.length === 1;
+  }, [preferredBlockIds, view, selectedClub, cheer]);
+
+  if (!bootstrapped) return null;
+  if (!accessToken || !user) return null;
+
+  const handlePrev = () => router.back();
+
+  const handleNext = () => {
+    if (!canGoNext || !selectedClub || cheer.length !== 1) return;
+
+    setFavoriteClubId(selectedClub.id);
+    setCheerProximityPref(CHEER_MAP[cheer[0]]);
+    setViewpoints(view.map((selectedView) => VIEWPOINT_MAP[selectedView]));
+    setOptionDraft({
+      seatHeight: SEAT_HEIGHT_MAP[height[0] ?? "무관"],
+      section: SECTION_MAP[zone[0] ?? "무관"],
+    });
+
+    router.push("/onboarding/option");
+  };
+
   useEffect(() => {
     if (!bootstrapped) return;
 
@@ -185,29 +203,6 @@ export default function SeatStyleOnboardingPage() {
       }
     })();
   }, [bootstrapped, accessToken, user, router, pathname, sp]);
-
-  const canGoNext = useMemo(() => {
-    return preferredBlockIds.length >= 1 && view.length >= 1 && Boolean(selectedClub) && cheer.length === 1;
-  }, [preferredBlockIds, view, selectedClub, cheer]);
-
-  if (!bootstrapped) return null;
-  if (!accessToken || !user) return null;
-
-  const handlePrev = () => router.back();
-
-  const handleNext = () => {
-    if (!canGoNext || !selectedClub || cheer.length !== 1) return;
-
-    setFavoriteClubId(selectedClub.id);
-    setCheerProximityPref(CHEER_MAP[cheer[0]]);
-    setViewpoints(view.map((selectedView) => VIEWPOINT_MAP[selectedView]));
-    setOptionDraft({
-      seatHeight: SEAT_HEIGHT_MAP[height[0] ?? "무관"],
-      section: SECTION_MAP[zone[0] ?? "무관"],
-    });
-
-    router.push("/onboarding/option");
-  };
 
   return (
     <div

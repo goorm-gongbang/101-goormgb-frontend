@@ -5,6 +5,10 @@ import { ChevronLeft, ChevronDown } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { BlockSeatDetailView } from "@/components/common/BlockSeatDetailView";
 import { PrimaryButton, SecondaryButton } from "@/components/common/Button";
+import { RecommendExitModal } from "@/components/common/RecommendExitModal";
+import { RecommendSeatUnavailableModal } from "@/components/common/RecommendSeatUnavailableModal";
+import { RecommendSoldOutModal } from "@/components/common/RecommendSoldOutModal";
+import { SeatFindingModal } from "@/components/common/SeatFindingModal";
 import { SeatRecommendSummaryCard, type SeatRecommendItem } from "@/components/common/SeatRecommendSummaryCard";
 import { TicketingNavigator } from "@/components/common/TicketingNavigator";
 import { Toggle } from "@/components/common/Toggle";
@@ -60,7 +64,7 @@ const seatSections: SeatSection[] = [
       {
         name: "테라존(중앙 프리미엄석)",
         count: 20,
-        blockNumbers: [],
+        blockNumbers: [1],
         color: "navy",
       },
     ],
@@ -77,7 +81,7 @@ const seatSections: SeatSection[] = [
       {
         name: "1루 익사이팅존",
         count: 14,
-        blockNumbers: [101, 102, 103, 104, 105, 106],
+        blockNumbers: [2],
         color: "red",
       },
       {
@@ -95,7 +99,7 @@ const seatSections: SeatSection[] = [
       {
         name: "1루 레드석",
         count: 20,
-        blockNumbers: [201, 202, 203, 204, 205],
+        blockNumbers: [101, 102, 103, 104, 105, 106, 201, 202, 203, 204],
         color: "red",
       },
       {
@@ -124,7 +128,7 @@ const seatSections: SeatSection[] = [
       {
         name: "3루 익사이팅존",
         count: 20,
-        blockNumbers: [117, 118, 119, 120, 121, 122],
+        blockNumbers: [3],
         color: "red",
       },
       {
@@ -142,7 +146,7 @@ const seatSections: SeatSection[] = [
       {
         name: "3루 레드석",
         count: 7,
-        blockNumbers: [226, 225, 224, 223],
+        blockNumbers: [117, 118, 119, 120, 121, 122, 226, 225, 224, 223],
         color: "red",
       },
       {
@@ -171,27 +175,26 @@ export default function Page() {
     return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
   }, [params]);
 
-  // Loading state
   const [loading, setLoading] = useState(false);
 
-  // Recommend mode state
   const [isPreferredRecommendOn, setIsPreferredRecommendOn] = useState(true);
   const [selectedRecommendId, setSelectedRecommendId] = useState<string | null>(null);
   const [hoveredRecommendBlock, setHoveredRecommendBlock] = useState<number | null>(null);
 
-  // Manual seat selection state
   const [hoveredSeatBlocks, setHoveredSeatBlocks] = useState<number[]>([]);
   const [selectedSeatListItem, setSelectedSeatListItem] = useState<SeatListItem | null>(null);
   const [selectedSeatBlocks, setSelectedSeatBlocks] = useState<number[]>([]);
   const [activeSeatDetailBlock, setActiveSeatDetailBlock] = useState<number | null>(null);
   const [selectedDetailSeats, setSelectedDetailSeats] = useState<string[]>([]);
 
-  // Dialog state
-  const [isExitDialogOpen, setIsExitDialogOpen] = useState(false);
-  const [isSoldOutDialogOpen, setIsSoldOutDialogOpen] = useState(false);
+  const [isExitModalOpen, setisExitModalOpen] = useState(false);
+  const [isSoldOutModalOpen, setIsSoldOutDialogOpen] = useState(false);
   const selectedRecommend = recommendItems.find((item) => item.id === selectedRecommendId);
   const isRecommendEmpty = recommendItems.length === 0;
   const isSeatDetailOpen = !isPreferredRecommendOn && selectedSeatListItem !== null && selectedSeatBlocks.length > 0 && activeSeatDetailBlock !== null;
+  const [isSeatUnavailableModalOpen, setIsSeatUnavailableModalOpen] = useState(false);
+  const [isFindingSeat, setIsFindingSeat] = useState(true);
+
   const selectedSeatRows = useMemo(() => {
     if (!selectedSeatListItem) return [];
 
@@ -206,14 +209,12 @@ export default function Page() {
     });
   }, [selectedDetailSeats, selectedSeatListItem]);
 
-
-
   const handleProceedToPayment = () => {
     if (!matchId) return;
     router.push(`/pay/${matchId}`);
   };
 
-  const handleBack = () => setIsExitDialogOpen(true);
+  const handleBack = () => setisExitModalOpen(true);
   const handleExit = () => {
     if (!matchId) {
       router.back();
@@ -248,12 +249,6 @@ export default function Page() {
       ? hoveredSeatBlocks
       : selectedSeatBlocks;
 
-  function resolveLogoSrc(input: string) {
-    if (/^https?:\/\//i.test(input)) return input; // input이 이미 https:// 로 시작하면 그대로 사용
-    if (!CDN_CLUBS_BASE_URL) return input; // env가 없을 경우
-    return new URL(input.replace(/^\//, ""), CDN_CLUBS_BASE_URL).toString(); // base + 상대경로 결합
-  }
-
   const logoImg = "lg-twins.png";
 
   const canGoNext = useMemo(() => {
@@ -262,8 +257,11 @@ export default function Page() {
     return selectedSeatListItem !== null && selectedDetailSeats.length > 0;
   }, [isPreferredRecommendOn, selectedDetailSeats.length, selectedRecommendId, selectedSeatListItem]);
 
-  const [isSeatUnavailableModalOpen, setIsSeatUnavailableModalOpen] = useState(false);
-  const [isFindingSeat, setIsFindingSeat] = useState(true);
+  function resolveLogoSrc(input: string) {
+    if (/^https?:\/\//i.test(input)) return input;
+    if (!CDN_CLUBS_BASE_URL) return input;
+    return new URL(input.replace(/^\//, ""), CDN_CLUBS_BASE_URL).toString();
+  }
 
   useEffect(() => {
     if (isPreferredRecommendOn) {
@@ -566,130 +564,36 @@ export default function Page() {
       </div>
 
       {/* 추천 좌석 소진 모달 */}
-      {isSoldOutDialogOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-          <div className="inline-flex max-w-[420px] flex-col items-start gap-8 rounded-2xl bg-white p-8">
-            <div className="flex w-full flex-col items-start gap-6">
-              <div className="w-full text-xl font-bold leading-7 text-[var(--foundation-neutral-240)] font-['Pretendard']">
-                추천 좌석이 모두 소진되었어요
-              </div>
-              <div className="text-base leading-6 text-[var(--foundation-neutral-240)]">
-                <span className="font-medium font-['Pretendard']">
-                  설정하신 조건에 맞는 추천 좌석이 모두 예매되었어요. 지금은 추천 대신
-                </span>
-                <span className="font-semibold font-['Pretendard_Variable']">
-                  {" "}좌석 맵에서 직접 선택
-                </span>
-                <span className="font-medium font-['Pretendard']">
-                  하실 수 있어요.
-                </span>
-              </div>
-            </div>
-
-            <PrimaryButton
-              onClick={() => {
-                setIsSoldOutDialogOpen(false);
-                setIsPreferredRecommendOn(false);
-              }}
-              className="flex w-full"
-            >
-              좌석 맵으로 이동하기
-            </PrimaryButton>
-          </div>
-        </div>
+      {isSoldOutModalOpen && (
+        <RecommendSoldOutModal
+          open={isSoldOutModalOpen}
+          onMoveToSeatMap={() => {
+            setIsSoldOutDialogOpen(false);
+            setIsPreferredRecommendOn(false);
+          }}
+        />
       )}
 
       {/* 뒤로가기 확인 모달 */}
-      {isExitDialogOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-          <div className="inline-flex w-full max-w-[420px] flex-col items-start gap-8 overflow-hidden rounded-2xl bg-white p-8">
-            <div className="flex w-full flex-col items-start gap-6">
-              <div className="w-full text-xl font-bold leading-7 text-[var(--foundation-neutral-240)] font-['Pretendard']">
-                이 화면을 나가시겠어요?
-              </div>
-              <div className="w-full text-base font-medium leading-6 text-[var(--foundation-neutral-240)] font-['Pretendard']">
-                돌아가면 예매 대기부터 다시 진행해야 할 수 있어요. 현재 선택한 정보는 유지되지 않습니다.
-              </div>
-            </div>
-            <div className="inline-flex w-full items-center gap-2">
-              <SecondaryButton
-                onClick={handleExit}
-                className="flex flex-1"
-              >
-                나가기
-              </SecondaryButton>
-              <PrimaryButton
-                onClick={() => setIsExitDialogOpen(false)}
-                className="flex flex-1"
-              >
-                계속 예매하기
-              </PrimaryButton>
-            </div>
-          </div>
-        </div>
+      {isExitModalOpen && (
+        <RecommendExitModal
+          open={isExitModalOpen}
+          onExit={handleExit}
+          onClose={() => setisExitModalOpen(false)}
+        />
       )}
 
       {/* 예매할 수 없는 상태 모달 */}
       {isSeatUnavailableModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-          <div className="w-96 rounded-2xl bg-white shadow-[0px_1px_3px_0px_rgba(0,0,0,0.05)] outline outline-1 outline-offset-[-1px] outline-[var(--stroke-interactive-neutral-default)] inline-flex flex-col justify-start items-start">
-            <div className="self-stretch overflow-hidden p-8 flex flex-col justify-start items-start gap-8">
-              <div className="self-stretch flex flex-col justify-start items-start">
-                <div className="self-stretch flex flex-col justify-start items-start gap-6">
-                  <div className="self-stretch inline-flex justify-start items-center">
-                    <div className="flex-1 text-xl font-bold leading-7 text-[var(--foundation-neutral-240)] font-['Pretendard']">
-                      지금 선택한 좌석을 예매할 수 없어요
-                    </div>
-                  </div>
-                  <div className="inline-flex justify-start items-center">
-                    <div className="text-base font-medium leading-6 text-[var(--foundation-neutral-240)] font-['Pretendard']">
-                      현재 해당 좌석은 예매할 수 없는 상태입니다.
-                      <br />
-                      다른 좌석을 선택해 주세요.
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="self-stretch inline-flex justify-start items-center gap-2">
-                <PrimaryButton
-                  onClick={() => setIsSeatUnavailableModalOpen(false)}
-                  className="flex-1"
-                >
-                  확인
-                </PrimaryButton>
-              </div>
-            </div>
-          </div>
-        </div>
+        <RecommendSeatUnavailableModal
+          open={isSeatUnavailableModalOpen}
+          onClose={() => setIsSeatUnavailableModalOpen(false)}
+        />
       )}
 
       {/* 대기열 모달 */}
       {isFindingSeat && (
-        <div className="fixed inset-0 z-50 overflow-hidden bg-gradient-to-b from-black/90 to-teal-950/50 backdrop-blur-[5px]">
-          <div className="absolute left-1/2 top-1/2 inline-flex w-96 -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-12 shadow-[0px_0px_40px_0px_rgba(0,0,0,0.50)]">
-            <div className="flex h-40 flex-col items-center justify-end gap-4">
-              <div className="w-96 text-center text-5xl font-extrabold leading-[72px] text-white font-['Pretendard']">
-                12245번째
-              </div>
-
-              <div className="relative h-4 w-96 overflow-hidden rounded-full bg-[var(--foundation-neutral-940)]">
-                <div className="absolute left-0 top-0 h-4 w-20 bg-gradient-to-r from-[var(--foundation-secondary-600)] to-[var(--foundation-primary-500)]" />
-              </div>
-            </div>
-
-            <div className="flex flex-col items-center gap-4 self-stretch">
-              <div className="self-stretch text-center text-2xl font-semibold leading-8 text-white font-['Pretendard_Variable']">
-                선호하신 조건에 맞는 좌석을 찾고 있어요!
-              </div>
-              <div className="text-center text-base font-bold leading-6 text-white font-['Pretendard']">
-                가장 선택 가능성이 높은 좌석을 계산 중이에요.
-                <br />
-                잠시만 기다려 주세요.
-              </div>
-            </div>
-          </div>
-        </div>
+        <SeatFindingModal open={isFindingSeat} />
       )}
 
     </div>

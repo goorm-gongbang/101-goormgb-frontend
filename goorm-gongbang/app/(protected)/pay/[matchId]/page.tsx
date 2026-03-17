@@ -11,11 +11,11 @@ import { PrimaryButton, SecondaryButton } from "@/components/common/Button";
 
 export default function Page() {
     const router = useRouter();
-
     const params = useParams<{ matchId: string }>();
     const matchId = Array.isArray(params.matchId) ? params.matchId[0] : params.matchId;
 
     const [step, setStep] = useState<"ticket" | "payment">("ticket");
+
     const handleNextStep = () => {
         if (!canProceed) return;
         setStep("payment");
@@ -34,10 +34,8 @@ export default function Page() {
         }
     };
 
-    /* 남은 결제 시간 */
     const [remainingSeconds, setRemainingSeconds] = useState(5 * 60);
 
-    /* 티켓 선택 */
     const PRICE = {
         normal: 20000,   // 일반
         disabled: 10000, // 장애인
@@ -76,18 +74,15 @@ export default function Page() {
     const totalAmount = ticketAmount + fee - discount;
     const won = (n: number) => `${n.toLocaleString("ko-KR")} 원`;
 
-    /* 예매자 확인 */
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [number, setNumber] = useState("");
     const [birth, setBirth] = useState("");
 
-    /* 모달 */
     const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
     const [isRefundModalOpen, setIsRefundModalOpen] = useState(false);
     const [isPaymentTimeoutModalOpen, setIsPaymentTimeoutModalOpen] = useState(false);
 
-    /* 예외처리 */
     const formatPhone = (value: string) => {
         const digits = value.replace(/\D/g, "").slice(0, 11); // 숫자만, 최대 11자리
         if (digits.length < 4) return digits;
@@ -96,7 +91,6 @@ export default function Page() {
     };
 
     const formatBirth6 = (value: string) => value.replace(/\D/g, "").slice(0, 6);
-
     const onlyDigits = (v: string) => v.replace(/\D/g, "");
     const isNameValid = name.trim().length > 0;
     const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
@@ -105,16 +99,19 @@ export default function Page() {
     const birthDigits = onlyDigits(birth);
     const isBirthValid = /^\d{6}$/.test(birthDigits);
     const canProceed = isNameValid && isEmailValid && isPhoneValid && isBirthValid;
+
     const [paymentMethod, setPaymentMethod] = useState<"toss" | "kakao" | "bank">("toss");
     const [cashReceipt, setCashReceipt] = useState<"apply" | "none">("none");
     const [isCashReceiptEditing, setIsCashReceiptEditing] = useState(false);
     const [cashReceiptPhone, setCashReceiptPhone] = useState("");
     const [saveCashReceiptInfo, setSaveCashReceiptInfo] = useState(true);
+
     const formatCountdown = (seconds: number) => {
         const minutes = String(Math.floor(seconds / 60)).padStart(2, "0");
         const secs = String(seconds % 60).padStart(2, "0");
         return `${minutes}:${secs}`;
     };
+
     const [agreeTerms, setAgreeTerms] = useState(false);
     const [agreeCancelFee, setAgreeCancelFee] = useState(false);
     const [showTermsDetail, setShowTermsDetail] = useState(false);
