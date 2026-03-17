@@ -161,19 +161,13 @@ export default function LoginPage() {
               <span className="text-[var(--foundation-neutral-560)]">
                 해당 계정을 통해 표고에 로그인함으로써 <br />
               </span>
-              <Link
-                href="/terms/privacy"
-                className="text-[var(--foundation-blue-500)] hover:underline"
-              >
+              <span className="text-[var(--foundation-blue-500)]">
                 개인정보 수집·이용
-              </Link>
+              </span>
               <span className="text-[var(--foundation-neutral-560)]"> 및 </span>
-              <Link
-                href="/terms/service"
-                className="text-[var(--foundation-blue-500)] hover:underline"
-              >
+              <span className="text-[var(--foundation-blue-500)]">
                 이용약관
-              </Link>
+              </span>
               <span className="text-[var(--foundation-neutral-560)]">
                 에 동의하는 것으로 간주됩니다.
               </span>
