@@ -188,7 +188,7 @@ export default function Page() {
   const [selectedDetailSeats, setSelectedDetailSeats] = useState<string[]>([]);
 
   const [isExitModalOpen, setIsExitModalOpen] = useState(false);
-  const [isSoldOutModalOpen, setIsSoldOutDialogOpen] = useState(false);
+  const [isSoldOutModalOpen, setIsSoldOutModalOpen] = useState(false);
   const selectedRecommend = recommendItems.find((item) => item.id === selectedRecommendId);
   const isRecommendEmpty = recommendItems.length === 0;
   const isSeatDetailOpen = !isPreferredRecommendOn && selectedSeatListItem !== null && selectedSeatBlocks.length > 0 && activeSeatDetailBlock !== null;
@@ -279,7 +279,7 @@ export default function Page() {
 
   useEffect(() => {
     if (!loading && isRecommendEmpty) {
-      setIsSoldOutDialogOpen(true);
+      setIsSoldOutModalOpen(true);
     }
   }, [isRecommendEmpty, loading]);
 
@@ -568,7 +568,7 @@ export default function Page() {
         <RecommendSoldOutModal
           open={isSoldOutModalOpen}
           onMoveToSeatMap={() => {
-            setIsSoldOutDialogOpen(false);
+            setIsSoldOutModalOpen(false);
             setIsPreferredRecommendOn(false);
           }}
         />
