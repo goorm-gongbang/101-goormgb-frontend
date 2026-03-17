@@ -129,8 +129,8 @@ export default function MatchDetailSectionResponsive({
   const user = useAuthStore((s) => s.user);
   const isLoggedIn = bootstrapped && !!accessToken && !!user;
 
-  const [isPreferredZoneModalOpen, setisPreferredZoneModalOpen] = useState(false);
-  const [isLoginRequiredModalOpen, setisLoginRequiredModalOpen] = useState(false);
+  const [isPreferredZoneModalOpen, setIsPreferredZoneModalOpen] = useState(false);
+  const [isLoginRequiredModalOpen, setIsLoginRequiredModalOpen] = useState(false);
 
   const handleBlockToggle = (blockNum: number) => {
     setSelectedBlocks((prev) =>
@@ -145,7 +145,7 @@ export default function MatchDetailSectionResponsive({
   const handleRev = () => {
     if (!matchId) return;
     if (!isLoggedIn) {
-      setisLoginRequiredModalOpen(true);
+      setIsLoginRequiredModalOpen(true);
       return;
     }
     router.push(`/recommend/${matchId}`);
@@ -475,7 +475,7 @@ export default function MatchDetailSectionResponsive({
                         <SeatPreferenceRecommendCard
                           enabled={enabled}
                           onChange={setEnabled}
-                          onPreferredZonesClick={() => setisPreferredZoneModalOpen(true)}
+                          onPreferredZonesClick={() => setIsPreferredZoneModalOpen(true)}
                         />
                       </div>
                     </div>
@@ -512,8 +512,8 @@ export default function MatchDetailSectionResponsive({
           selectedBlocks={selectedBlocks}
           onToggleBlock={handleBlockToggle}
           onReset={() => setSelectedBlocks([])}
-          onClose={() => setisPreferredZoneModalOpen(false)}
-          onConfirm={() => setisPreferredZoneModalOpen(false)}
+          onClose={() => setIsPreferredZoneModalOpen(false)}
+          onConfirm={() => setIsPreferredZoneModalOpen(false)}
         />
       )}
 
@@ -521,7 +521,7 @@ export default function MatchDetailSectionResponsive({
       {isLoginRequiredModalOpen && (
         <LoginRequiredModal
           open={isLoginRequiredModalOpen}
-          onClose={() => setisLoginRequiredModalOpen(false)}
+          onClose={() => setIsLoginRequiredModalOpen(false)}
         />
       )}
     </div>

@@ -187,7 +187,7 @@ export default function Page() {
   const [activeSeatDetailBlock, setActiveSeatDetailBlock] = useState<number | null>(null);
   const [selectedDetailSeats, setSelectedDetailSeats] = useState<string[]>([]);
 
-  const [isExitModalOpen, setisExitModalOpen] = useState(false);
+  const [isExitModalOpen, setIsExitModalOpen] = useState(false);
   const [isSoldOutModalOpen, setIsSoldOutDialogOpen] = useState(false);
   const selectedRecommend = recommendItems.find((item) => item.id === selectedRecommendId);
   const isRecommendEmpty = recommendItems.length === 0;
@@ -214,7 +214,7 @@ export default function Page() {
     router.push(`/pay/${matchId}`);
   };
 
-  const handleBack = () => setisExitModalOpen(true);
+  const handleBack = () => setIsExitModalOpen(true);
   const handleExit = () => {
     if (!matchId) {
       router.back();
@@ -579,7 +579,7 @@ export default function Page() {
         <RecommendExitModal
           open={isExitModalOpen}
           onExit={handleExit}
-          onClose={() => setisExitModalOpen(false)}
+          onClose={() => setIsExitModalOpen(false)}
         />
       )}
 
