@@ -124,6 +124,7 @@ function priceToPayload(p: PricePreference | null): {
 }
 
 export default function SeatStyleOnboardingOptionPage() {
+  const router = useRouter();
   const accessToken = useAuthStore((s) => s.accessToken);
 
   const marketingAgreed = useOnboardingPrefStore((s) => s.marketingAgreed);
@@ -135,7 +136,6 @@ export default function SeatStyleOnboardingOptionPage() {
   const setMarketingAgreed = useOnboardingPrefStore((s) => s.setMarketingAgreed);
   const reset = useOnboardingPrefStore((s) => s.reset);
 
-  const router = useRouter();
   const [viewType, setViewType] = useState<ViewTypePreference | null>(null);
   const [env, setEnv] = useState<EnvPreference | null>(null);
   const [mood, setMood] = useState<MoodPreference | null>(null);
