@@ -3,11 +3,11 @@
 import * as React from "react";
 import { useState, useMemo, useEffect } from "react";
 import { SeatPreferenceRecommendCard } from "@/components/common/SeatPreferenceRecommendCard";
-import { DesiredPriceCard } from "@/components/common/DesiredPriceCard";
 import { BookingButton, TabButton } from "@/components/common/Button";
 import { MatchInfoTab } from "@/components/common/match-detail/tabs/MatchInfoTab";
 import { MatchRecommendTab } from "@/components/common/match-detail/tabs/MatchRecommendTab";
 import { MatchRefundTab } from "@/components/common/match-detail/tabs/MatchRefundTab";
+import { PreferredZoneSection } from "@/components/my/PreferredZoneSection";
 import { useParams } from "next/navigation";
 import { Spinner } from "@/components/ui/spinner";
 import Image from "next/image";
@@ -17,6 +17,11 @@ import { CDN_CLUBS_BASE_URL } from "@/lib/api/config";
 import { ApiError } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import { toDate, formatKST } from "@/lib/datetime";
+import { Info, X } from "lucide-react";
+import { PrimaryButton } from "@/components/common/Button";
+import { useAuthStore } from "@/stores/authStore";
+import { KakaoButton } from "@/components/login/KakaoButton";
+import { getKakaoLoginUrl } from "@/lib/services";
 
 /* ===========================
     UI TYPES
@@ -128,12 +133,39 @@ export default function MatchDetailSectionResponsive({
   }, [params]);
 
   const [enabled, setEnabled] = useState(true);
-  const [enabledPrice, setEnabledPrice] = useState(true);
   const [activeTab, setActiveTab] = React.useState<TabKey>("INFO");
+  const [isPreferredZoneDialogOpen, setIsPreferredZoneDialogOpen] = useState(false);
+  const [selectedBlocks, setSelectedBlocks] = useState<number[]>([]);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<MatchDetail | null>(null);
+
+  const bootstrapped = useAuthStore((s) => s.bootstrapped);
+  const accessToken = useAuthStore((s) => s.accessToken);
+  const user = useAuthStore((s) => s.user);
+  const isLoggedIn = bootstrapped && !!accessToken && !!user;
+  const [isLoginRequiredDialogOpen, setIsLoginRequiredDialogOpen] = useState(false);
+
+  const handleKakaoLogin = async () => {
+    try {
+      const data = await getKakaoLoginUrl();
+      const loginUrl = data?.loginUrl;
+
+      if (!loginUrl) {
+        console.error("❌ loginUrl missing:", data);
+        return;
+      }
+
+      window.location.href = loginUrl;
+    } catch (e) {
+      if (e instanceof ApiError) {
+        console.error("❌ kakao login-url failed:", e.status, e.message);
+      } else {
+        console.error("⚠️ kakao login-url error:", e);
+      }
+    }
+  };
 
   useEffect(() => {
     if (!matchId) return;
@@ -169,6 +201,16 @@ export default function MatchDetailSectionResponsive({
       alive = false;
     };
   }, [matchId]);
+
+  const handleBlockToggle = (blockNum: number) => {
+    setSelectedBlocks((prev) =>
+      prev.includes(blockNum)
+        ? prev.filter((v) => v !== blockNum)
+        : prev.length >= 10
+          ? prev
+          : [...prev, blockNum],
+    );
+  };
 
   if (!matchId) {
     return (
@@ -253,6 +295,10 @@ export default function MatchDetailSectionResponsive({
 
   const handleRev = () => {
     if (!matchId) return;
+    if (!isLoggedIn) {
+      setIsLoginRequiredDialogOpen(true);
+      return;
+    }
     router.push(`/recommend/${matchId}`);
   };
 
@@ -465,15 +511,12 @@ export default function MatchDetailSectionResponsive({
                         <SeatPreferenceRecommendCard
                           enabled={enabled}
                           onChange={setEnabled}
+                          onPreferredZonesClick={() =>
+                            setIsPreferredZoneDialogOpen(true)
+                          }
                         />
                       </div>
                     </div>
-
-                    {/* slider block */}
-                    <DesiredPriceCard
-                      enabled={enabledPrice}
-                      onChange={setEnabledPrice}
-                    />
                   </div>
                 </div>
 
@@ -499,6 +542,140 @@ export default function MatchDetailSectionResponsive({
           </aside>
         </div>
       </section>
+
+      {/* 선호 구역 설정 모달 */}
+      {isPreferredZoneDialogOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-8">
+          <div className="flex max-h-[90vh] w-full max-w-[570px] flex-col overflow-hidden rounded-2xl bg-white">
+            <div className="flex w-full flex-1 flex-col overflow-hidden p-9">
+              <div className="inline-flex w-full items-center justify-end gap-2.5">
+                <div className="flex flex-1 items-center justify-start">
+                  <div className="inline-flex flex-1 flex-col items-start justify-center">
+                    <div className="self-stretch text-xl font-bold leading-7 text-[var(--foundation-neutral-240)]">
+                      선호 구역을 선택해주세요
+                    </div>
+                    <div className="inline-flex items-center justify-start gap-2 self-stretch">
+                      <div className="text-sm font-medium leading-5 text-[var(--text-info-n600)]">
+                        최대 10개까지 선택 가능해요
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsPreferredZoneDialogOpen(false)}
+                  className="cursor-pointer relative self-stretch overflow-hidden"
+                >
+                  <span className="flex h-12 w-12 items-center justify-center">
+                    <X className="h-6 w-6 text-[var(--foundation-neutral-240)]" />
+                  </span>
+                </button>
+              </div>
+
+              <div className="mt-4 flex w-full flex-1 flex-col overflow-hidden">
+                <div className="inline-flex w-full items-center justify-start gap-2">
+                  <div className="text-sm font-medium leading-5 text-[var(--foundation-primary-500)]">
+                    현재 선택 개수 : {selectedBlocks.length}개
+                  </div>
+                </div>
+
+                <div className="mt-6 w-full flex-1 overflow-y-auto [&>div]:mb-0 [&>div]:border-0 [&>div]:px-0 [&>div]:py-0">
+                  <PreferredZoneSection
+                    selectedBlocks={selectedBlocks}
+                    onToggle={handleBlockToggle}
+                    onReset={() => setSelectedBlocks([])}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="shrink-0 border-t border-[var(--stroke-interactive-neutral-default)] bg-white p-6">
+              <div className="inline-flex h-10 w-full items-center justify-between">
+                <PrimaryButton
+                  className="flex flex-1"
+                  size="lg"
+                  tone="base"
+                  onClick={() => setIsPreferredZoneDialogOpen(false)}
+                >
+                  수정 완료
+                </PrimaryButton>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 로그인 유도 모달 */}
+      {isLoginRequiredDialogOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="inline-flex flex-col items-center gap-6">
+            <div className="w-full max-w-[420px] rounded-2xl bg-white shadow-[0px_1px_3px_0px_rgba(0,0,0,0.05)] outline outline-1 outline-offset-[-1px] outline-[var(--stroke-interactive-neutral-default)]">
+              <div className="inline-flex w-full flex-col items-start justify-start gap-8 p-8">
+                <div className="flex w-full flex-col items-start justify-start gap-4">
+                  <div className="flex w-full flex-col items-start justify-start gap-8">
+                    <div className="flex w-full flex-col items-start justify-start gap-6">
+                      <div className="inline-flex w-full items-center justify-center">
+                        <div className="flex-1 text-xl font-bold leading-7 text-[var(--foundation-neutral-160)] font-['Pretendard']">
+                          예매를 계속하려면 로그인이 필요해요
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex w-full flex-col items-start justify-start gap-8">
+                    <div className="flex w-full flex-col items-start justify-start gap-6">
+                      <div className="inline-flex w-full items-center justify-center">
+                        <div className="flex-1 text-base font-medium leading-6 text-[var(--foundation-neutral-160)] font-['Pretendard']">
+                          간편 로그인 하나로, 원하는 경기를 바로 예매하세요
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex w-full flex-col items-start justify-start gap-2.5">
+                  <div className="flex w-full flex-col items-start justify-start gap-3">
+                    <div className="inline-flex w-full items-center justify-start gap-2">
+                      <div className="inline-flex flex-1 flex-col items-start justify-start gap-2">
+                        <KakaoButton onClick={handleKakaoLogin} className="w-full" bgVariant="kakao" contentPadding="20" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="inline-flex w-full items-center justify-center gap-2 p-2">
+                    <div className="text-center text-xs font-medium leading-4 font-['Pretendard_Variable']">
+                      <span className="text-[var(--foundation-neutral-560)]">
+                        해당 계정을 통해 표고에 로그인함으로써
+                        <br />
+                      </span>
+                      <span className="text-[var(--foundation-blue-500)]">
+                        개인정보 수집·이용
+                      </span>
+                      <span className="text-[var(--foundation-neutral-560)]"> 및 </span>
+                      <span className="text-[var(--foundation-blue-500)]">
+                        이용약관
+                      </span>
+                      <span className="text-[var(--foundation-neutral-560)]">
+                        에 동의하는 것으로 간주됩니다.
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setIsLoginRequiredDialogOpen(false)}
+              className="cursor-pointer text-center text-base font-normal leading-0 text-[var(--foundation-neutral-white)] underline font-['Pretendard']"
+            >
+              다음에 할래요
+            </button>
+          </div>
+        </div>
+      )}
+
+
     </div>
   );
 }

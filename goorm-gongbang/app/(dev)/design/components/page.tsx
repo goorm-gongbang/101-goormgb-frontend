@@ -550,7 +550,7 @@ export default function Components() {
         </ToneRow>
       </Section>
 
-      <Section title="SeatRecommendSummaryCard">
+      {/* <Section title="SeatRecommendSummaryCard">
         <ToneRow title="SeatRecommendSummaryCard">
           <SeatRecommendSummaryCard
             variant="default"
@@ -579,7 +579,7 @@ export default function Components() {
             tags={["# 1루 내야", "# 하단", "# 통로", "# 응원단 바로 앞"]}
           />
         </ToneRow>
-      </Section>
+      </Section> */}
 
       <Section title="IconPreview">
         <ToneRow title="IconPreview">

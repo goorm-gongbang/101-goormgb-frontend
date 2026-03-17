@@ -35,7 +35,7 @@ export default function Page() {
     };
 
     /* 남은 결제 시간 */
-    const [remainingSeconds, setRemainingSeconds] = useState(5 * 60); // ★ 이부분 나중에 5 * 60 으로 변경
+    const [remainingSeconds, setRemainingSeconds] = useState(5 * 60);
 
     /* 티켓 선택 */
     const PRICE = {
@@ -123,7 +123,19 @@ export default function Page() {
 
     const [receiptPurpose, setReceiptPurpose] = useState<"personal" | "business">("personal");
 
-    const cashReceiptPhoneDigits = onlyDigits(cashReceiptPhone);
+    const handleBack = () => {
+        if (step === "payment") {
+            setStep("ticket");
+            return;
+        }
+
+        if (!matchId) {
+            router.back();
+            return;
+        }
+
+        router.push(`/recommend/${matchId}`);
+    };
 
     useEffect(() => {
         if (isPaymentTimeoutModalOpen) return;
@@ -155,7 +167,7 @@ export default function Page() {
                             data-stroke="False"
                             className="cursor-pointer w-10 h-10 rounded-md flex shrink-0 justify-center items-center"
                             aria-label="뒤로가기"
-                            onClick={() => setStep("ticket")}
+                            onClick={handleBack}
                         >
                             <ChevronLeft
                                 className="w-6 h-6 text-[var(--foundation-neutral-160)]"
@@ -902,7 +914,7 @@ export default function Page() {
                                 open={isPaymentTimeoutModalOpen}
                                 onConfirm={() => {
                                     setIsPaymentTimeoutModalOpen(false);
-                                    router.push(`/matches/${matchId}`); // ★ 경기 상세 페이지 경로 (추후 /matches/(번호) 추가해야함.)
+                                    router.push(`/matches/${matchId}`);
                                 }}
                             />
                             <div data-order="5순위" className="h-6 p-2 bg-[var(--foundation-red-500)] rounded-[100px] outline outline-1 outline-offset-[-1px] outline-[var(--foundation-red-400)] flex justify-center items-center">
