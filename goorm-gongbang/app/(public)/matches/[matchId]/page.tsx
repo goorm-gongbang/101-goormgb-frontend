@@ -7,21 +7,18 @@ import { BookingButton, TabButton } from "@/components/common/Button";
 import { MatchInfoTab } from "@/components/common/match-detail/tabs/MatchInfoTab";
 import { MatchRecommendTab } from "@/components/common/match-detail/tabs/MatchRecommendTab";
 import { MatchRefundTab } from "@/components/common/match-detail/tabs/MatchRefundTab";
-import { PreferredZoneSection } from "@/components/my/PreferredZoneSection";
 import { useParams } from "next/navigation";
 import { Spinner } from "@/components/ui/spinner";
-import Image from "next/image";
 import { getMatchById } from "@/lib/services";
 import { SaleStatus, PurchaseStatus, MatchDetail } from "@/lib/types";
 import { CDN_CLUBS_BASE_URL } from "@/lib/api/config";
 import { ApiError } from "@/lib/api";
 import { useRouter } from "next/navigation";
-import { toDate, formatKST } from "@/lib/datetime";
-import { Info, X } from "lucide-react";
-import { PrimaryButton } from "@/components/common/Button";
+import { toDate } from "@/lib/datetime";
 import { useAuthStore } from "@/stores/authStore";
-import { KakaoButton } from "@/components/login/KakaoButton";
-import { getKakaoLoginUrl } from "@/lib/services";
+import { LoginRequiredModal } from "@/components/common/LoginRequiredModal";
+import { PreferredZoneModal } from "@/components/common/PreferredZoneModal";
+import Image from "next/image";
 
 /* ===========================
     UI TYPES
@@ -84,23 +81,14 @@ function resolveLogoSrc(input: string) {
   return new URL(input.replace(/^\//, ""), CDN_CLUBS_BASE_URL).toString(); // base + 상대경로 결합
 }
 
-/* function ensureKstOffset(iso: string) {
-  // API 예시가 "2026-03-29T14:00:00" 처럼 오프셋이 없을 수 있어요.
-  // UI/카운트다운용 Date 생성은 KST로 해석되게 +09:00을 붙여줍니다(오프셋/UTC 있으면 그대로).
-  if (!iso) return iso;
-  if (/[zZ]|[+\-]\d{2}:\d{2}$/.test(iso)) return iso;
-  return `${iso}+09:00`;
-} */
-
 function toSaleBadgeText(
   saleStatus: SaleStatus,
   purchaseStatus: PurchaseStatus,
 ): SaleBadgeText {
-  // 명세의 purchaseStatus 규칙을 우선 반영
   if (purchaseStatus === "PURCHASABLE") return "구매 가능";
   if (saleStatus === "SOLD_OUT") return "매진";
   if (saleStatus === "ENDED") return "경기 종료";
-  return "구매 불가"; // UPCOMING 등
+  return "구매 불가";
 }
 
 // 99분이 넘어도 99:59로 고정
@@ -108,9 +96,7 @@ function mmssTwoDigitsMinutes(sec: number) {
   const s = Math.max(0, sec);
   const mmRaw = Math.floor(s / 60);
   const ss = s % 60;
-
   const mm = Math.min(mmRaw, 99);
-
   const ssShown = mmRaw > 99 ? 59 : ss;
 
   return `${String(mm).padStart(2, "0")} : ${String(ssShown).padStart(2, "0")}`;
@@ -123,10 +109,8 @@ export default function MatchDetailSectionResponsive({
 }: Props) {
   const router = useRouter();
   const params = useParams();
-
   const matchId = useMemo(() => {
-    const raw = (params as Record<string, string | string[] | undefined>)
-      ?.matchId;
+    const raw = (params as Record<string, string | string[] | undefined>)?.matchId;
     const str = Array.isArray(raw) ? raw[0] : raw;
     const n = str ? Number(str) : NaN;
     return Number.isFinite(n) && n > 0 ? n : null;
@@ -134,7 +118,6 @@ export default function MatchDetailSectionResponsive({
 
   const [enabled, setEnabled] = useState(true);
   const [activeTab, setActiveTab] = React.useState<TabKey>("INFO");
-  const [isPreferredZoneDialogOpen, setIsPreferredZoneDialogOpen] = useState(false);
   const [selectedBlocks, setSelectedBlocks] = useState<number[]>([]);
 
   const [loading, setLoading] = useState(false);
@@ -145,26 +128,27 @@ export default function MatchDetailSectionResponsive({
   const accessToken = useAuthStore((s) => s.accessToken);
   const user = useAuthStore((s) => s.user);
   const isLoggedIn = bootstrapped && !!accessToken && !!user;
-  const [isLoginRequiredDialogOpen, setIsLoginRequiredDialogOpen] = useState(false);
 
-  const handleKakaoLogin = async () => {
-    try {
-      const data = await getKakaoLoginUrl();
-      const loginUrl = data?.loginUrl;
+  const [isPreferredZoneModalOpen, setIsPreferredZoneModalOpen] = useState(false);
+  const [isLoginRequiredModalOpen, setIsLoginRequiredModalOpen] = useState(false);
 
-      if (!loginUrl) {
-        console.error("❌ loginUrl missing:", data);
-        return;
-      }
+  const handleBlockToggle = (blockNum: number) => {
+    setSelectedBlocks((prev) =>
+      prev.includes(blockNum)
+        ? prev.filter((v) => v !== blockNum)
+        : prev.length >= 10
+          ? prev
+          : [...prev, blockNum],
+    );
+  };
 
-      window.location.href = loginUrl;
-    } catch (e) {
-      if (e instanceof ApiError) {
-        console.error("❌ kakao login-url failed:", e.status, e.message);
-      } else {
-        console.error("⚠️ kakao login-url error:", e);
-      }
+  const handleRev = () => {
+    if (!matchId) return;
+    if (!isLoggedIn) {
+      setIsLoginRequiredModalOpen(true);
+      return;
     }
+    router.push(`/recommend/${matchId}`);
   };
 
   useEffect(() => {
@@ -201,16 +185,6 @@ export default function MatchDetailSectionResponsive({
       alive = false;
     };
   }, [matchId]);
-
-  const handleBlockToggle = (blockNum: number) => {
-    setSelectedBlocks((prev) =>
-      prev.includes(blockNum)
-        ? prev.filter((v) => v !== blockNum)
-        : prev.length >= 10
-          ? prev
-          : [...prev, blockNum],
-    );
-  };
 
   if (!matchId) {
     return (
@@ -288,19 +262,9 @@ export default function MatchDetailSectionResponsive({
 
   // BookingButton에 넘길 Date
   const matchAtDate = toDate(data.matchAt);
-
   const saleAtDate = new Date(matchAtDate);
   saleAtDate.setDate(saleAtDate.getDate() - 7);
   saleAtDate.setHours(11, 0, 0, 0);
-
-  const handleRev = () => {
-    if (!matchId) return;
-    if (!isLoggedIn) {
-      setIsLoginRequiredDialogOpen(true);
-      return;
-    }
-    router.push(`/recommend/${matchId}`);
-  };
 
   return (
     <div className="w-full">
@@ -511,9 +475,7 @@ export default function MatchDetailSectionResponsive({
                         <SeatPreferenceRecommendCard
                           enabled={enabled}
                           onChange={setEnabled}
-                          onPreferredZonesClick={() =>
-                            setIsPreferredZoneDialogOpen(true)
-                          }
+                          onPreferredZonesClick={() => setIsPreferredZoneModalOpen(true)}
                         />
                       </div>
                     </div>
@@ -544,138 +506,24 @@ export default function MatchDetailSectionResponsive({
       </section>
 
       {/* 선호 구역 설정 모달 */}
-      {isPreferredZoneDialogOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-8">
-          <div className="flex max-h-[90vh] w-full max-w-[570px] flex-col overflow-hidden rounded-2xl bg-white">
-            <div className="flex w-full flex-1 flex-col overflow-hidden p-9">
-              <div className="inline-flex w-full items-center justify-end gap-2.5">
-                <div className="flex flex-1 items-center justify-start">
-                  <div className="inline-flex flex-1 flex-col items-start justify-center">
-                    <div className="self-stretch text-xl font-bold leading-7 text-[var(--foundation-neutral-240)]">
-                      선호 구역을 선택해주세요
-                    </div>
-                    <div className="inline-flex items-center justify-start gap-2 self-stretch">
-                      <div className="text-sm font-medium leading-5 text-[var(--text-info-n600)]">
-                        최대 10개까지 선택 가능해요
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setIsPreferredZoneDialogOpen(false)}
-                  className="cursor-pointer relative self-stretch overflow-hidden"
-                >
-                  <span className="flex h-12 w-12 items-center justify-center">
-                    <X className="h-6 w-6 text-[var(--foundation-neutral-240)]" />
-                  </span>
-                </button>
-              </div>
-
-              <div className="mt-4 flex w-full flex-1 flex-col overflow-hidden">
-                <div className="inline-flex w-full items-center justify-start gap-2">
-                  <div className="text-sm font-medium leading-5 text-[var(--foundation-primary-500)]">
-                    현재 선택 개수 : {selectedBlocks.length}개
-                  </div>
-                </div>
-
-                <div className="mt-6 w-full flex-1 overflow-y-auto [&>div]:mb-0 [&>div]:border-0 [&>div]:px-0 [&>div]:py-0">
-                  <PreferredZoneSection
-                    selectedBlocks={selectedBlocks}
-                    onToggle={handleBlockToggle}
-                    onReset={() => setSelectedBlocks([])}
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="shrink-0 border-t border-[var(--stroke-interactive-neutral-default)] bg-white p-6">
-              <div className="inline-flex h-10 w-full items-center justify-between">
-                <PrimaryButton
-                  className="flex flex-1"
-                  size="lg"
-                  tone="base"
-                  onClick={() => setIsPreferredZoneDialogOpen(false)}
-                >
-                  수정 완료
-                </PrimaryButton>
-              </div>
-            </div>
-          </div>
-        </div>
+      {isPreferredZoneModalOpen && (
+        <PreferredZoneModal
+          open={isPreferredZoneModalOpen}
+          selectedBlocks={selectedBlocks}
+          onToggleBlock={handleBlockToggle}
+          onReset={() => setSelectedBlocks([])}
+          onClose={() => setIsPreferredZoneModalOpen(false)}
+          onConfirm={() => setIsPreferredZoneModalOpen(false)}
+        />
       )}
 
       {/* 로그인 유도 모달 */}
-      {isLoginRequiredDialogOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-          <div className="inline-flex flex-col items-center gap-6">
-            <div className="w-full max-w-[420px] rounded-2xl bg-white shadow-[0px_1px_3px_0px_rgba(0,0,0,0.05)] outline outline-1 outline-offset-[-1px] outline-[var(--stroke-interactive-neutral-default)]">
-              <div className="inline-flex w-full flex-col items-start justify-start gap-8 p-8">
-                <div className="flex w-full flex-col items-start justify-start gap-4">
-                  <div className="flex w-full flex-col items-start justify-start gap-8">
-                    <div className="flex w-full flex-col items-start justify-start gap-6">
-                      <div className="inline-flex w-full items-center justify-center">
-                        <div className="flex-1 text-xl font-bold leading-7 text-[var(--foundation-neutral-160)] font-['Pretendard']">
-                          예매를 계속하려면 로그인이 필요해요
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex w-full flex-col items-start justify-start gap-8">
-                    <div className="flex w-full flex-col items-start justify-start gap-6">
-                      <div className="inline-flex w-full items-center justify-center">
-                        <div className="flex-1 text-base font-medium leading-6 text-[var(--foundation-neutral-160)] font-['Pretendard']">
-                          간편 로그인 하나로, 원하는 경기를 바로 예매하세요
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex w-full flex-col items-start justify-start gap-2.5">
-                  <div className="flex w-full flex-col items-start justify-start gap-3">
-                    <div className="inline-flex w-full items-center justify-start gap-2">
-                      <div className="inline-flex flex-1 flex-col items-start justify-start gap-2">
-                        <KakaoButton onClick={handleKakaoLogin} className="w-full" bgVariant="kakao" contentPadding="20" />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="inline-flex w-full items-center justify-center gap-2 p-2">
-                    <div className="text-center text-xs font-medium leading-4 font-['Pretendard_Variable']">
-                      <span className="text-[var(--foundation-neutral-560)]">
-                        해당 계정을 통해 표고에 로그인함으로써
-                        <br />
-                      </span>
-                      <span className="text-[var(--foundation-blue-500)]">
-                        개인정보 수집·이용
-                      </span>
-                      <span className="text-[var(--foundation-neutral-560)]"> 및 </span>
-                      <span className="text-[var(--foundation-blue-500)]">
-                        이용약관
-                      </span>
-                      <span className="text-[var(--foundation-neutral-560)]">
-                        에 동의하는 것으로 간주됩니다.
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => setIsLoginRequiredDialogOpen(false)}
-              className="cursor-pointer text-center text-base font-normal leading-0 text-[var(--foundation-neutral-white)] underline font-['Pretendard']"
-            >
-              다음에 할래요
-            </button>
-          </div>
-        </div>
+      {isLoginRequiredModalOpen && (
+        <LoginRequiredModal
+          open={isLoginRequiredModalOpen}
+          onClose={() => setIsLoginRequiredModalOpen(false)}
+        />
       )}
-
-
     </div>
   );
 }
