@@ -1,4 +1,4 @@
-export const STADIUM_PATHS = [
+export const STADIUM_PATHS: { d: string; fill: string; num?: number }[] = [
     {
         "d": "M299.595 442.073C304.757 442.48 309.838 442.659 314.81 442.608V453H317.809V509.031C308.629 509.19 298.761 508.587 288.437 507.186L295.35 451.302L298.31 451.5L299.595 442.073Z",
         "fill": "#262853",

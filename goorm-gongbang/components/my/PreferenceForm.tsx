@@ -33,20 +33,27 @@ import { InfoTooltip } from "@/components/common/InfoTooltip";
 import { PreferredZoneSection } from "./PreferredZoneSection";
 import { ConfirmationModal } from "@/components/common/ConfirmationModal";
 import { useRouter } from "next/navigation";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 /* ===========================
    타입 정의 (온보딩과 동일)
    [TODO] 아래 타입들을 lib/constants/preference-options.ts 로 이동 후
           onboarding/page.tsx 와 이 파일 양쪽에서 import해서 사용
 =========================== */
-type ViewPreference = "중앙" | "1루 내야" | "3루 내야" | "외야(좌)" | "외야(중)" | "외야(우)";  // onboarding/page.tsx:14와 동일
-type HeightPreference = "하단" | "중단" | "상단" | "무관";                                        // onboarding/page.tsx:15와 동일
-type ZonePreference = "중앙쪽" | "중간" | "코너(파울라인)" | "무관";                            // onboarding/page.tsx:16과 동일
-type ViewTypePreference = "통로 선호" | "중앙 선호" | "무관";                                    // onboarding/option/page.tsx:21과 동일
-type EnvPreference = "그늘 선호" | "햇빛 무관" | "무관";                                      // onboarding/option/page.tsx:22와 동일
-type MoodPreference = "열정적인 응원" | "조용한 관람" | "무관";                                // onboarding/option/page.tsx:23과 동일
-type DistPreference = "안전망 민감" | "난간·기둥 민감" | "보통" | "둔감";                      // onboarding/option/page.tsx:24와 동일
-type PricePreference = "~ 13,000원" | "14,000원 ~ 17,000원" | "18,000원 ~ 29,000원" | "30,000원 ~ " | "무관"; // onboarding/option/page.tsx:25와 동일
+type ViewPreference = "중앙" | "1루 내야" | "3루 내야" | "외야(좌)" | "외야(중)" | "외야(우)";
+type CheerPreference = "응원석 인접" | "응원석 비인접" | "무관";
+type HeightPreference = "하단" | "중단" | "상단" | "무관";
+type ZonePreference = "중앙 쪽" | "중간" | "코너(파울라인)" | "무관";
+type ViewTypePreference = "통로 선호" | "중앙 선호" | "무관";
+type EnvPreference = "그늘 선호" | "햇빛 무관" | "무관";
+type MoodPreference = "열정적인 응원" | "조용한 관람" | "무관";
+type DistPreference = "안전망 민감" | "난간·기둥 민감" | "보통" | "무관";
+type PricePreference = "~ 13,000원" | "14,000원~ 17,000원" | "18,000원~ 29,000원" | "30,000원~ " | "무관";
 
 /* ===========================
    옵션 목록 (온보딩과 동일)
@@ -54,25 +61,40 @@ type PricePreference = "~ 13,000원" | "14,000원 ~ 17,000원" | "18,000원 ~ 29
           + VIEWPOINT_MAP 등 서버 enum 매핑도 함께 이동 (현재 onboarding/page.tsx에만 존재)
 =========================== */
 const viewOptions: ViewPreference[] = ["중앙", "1루 내야", "3루 내야", "외야(좌)", "외야(중)", "외야(우)"];
+const cheerOption: CheerPreference[] = ["응원석 인접", "응원석 비인접", "무관"];
 const heightOptions: HeightPreference[] = ["하단", "중단", "상단", "무관"];
-const zoneOptions: ZonePreference[] = ["중앙쪽", "중간", "코너(파울라인)", "무관"];
+const zoneOptions: ZonePreference[] = ["중앙 쪽", "중간", "코너(파울라인)", "무관"];
 const viewTypeOptions: ViewTypePreference[] = ["통로 선호", "중앙 선호", "무관"];
 const envOptions: EnvPreference[] = ["그늘 선호", "햇빛 무관", "무관"];
 const moodOptions: MoodPreference[] = ["열정적인 응원", "조용한 관람", "무관"];
-const distOptions: DistPreference[] = ["안전망 민감", "난간·기둥 민감", "보통", "둔감"];
-const priceOptions: PricePreference[] = ["~ 13,000원", "14,000원 ~ 17,000원", "18,000원 ~ 29,000원", "30,000원 ~ ", "무관"];
+const distOptions: DistPreference[] = ["안전망 민감", "난간·기둥 민감", "보통", "무관"];
+const priceOptions: PricePreference[] = ["~ 13,000원", "14,000원~ 17,000원", "18,000원~ 29,000원", "30,000원~ ", "무관"];
+const clubOptions = [
+    { id: 1, label: "두산 베어스" },
+    { id: 2, label: "삼성 라이온즈" },
+    { id: 3, label: "키움 히어로즈" },
+    { id: 4, label: "한화 이글스" },
+    { id: 5, label: "롯데 자이언츠" },
+    { id: 6, label: "LG 트윈스" },
+    { id: 7, label: "NC 다이노스" },
+    { id: 8, label: "SSG 랜더스" },
+    { id: 9, label: "kt 위즈" },
+    { id: 10, label: "KIA 타이거즈" },
+] as const;
 
 /* ===========================
    Mock 초기값
 =========================== */
 const MOCK_VIEW: ViewPreference[] = ["중앙", "1루 내야", "3루 내야"];
-const MOCK_HEIGHT: HeightPreference[] = ["중단", "하단", "상단"];
-const MOCK_ZONE: ZonePreference[] = ["중앙쪽", "중간", "코너(파울라인)"];
+const MOCK_CHEER: CheerPreference = "응원석 인접";
+const MOCK_CLUB = clubOptions[0]; // 두산 베어스
+const MOCK_HEIGHT: HeightPreference = "중단";
+const MOCK_ZONE: ZonePreference = "중앙 쪽";
 const MOCK_VIEWTYPE: ViewTypePreference = "통로 선호";
 const MOCK_ENV: EnvPreference = "그늘 선호";
 const MOCK_MOOD: MoodPreference = "열정적인 응원";
 const MOCK_DIST: DistPreference = "보통";
-const MOCK_PRICE: PricePreference = "14,000원 ~ 17,000원";
+const MOCK_PRICE: PricePreference = "14,000원~ 17,000원";
 const MOCK_BLOCKS: number[] = [70, 71, 72, 80, 81, 82]; // 예시 선택 블록
 
 /* ===========================
@@ -220,10 +242,12 @@ export function PreferenceForm() {
     /* Step 0: 블록 선택 */
     const [selectedBlocks, setSelectedBlocks] = useState<number[]>(MOCK_BLOCKS);
 
-    /* Step 1: 순위 선택 */
+    /* Step 1: 필수성 질문들 */
     const [view, setView] = useState<ViewPreference[]>(MOCK_VIEW);
-    const [height, setHeight] = useState<HeightPreference[]>(MOCK_HEIGHT);
-    const [zone, setZone] = useState<ZonePreference[]>(MOCK_ZONE);
+    const [selectedClub, setSelectedClub] = useState<(typeof clubOptions)[number] | null>(MOCK_CLUB);
+    const [cheer, setCheer] = useState<CheerPreference | null>(MOCK_CHEER);
+    const [zone, setZone] = useState<ZonePreference | null>(MOCK_ZONE);
+    const [height, setHeight] = useState<HeightPreference | null>(MOCK_HEIGHT);
 
     /* Step 2: 단일 선택 */
     const [viewType, setViewType] = useState<ViewTypePreference | null>(MOCK_VIEWTYPE);
@@ -235,6 +259,7 @@ export function PreferenceForm() {
     /* UI 관련 상태 */
     const [optionalOpen, setOptionalOpen] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isClubOpen, setIsClubOpen] = useState(false);
 
     /**
      * 변경 사항이 있는지 확인하는 함수
@@ -242,8 +267,10 @@ export function PreferenceForm() {
     const checkIsDirty = () => {
         const isBlocksDirty = JSON.stringify([...selectedBlocks].sort()) !== JSON.stringify([...MOCK_BLOCKS].sort());
         const isViewDirty = JSON.stringify(view) !== JSON.stringify(MOCK_VIEW);
-        const isHeightDirty = JSON.stringify(height) !== JSON.stringify(MOCK_HEIGHT);
-        const isZoneDirty = JSON.stringify(zone) !== JSON.stringify(MOCK_ZONE);
+        const isClubDirty = selectedClub?.id !== MOCK_CLUB.id;
+        const isCheerDirty = cheer !== MOCK_CHEER;
+        const isZoneDirty = zone !== MOCK_ZONE;
+        const isHeightDirty = height !== MOCK_HEIGHT;
         const isOtherDirty =
             viewType !== MOCK_VIEWTYPE ||
             env !== MOCK_ENV ||
@@ -251,7 +278,7 @@ export function PreferenceForm() {
             dist !== MOCK_DIST ||
             price !== MOCK_PRICE;
 
-        return isBlocksDirty || isViewDirty || isHeightDirty || isZoneDirty || isOtherDirty;
+        return isBlocksDirty || isViewDirty || isClubDirty || isCheerDirty || isZoneDirty || isHeightDirty || isOtherDirty;
     };
 
     /**
@@ -285,8 +312,10 @@ export function PreferenceForm() {
         const payload = {
             step1: {
                 view: view.map((v, i) => ({ priority: i + 1, value: v })),
-                height: height.map((v, i) => ({ priority: i + 1, value: v })),
-                zone: zone.map((v, i) => ({ priority: i + 1, value: v })),
+                clubId: selectedClub?.id,
+                cheer,
+                zone,
+                height,
             },
             step2: { viewType, env, mood, dist, price },
         };
@@ -328,7 +357,7 @@ export function PreferenceForm() {
                 <div className="flex flex-col gap-7">
                     <QuestionSection
                         title="어디에서 보고 싶으신가요? 선호하는 순으로 선택해주세요."
-                        description="경기 시야와 관람 경험에 가장 큰 영향을 줘요. 최대 3개까지 입력해주세요."
+                        description="경기 시야는 관람 경험에 가장 큰 영향을 줍니다. 최대 3개까지 입력해주세요."
                     >
                         {viewOptions.map((opt) => (
                             <PriorityChip
@@ -341,15 +370,53 @@ export function PreferenceForm() {
                     </QuestionSection>
 
                     <QuestionSection
-                        title="좌석 높이는 어느 쪽이 좋으신가요?"
-                        description="앞뒤 거리와 시야 각도에 영향을 줘요."
+                        title="응원하는 구단이 있으신가요?"
+                        description="응원하는 구단과 가까운 자리에서 더 생생하게 응원할 수 있어요."
                     >
-                        {heightOptions.map((opt) => (
-                            <PriorityChip
+                        <DropdownMenu open={isClubOpen} onOpenChange={setIsClubOpen}>
+                            <DropdownMenuTrigger asChild>
+                                <button
+                                    type="button"
+                                    className="w-full sm:w-[320px] min-h-12 rounded-lg px-4 py-2 inline-flex justify-start items-center gap-1 overflow-hidden outline outline-[1px] outline-offset-[-1px]"
+                                    style={{
+                                        background: isClubOpen ? "var(--foundation-primary-10)" : "var(--background-white)",
+                                        outlineColor: isClubOpen ? "var(--foundation-primary-500)" : "var(--stroke-interactive-neutral-default)",
+                                    }}
+                                >
+                                    <div className="flex-1 flex justify-between items-center">
+                                        <div
+                                            className="text-center justify-center text-[15px] font-medium font-['Pretendard'] leading-5"
+                                            style={{ color: isClubOpen ? "var(--foundation-primary-700)" : "#1A1A1A" }}
+                                        >
+                                            {selectedClub?.label ?? "선택하기"}
+                                        </div>
+                                        <div className="flex justify-center items-center">
+                                            <ChevronDown className="h-4 w-4" style={{ color: isClubOpen ? "var(--foundation-primary-500)" : "var(--text-normal-n240)" }} />
+                                        </div>
+                                    </div>
+                                </button>
+                            </DropdownMenuTrigger>
+
+                            <DropdownMenuContent align="start" className="w-full sm:w-[320px]">
+                                {clubOptions.map((club) => (
+                                    <DropdownMenuItem key={club.id} onClick={() => setSelectedClub(club)}>
+                                        {club.label}
+                                    </DropdownMenuItem>
+                                ))}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </QuestionSection>
+
+                    <QuestionSection
+                        title="응원석 근처 자리를 선호하시나요?"
+                        description="응원석 근처에서 더 뜨거운 현장 분위기를 느껴보세요."
+                    >
+                        {cheerOption.map((opt) => (
+                            <SingleChip
                                 key={opt}
                                 label={opt}
-                                priority={getPriority(height, opt)}
-                                onClick={() => setHeight((prev) => toggleUpToThree(prev, opt))}
+                                selected={cheer === opt}
+                                onClick={() => setCheer((prev) => toggleSingle(prev, opt))}
                             />
                         ))}
                     </QuestionSection>
@@ -359,11 +426,25 @@ export function PreferenceForm() {
                         description="중앙에 가까울수록 시야가 안정적이에요."
                     >
                         {zoneOptions.map((opt) => (
-                            <PriorityChip
+                            <SingleChip
                                 key={opt}
                                 label={opt}
-                                priority={getPriority(zone, opt)}
-                                onClick={() => setZone((prev) => toggleUpToThree(prev, opt))}
+                                selected={zone === opt}
+                                onClick={() => setZone((prev) => toggleSingle(prev, opt))}
+                            />
+                        ))}
+                    </QuestionSection>
+
+                    <QuestionSection
+                        title="좌석 높이는 어느 쪽이 좋으신가요?"
+                        description="앞뒤 거리와 시야 각도에 영향을 줍니다."
+                    >
+                        {heightOptions.map((opt) => (
+                            <SingleChip
+                                key={opt}
+                                label={opt}
+                                selected={height === opt}
+                                onClick={() => setHeight((prev) => toggleSingle(prev, opt))}
                             />
                         ))}
                     </QuestionSection>
