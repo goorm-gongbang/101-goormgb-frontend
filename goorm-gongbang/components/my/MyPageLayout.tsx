@@ -49,7 +49,7 @@ const SECTIONS: Section[] = [
         title: "티켓 관리",
         items: [
             { label: "경기 예정 티켓", href: "/my/tickets" },
-            { label: "예매 내역", href: "/my/tickets" },
+            { label: "예매 내역", href: "/my/reservations" },
         ],
     },
     {
