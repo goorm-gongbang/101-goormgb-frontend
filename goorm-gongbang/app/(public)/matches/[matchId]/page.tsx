@@ -145,7 +145,7 @@ export default function MatchDetailSectionResponsive({
     );
   };
 
-  {/* 예매하기 버튼 클릭 */ }
+  /* 예매하기 버튼 클릭 */
   const handleRev = async () => {
     if (!matchId) return;
 
@@ -185,7 +185,7 @@ export default function MatchDetailSectionResponsive({
   };
 
 
-  {/* 설정하기 버튼 클릭 */ }
+  /* 설정하기 버튼 클릭 */
   const handlePreferredZonesClick = async () => {
     if (!isLoggedIn) {
       setIsLoginRequiredModalOpen(true);
@@ -206,7 +206,7 @@ export default function MatchDetailSectionResponsive({
     }
   };
 
-  {/* 수정하기 버튼 클릭 */ }
+  /* 수정하기 버튼 클릭 */
   const handlePreferredZoneConfirm = async () => {
     if (!isLoggedIn) {
       setIsLoginRequiredModalOpen(true);

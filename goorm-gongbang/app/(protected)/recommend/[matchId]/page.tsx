@@ -309,6 +309,17 @@ export default function Page() {
     return new URL(input.replace(/^\//, ""), CDN_CLUBS_BASE_URL).toString();
   }
 
+  const handleQueueEnd = (message: string) => {
+    if (hasHandledQueueEndRef.current) return;
+    hasHandledQueueEndRef.current = true;
+
+    setIsFindingSeat(false);
+    clearQueuePolling();
+    toast.error(message);
+    router.push(`/matches/${matchId}`);
+  };
+
+
   useEffect(() => {
     if (!matchId) return;
 
@@ -349,42 +360,37 @@ export default function Page() {
           return;
         }
 
-        if (status === "EXPIRED") { // 입장 가능 시간이 만료된 상태
+        if (status === "EXPIRED" || status === "ENTERED") { // 입장 가능 시간이 만료된 상태 (EXPIRED)
           if (hasHandledQueueEndRef.current) return;
           hasHandledQueueEndRef.current = true;
 
           setIsFindingSeat(false);
           clearQueuePolling();
 
-          toast.error("입장 가능 시간이 만료되었습니다. 다시 대기열에 진입해주세요.");
-          router.push(`/matches/${matchId}`);
+          if (status === "EXPIRED") {
+            toast.error("입장 가능 시간이 만료되었습니다. 다시 대기열에 진입해주세요.");
+            router.push(`/matches/${matchId}`);
+          }
 
-          return;
-        }
-
-        if (status === "ENTERED") {
-          if (hasHandledQueueEndRef.current) return;
-          hasHandledQueueEndRef.current = true;
-
-          setIsFindingSeat(false);
-          clearQueuePolling();
           return;
         }
       } catch (e) {
         if (cancelled || hasHandledQueueEndRef.current) return;
+        if (e instanceof ApiError) {
+          if (e.status === 410) {
+            handleQueueEnd("입장 가능 시간이 만료되었습니다. 다시 대기열에 진입해주세요.");
+            return;
+          }
 
-        if (e instanceof ApiError && e.message === "해당 경기의 대기열에 등록되어 있지 않습니다.") {
-          hasHandledQueueEndRef.current = true;
-          setIsFindingSeat(false);
-          clearQueuePolling();
-          toast.error(e.message);
-          router.push(`/matches/${matchId}`);
-          return;
+          if (e.status === 404) {
+            handleQueueEnd("해당 경기의 대기열에 등록되어 있지 않습니다.");
+            return;
+          }
         }
 
         setIsFindingSeat(true);
         console.error("queue polling failed:", e);
-        scheduleNextPoll(pollingMs ?? 3000, poll);
+        scheduleNextPoll(3000, poll);
       }
     };
 
