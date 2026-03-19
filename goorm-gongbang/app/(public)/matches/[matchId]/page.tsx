@@ -9,8 +9,8 @@ import { MatchRecommendTab } from "@/components/common/match-detail/tabs/MatchRe
 import { MatchRefundTab } from "@/components/common/match-detail/tabs/MatchRefundTab";
 import { useParams } from "next/navigation";
 import { Spinner } from "@/components/ui/spinner";
-import { getMatchById } from "@/lib/services";
-import { SaleStatus, PurchaseStatus, MatchDetail } from "@/lib/types";
+import { getMatchById, getOnboardingPreferences, saveOnboardingPreferencesBlocks, saveBookingOptions, enterQueue } from "@/lib/services";
+import { SaleStatus, PurchaseStatus, MatchDetail, BookingOptionsRequest, BookingOptionsResponse, QueueEnterResponse } from "@/lib/types";
 import { CDN_CLUBS_BASE_URL } from "@/lib/api/config";
 import { ApiError } from "@/lib/api";
 import { useRouter } from "next/navigation";
@@ -19,6 +19,7 @@ import { useAuthStore } from "@/stores/authStore";
 import { LoginRequiredModal } from "@/components/common/LoginRequiredModal";
 import { PreferredZoneModal } from "@/components/common/PreferredZoneModal";
 import Image from "next/image";
+import { toast } from "sonner";
 
 /* ===========================
     UI TYPES
@@ -117,8 +118,10 @@ export default function MatchDetailSectionResponsive({
   }, [params]);
 
   const [enabled, setEnabled] = useState(true);
+  const [nearbySeatEnabled, setNearbySeatEnabled] = useState(true);
   const [activeTab, setActiveTab] = React.useState<TabKey>("INFO");
   const [selectedBlocks, setSelectedBlocks] = useState<number[]>([]);
+  const [people, setPeople] = useState(2);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -142,13 +145,89 @@ export default function MatchDetailSectionResponsive({
     );
   };
 
-  const handleRev = () => {
+  {/* 예매하기 버튼 클릭 */ }
+  const handleRev = async () => {
     if (!matchId) return;
+
     if (!isLoggedIn) {
       setIsLoginRequiredModalOpen(true);
       return;
     }
-    router.push(`/recommend/${matchId}`);
+
+    const bookingBody: BookingOptionsRequest = {
+      recommendationEnabled: enabled,
+      nearAdjacentToggle: enabled ? nearbySeatEnabled : false,
+      ticketCount: enabled ? people : null,
+    };
+
+    try {
+      const bookingResponse: BookingOptionsResponse = await saveBookingOptions(matchId, bookingBody);
+
+      const queueResponse: QueueEnterResponse = await enterQueue(matchId);
+
+      const params = new URLSearchParams({
+        recommendationEnabled: String(bookingResponse.recommendationEnabled ?? false),
+        nearbySeatEnabled: String(bookingResponse.nearAdjacentToggle ?? false),
+        ticketCount: String(bookingResponse.ticketCount ?? ""),
+        queueRank: String(queueResponse.rank ?? ""),
+        queueTotalWaitingCount: String(queueResponse.totalWaitingCount ?? ""),
+      });
+
+      router.push(`/recommend/${matchId}?${params.toString()}`);
+    } catch (e) {
+      if (e instanceof ApiError) {
+        console.error("handleRev failed:", e.message);
+      } else {
+        console.error("handleRev failed:", e);
+      }
+    }
+  };
+
+
+  {/* 설정하기 버튼 클릭 */ }
+  const handlePreferredZonesClick = async () => {
+    if (!isLoggedIn) {
+      setIsLoginRequiredModalOpen(true);
+      return;
+    }
+
+    try {
+      const data = await getOnboardingPreferences();
+      setSelectedBlocks(data.preferredBlockIds ?? []);
+      setIsPreferredZoneModalOpen(true);
+    } catch (e) {
+      if (e instanceof ApiError) {
+        console.error("onboarding preferences fetch failed:", e.message);
+      } else {
+        console.error("onboarding preferences fetch failed:", e);
+      }
+      setIsPreferredZoneModalOpen(true);
+    }
+  };
+
+  {/* 수정하기 버튼 클릭 */ }
+  const handlePreferredZoneConfirm = async () => {
+    if (!isLoggedIn) {
+      setIsLoginRequiredModalOpen(true);
+      return;
+    }
+
+    try {
+      await saveOnboardingPreferencesBlocks({
+        preferredBlockIds: selectedBlocks,
+      });
+
+      toast.success("선호 구역이 수정되었어요.");
+      setIsPreferredZoneModalOpen(false);
+    } catch (e) {
+      if (e instanceof ApiError) {
+        toast.error("선호 구역 수정에 실패했어요.");
+        console.error("saveOnboardingPreferencesBlocks failed:", e.message);
+      } else {
+        toast.error("선호 구역 수정에 실패했어요.");
+        console.error("saveOnboardingPreferencesBlocks failed:", e);
+      }
+    }
   };
 
   useEffect(() => {
@@ -475,7 +554,11 @@ export default function MatchDetailSectionResponsive({
                         <SeatPreferenceRecommendCard
                           enabled={enabled}
                           onChange={setEnabled}
-                          onPreferredZonesClick={() => setIsPreferredZoneModalOpen(true)}
+                          nearbySeatEnabled={nearbySeatEnabled}
+                          onNearbySeatChange={setNearbySeatEnabled}
+                          onPreferredZonesClick={handlePreferredZonesClick}
+                          people={people}
+                          onPeopleChange={setPeople}
                         />
                       </div>
                     </div>
@@ -513,7 +596,7 @@ export default function MatchDetailSectionResponsive({
           onToggleBlock={handleBlockToggle}
           onReset={() => setSelectedBlocks([])}
           onClose={() => setIsPreferredZoneModalOpen(false)}
-          onConfirm={() => setIsPreferredZoneModalOpen(false)}
+          onConfirm={handlePreferredZoneConfirm}
         />
       )}
 

@@ -6,19 +6,26 @@
 
 import { API_BASE_URL } from "@/lib/api/config";
 import { auth, pub } from "@/lib/api/fetch";
-import type { SeatStatus, Seat, SeatsData, SeatReservationRequest } from "@/lib/types";
+import type { SeatStatus, Seat, SeatsData, SeatReservationRequest, BookingOptionsRequest, BookingOptionsResponse } from "@/lib/types";
 
 // Re-export types for convenience
 export type { SeatStatus, Seat, SeatsData, SeatReservationRequest };
 
 /* 좌석 목록 조회 (public) */
 export const getSeats = (matchId: string | number) =>
-  pub.get<SeatsData>(`${API_BASE_URL}/seats?matchId=${matchId}`);
+  pub.get<SeatsData>(`${API_BASE_URL}/seat?matchId=${matchId}`);
 
 /* 좌석 예약 */
 export const reserveSeats = (body: SeatReservationRequest) =>
-  auth.post<{ reservationId: string }, SeatReservationRequest>(`${API_BASE_URL}/seats/reserve`, body);
+  auth.post<{ reservationId: string }, SeatReservationRequest>(`${API_BASE_URL}/seat/reserve`, body);
 
 /* 좌석 예약 취소 */
 export const cancelReservation = (reservationId: string | number) =>
-  auth.delete<void>(`${API_BASE_URL}/seats/reservations/${reservationId}`);
+  auth.delete<void>(`${API_BASE_URL}/seat/reservations/${reservationId}`);
+
+/* 예매 조건 저장 */
+export const saveBookingOptions = (matchId: string | number, body: BookingOptionsRequest) =>
+  auth.post<BookingOptionsResponse, BookingOptionsRequest>(
+    `${API_BASE_URL}/seat/matches/${matchId}/booking-options`,
+    body,
+  );
