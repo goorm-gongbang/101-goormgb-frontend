@@ -177,6 +177,7 @@ export default function MatchDetailSectionResponsive({
     } catch (e) {
       if (e instanceof ApiError) {
         console.error("handleRev failed:", e.message);
+        toast.error(e.message);
       } else {
         console.error("handleRev failed:", e);
       }

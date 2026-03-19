@@ -17,6 +17,7 @@ import { CDN_CLUBS_BASE_URL } from "@/lib/api/config";
 import { QueueStatusType } from "@/lib/types";
 import { getQueueStatus } from "@/lib/services";
 import { toast } from "sonner";
+import { ApiError } from "@/lib/api";
 
 type SeatListItem = {
   name: string;
@@ -209,7 +210,18 @@ export default function Page() {
 
   const [loading, setLoading] = useState(false);
 
-  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const pollingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hasHandledQueueEndRef = useRef(false);
+  const clearQueuePolling = () => {
+    if (pollingTimeoutRef.current) {
+      clearTimeout(pollingTimeoutRef.current);
+      pollingTimeoutRef.current = null;
+    }
+  };
+  const scheduleNextPoll = (ms: number, callback: () => void) => {
+    clearQueuePolling();
+    pollingTimeoutRef.current = setTimeout(callback, ms);
+  };
 
   const [isPreferredRecommendOn, setIsPreferredRecommendOn] = useState(recommendationEnabled);
   const [selectedRecommendId, setSelectedRecommendId] = useState<string | null>(null);
@@ -300,8 +312,10 @@ export default function Page() {
   useEffect(() => {
     if (!matchId) return;
 
+    hasHandledQueueEndRef.current = false;
+    clearQueuePolling();
+
     let cancelled = false;
-    let timer: ReturnType<typeof setTimeout> | null = null;
 
     const poll = async () => {
       try {
@@ -326,7 +340,7 @@ export default function Page() {
         // stattus 응답에 따른 분기
         if (status === "WAITING") { // 대기열에서 순번을 기다리는 상태
           setIsFindingSeat(true);
-          timer = setTimeout(poll, nextPollingMs);
+          scheduleNextPoll(nextPollingMs, poll);
           return;
         }
 
@@ -336,35 +350,41 @@ export default function Page() {
         }
 
         if (status === "EXPIRED") { // 입장 가능 시간이 만료된 상태
+          if (hasHandledQueueEndRef.current) return;
+          hasHandledQueueEndRef.current = true;
+
           setIsFindingSeat(false);
+          clearQueuePolling();
 
-          // polling 중단
-          if (pollingIntervalRef.current) {
-            clearInterval(pollingIntervalRef.current);
-            pollingIntervalRef.current = null;
-          }
+          toast.error("입장 가능 시간이 만료되었습니다. 다시 대기열에 진입해주세요.");
+          router.push(`/matches/${matchId}`);
 
-          toast.error("입장 가능 시간이 만료되었습니다.");
+          return;
+        }
+
+        if (status === "ENTERED") {
+          if (hasHandledQueueEndRef.current) return;
+          hasHandledQueueEndRef.current = true;
+
+          setIsFindingSeat(false);
+          clearQueuePolling();
+          return;
+        }
+      } catch (e) {
+        if (cancelled || hasHandledQueueEndRef.current) return;
+
+        if (e instanceof ApiError && e.message === "해당 경기의 대기열에 등록되어 있지 않습니다.") {
+          hasHandledQueueEndRef.current = true;
+          setIsFindingSeat(false);
+          clearQueuePolling();
+          toast.error("입장 가능 시간이 만료되었습니다. 다시 대기열에 진입해주세요.");
           router.push(`/matches/${matchId}`);
           return;
         }
 
-        if (status === "ENTERED") { // Seat 서비스 입장을 완료한 상태
-          setIsFindingSeat(false);
-
-          // polling 중단
-          if (pollingIntervalRef.current) {
-            clearInterval(pollingIntervalRef.current);
-            pollingIntervalRef.current = null;
-          }
-          
-          return;
-        }
-      } catch (e) {
-        if (cancelled) return;
         setIsFindingSeat(true);
         console.error("queue polling failed:", e);
-        timer = setTimeout(poll, 3000);
+        scheduleNextPoll(pollingMs ?? 3000, poll);
       }
     };
 
@@ -372,7 +392,7 @@ export default function Page() {
 
     return () => {
       cancelled = true;
-      if (timer) clearTimeout(timer);
+      clearQueuePolling();
     };
   }, [matchId, router]);
 
