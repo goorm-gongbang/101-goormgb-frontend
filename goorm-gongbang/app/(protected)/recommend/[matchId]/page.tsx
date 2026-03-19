@@ -377,7 +377,7 @@ export default function Page() {
           hasHandledQueueEndRef.current = true;
           setIsFindingSeat(false);
           clearQueuePolling();
-          toast.error("입장 가능 시간이 만료되었습니다. 다시 대기열에 진입해주세요.");
+          toast.error(e.message);
           router.push(`/matches/${matchId}`);
           return;
         }
