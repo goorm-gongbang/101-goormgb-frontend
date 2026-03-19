@@ -10,6 +10,10 @@ import { Info } from "lucide-react";
 type Props = {
   enabled: boolean;
   onChange: (next: boolean) => void;
+  nearbySeatEnabled: boolean;
+  onNearbySeatChange: (next: boolean) => void;
+  people: number;
+  onPeopleChange: (next: number) => void;
   onPreferredZonesClick?: () => void;
   className?: string;
 };
@@ -17,10 +21,14 @@ type Props = {
 export function SeatPreferenceRecommendCard({
   enabled,
   onChange,
+  nearbySeatEnabled,
+  onNearbySeatChange,
+  people,
+  onPeopleChange,
   onPreferredZonesClick,
   className,
 }: Props) {
-  const [people, setPeople] = useState(2);
+  
   const [isNearbySeatInfoOpen, setIsNearbySeatInfoOpen] = useState(false);
 
   return (
@@ -94,7 +102,7 @@ export function SeatPreferenceRecommendCard({
               </button>
             </div>
 
-            <Toggle />
+            <Toggle checked={nearbySeatEnabled} onCheckedChange={onNearbySeatChange} />
           </div>
 
           <div className="inline-flex w-full items-center justify-between">
@@ -104,7 +112,7 @@ export function SeatPreferenceRecommendCard({
               </div>
             </div>
 
-            <DropDown value={people} onChange={setPeople} max={10} />
+            <DropDown value={people} onChange={onPeopleChange} max={10} />
           </div>
 
           <div className="inline-flex w-full items-center justify-between">
