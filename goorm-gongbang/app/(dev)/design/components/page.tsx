@@ -530,14 +530,14 @@ export default function Components() {
       </Section>
 
       {/* SeatPreferenceRecommendCard */}
-      <Section title="SeatPreferenceRecommendCard">
+      {/* <Section title="SeatPreferenceRecommendCard">
         <ToneRow title="SeatPreferenceRecommendCard">
           <SeatPreferenceRecommendCard
             enabled={enabled}
             onChange={setEnabled}
           />
         </ToneRow>
-      </Section>
+      </Section> */}
 
 
       <Section title="Header">

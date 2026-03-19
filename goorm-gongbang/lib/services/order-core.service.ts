@@ -19,6 +19,8 @@ import type {
   OnboardingStatusResponse,
   OnboardingPreferencesRequest,
   ClubMonthMatches,
+  OnboardingPreferencesResponse,
+  PreferredBlockUpdateRequest,
 } from "@/lib/types";
 
 // Re-export types for convenience
@@ -33,6 +35,8 @@ export type {
   ClubDetail,
   OnboardingStatusResponse,
   OnboardingPreferencesRequest,
+  OnboardingPreferencesResponse,
+  PreferredBlockUpdateRequest
 };
 
 /* 경기 목록 조회 */
@@ -74,3 +78,11 @@ export const getOnboardingStatus = () =>
 /* 온보딩 선호도 저장 */
 export const saveOnboardingPreferences = (body: OnboardingPreferencesRequest) =>
   auth.post(`${API_BASE_URL}/order/onboarding/preferences`, body);
+
+/* 온보딩 선호도 응답 */
+export const getOnboardingPreferences = () =>
+  auth.get<OnboardingPreferencesResponse>(`${API_BASE_URL}/order/onboarding/preferences`);
+
+/* 선호 구역 수정 */
+export const saveOnboardingPreferencesBlocks = (body: PreferredBlockUpdateRequest) =>
+  auth.put(`${API_BASE_URL}/order/onboarding/preferred-blocks`, body);

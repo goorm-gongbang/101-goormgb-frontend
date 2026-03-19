@@ -174,6 +174,30 @@ export type OnboardingPreferencesRequest = {
   preferences: Preference[];
 };
 
+/* 온보딩 선호도 응답 */
+export type OnboardingPreferencesResponse = {
+  favoriteClubId: number;
+  favoriteClubName: string;
+  cheerProximityPref: "NEAR" | "FAR" | "ANY";
+  preferredBlockIds: number[];
+  preferences: Array<{
+    priority: number;
+    viewpoint: "CENTER" | "INFIELD_1B" | "INFIELD_3B" | "OUTFIELD_L" | "OUTFIELD_C" | "OUTFIELD_R";
+    seatHeight: "LOW" | "MID" | "HIGH" | "ANY";
+    section: "CENTER_SIDE" | "MIDDLE" | "CORNER" | "ANY";
+    seatPositionPref: "AISLE" | "MIDDLE" | "ANY";
+    environmentPref: "SHADE" | "SUN_OK" | "ANY";
+    moodPref: "CHEERFUL" | "QUIET" | "ANY";
+    obstructionSensitivity: "NET_SENSITIVE" | "RAIL_PILLAR_SENSITIVE" | "NORMAL" | "ANY";
+    priceMode: "ANY" | "RANGE";
+    priceMin: number;
+    priceMax: number;
+  }>;
+};
+
+/* 선호 구역 수정 */
+export type PreferredBlockUpdateRequest = { preferredBlockIds: number[] }
+
 /** 구단 월별 경기 조회  - 상대팀 정보 */
 export type OpponentClub = {
   clubId: number;

@@ -56,3 +56,18 @@ export type OutfieldPriceRow = {
   weekday: string;
   weekend: string;
 };
+
+/* 예매 조건 저장 */
+export type BookingOptionsRequest = {
+  recommendationEnabled?: boolean,
+  nearAdjacentToggle?: boolean,
+  ticketCount: number | null;
+};
+
+/* 예매 조건 응답 */
+export type BookingOptionsResponse = {
+  matchId: number,
+  recommendationEnabled?: boolean,
+  nearAdjacentToggle?: boolean,
+  ticketCount: number | null;
+};

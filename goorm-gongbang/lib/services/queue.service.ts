@@ -6,19 +6,27 @@
 
 import { API_BASE_URL } from "@/lib/api/config";
 import { auth } from "@/lib/api/fetch";
-import type { QueueStatus, QueueStatusResponse } from "@/lib/types";
+import type {
+  QueueEnterResponse,
+  QueueStatusResponse,
+  QueueStatusType,
+} from "@/lib/types";
 
 // Re-export types for convenience
-export type { QueueStatus, QueueStatusResponse };
+export type {
+  QueueEnterResponse,
+  QueueStatusResponse,
+  QueueStatusType,
+};
 
 /* 대기열 진입 */
 export const enterQueue = (matchId: string | number) =>
-  auth.post<QueueStatusResponse>(`${API_BASE_URL}/queue/enter`, { matchId });
+  auth.post<QueueEnterResponse>(
+    `${API_BASE_URL}/queue/matches/${matchId}/enter`,
+  );
 
 /* 대기열 상태 조회 */
 export const getQueueStatus = (matchId: string | number) =>
-  auth.get<QueueStatusResponse>(`${API_BASE_URL}/queue/status?matchId=${matchId}`);
-
-/* 대기열 이탈 */
-export const leaveQueue = (matchId: string | number) =>
-  auth.post<void>(`${API_BASE_URL}/queue/leave`, { matchId });
+  auth.get<QueueStatusResponse>(
+    `${API_BASE_URL}/queue/matches/${matchId}/status`,
+  );

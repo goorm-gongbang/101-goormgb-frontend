@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { ChevronLeft, ChevronDown } from "lucide-react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { BlockSeatDetailView } from "@/components/common/BlockSeatDetailView";
-import { PrimaryButton, SecondaryButton } from "@/components/common/Button";
+import { PrimaryButton } from "@/components/common/Button";
 import { RecommendExitModal } from "@/components/common/RecommendExitModal";
 import { RecommendSeatUnavailableModal } from "@/components/common/RecommendSeatUnavailableModal";
 import { RecommendSoldOutModal } from "@/components/common/RecommendSoldOutModal";
@@ -14,6 +14,10 @@ import { TicketingNavigator } from "@/components/common/TicketingNavigator";
 import { Toggle } from "@/components/common/Toggle";
 import { StadiumMap } from "@/components/my/StadiumMap";
 import { CDN_CLUBS_BASE_URL } from "@/lib/api/config";
+import { QueueStatusType } from "@/lib/types";
+import { getQueueStatus } from "@/lib/services";
+import { toast } from "sonner";
+import { ApiError } from "@/lib/api";
 
 type SeatListItem = {
   name: string;
@@ -166,6 +170,35 @@ const seatSections: SeatSection[] = [
 ];
 
 export default function Page() {
+  const searchParams = useSearchParams();
+  const recommendationEnabled =
+    searchParams.get("recommendationEnabled") === "true";
+
+  const nearbySeatEnabled = recommendationEnabled
+    ? searchParams.get("nearbySeatEnabled") === "true"
+    : false;
+
+  const ticketCount = recommendationEnabled
+    ? searchParams.get("ticketCount")
+      ? Number(searchParams.get("ticketCount"))
+      : null
+    : null;
+
+  const initialQueueRank = searchParams.get("queueRank")
+    ? Number(searchParams.get("queueRank"))
+    : null;
+
+  const initialQueueTotalWaitingCount = searchParams.get("queueTotalWaitingCount")
+    ? Number(searchParams.get("queueTotalWaitingCount"))
+    : null;
+
+  const [queueStatus, setQueueStatus] = useState<QueueStatusType | null>(null);
+  const [queueRank, setQueueRank] = useState<number | null>(initialQueueRank);
+  const [totalWaitingCount, setTotalWaitingCount] = useState<number | null>(initialQueueTotalWaitingCount);
+  const [expiresIn, setExpiresIn] = useState<number | null>(null);
+  const [pollingMs, setPollingMs] = useState<number>(3000);
+
+
   const router = useRouter();
   const params = useParams();
   const matchId = useMemo(() => {
@@ -177,7 +210,20 @@ export default function Page() {
 
   const [loading, setLoading] = useState(false);
 
-  const [isPreferredRecommendOn, setIsPreferredRecommendOn] = useState(true);
+  const pollingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hasHandledQueueEndRef = useRef(false);
+  const clearQueuePolling = () => {
+    if (pollingTimeoutRef.current) {
+      clearTimeout(pollingTimeoutRef.current);
+      pollingTimeoutRef.current = null;
+    }
+  };
+  const scheduleNextPoll = (ms: number, callback: () => void) => {
+    clearQueuePolling();
+    pollingTimeoutRef.current = setTimeout(callback, ms);
+  };
+
+  const [isPreferredRecommendOn, setIsPreferredRecommendOn] = useState(recommendationEnabled);
   const [selectedRecommendId, setSelectedRecommendId] = useState<string | null>(null);
   const [hoveredRecommendBlock, setHoveredRecommendBlock] = useState<number | null>(null);
 
@@ -263,19 +309,99 @@ export default function Page() {
     return new URL(input.replace(/^\//, ""), CDN_CLUBS_BASE_URL).toString();
   }
 
-  useEffect(() => {
-    if (isPreferredRecommendOn) {
-      setIsFindingSeat(true);
-
-      const timer = setTimeout(() => {
-        setIsFindingSeat(false);
-      }, 1500);
-
-      return () => clearTimeout(timer);
-    }
+  const handleQueueEnd = (message: string) => {
+    if (hasHandledQueueEndRef.current) return;
+    hasHandledQueueEndRef.current = true;
 
     setIsFindingSeat(false);
-  }, [isPreferredRecommendOn]);
+    clearQueuePolling();
+    toast.error(message);
+    router.push(`/matches/${matchId}`);
+  };
+
+
+  useEffect(() => {
+    if (!matchId) return;
+
+    hasHandledQueueEndRef.current = false;
+    clearQueuePolling();
+
+    let cancelled = false;
+
+    const poll = async () => {
+      try {
+        const response = await getQueueStatus(matchId);
+
+        if (cancelled) return;
+
+        const status = response.status ?? null; // 현재 대기 상태
+        const rank = response.rank ?? null; // 현재 사용자 대기 순번
+        const total = response.totalWaitingCount ?? null; // 전체 대기 인원 수
+        const nextPollingMs = response.pollingMs ?? 3000; // 상태 확인(polling)할 권장 주기
+        const nextExpiresIn = response.expiresIn ?? null; // 토큰 만료까지 남은 시간(초)
+
+        setQueueStatus(status);
+        setQueueRank(rank);
+        setTotalWaitingCount(total);
+        setPollingMs(nextPollingMs);
+        setExpiresIn(nextExpiresIn);
+
+        console.log("[recommend] queueStatus", response);
+
+        // stattus 응답에 따른 분기
+        if (status === "WAITING") { // 대기열에서 순번을 기다리는 상태
+          setIsFindingSeat(true);
+          scheduleNextPoll(nextPollingMs, poll);
+          return;
+        }
+
+        if (status === "READY") { // Seat 서비스에 입장 가능한 상태
+          setIsFindingSeat(false);
+          return;
+        }
+
+        if (status === "EXPIRED" || status === "ENTERED") { // 입장 가능 시간이 만료된 상태 (EXPIRED)
+          if (hasHandledQueueEndRef.current) return;
+          hasHandledQueueEndRef.current = true;
+
+          setIsFindingSeat(false);
+          clearQueuePolling();
+
+          if (status === "EXPIRED") {
+            toast.error("입장 가능 시간이 만료되었습니다. 다시 대기열에 진입해주세요.");
+            router.push(`/matches/${matchId}`);
+          }
+
+          return;
+        }
+      } catch (e) {
+        if (cancelled || hasHandledQueueEndRef.current) return;
+        if (e instanceof ApiError) {
+          if (e.status === 410) {
+            handleQueueEnd("입장 가능 시간이 만료되었습니다. 다시 대기열에 진입해주세요.");
+            return;
+          }
+
+          if (e.status === 404) {
+            handleQueueEnd("해당 경기의 대기열에 등록되어 있지 않습니다.");
+            return;
+          }
+        }
+
+        setIsFindingSeat(true);
+        console.error("queue polling failed:", e);
+        scheduleNextPoll(3000, poll);
+      }
+    };
+
+    poll();
+
+    return () => {
+      cancelled = true;
+      clearQueuePolling();
+    };
+  }, [matchId, router]);
+
 
   useEffect(() => {
     if (!loading && isRecommendEmpty) {
@@ -593,7 +719,11 @@ export default function Page() {
 
       {/* 대기열 모달 */}
       {isFindingSeat && (
-        <SeatFindingModal open={isFindingSeat} />
+        <SeatFindingModal
+          open={isFindingSeat && queueStatus === "WAITING"}
+          rank={queueRank}
+          totalWaitingCount={totalWaitingCount}
+        />
       )}
 
     </div>
