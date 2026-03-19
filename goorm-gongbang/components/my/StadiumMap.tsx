@@ -55,8 +55,7 @@ export function StadiumMap({ selectedIndices, onToggle }: StadiumMapProps) {
             >
                 {STADIUM_PATHS.map((path, idx) => {
                     const active = isBlock(idx) && path.num !== undefined;
-                    const isSelected =
-                        path.num !== undefined && selectedIndices.includes(path.num);
+                    const isSelected = path.num !== undefined && selectedIndices.includes(path.num);
                     return (
                         <path
                             key={idx}
@@ -73,7 +72,7 @@ export function StadiumMap({ selectedIndices, onToggle }: StadiumMapProps) {
                                 active
                                     ? () => {
                                         console.log("선택한 구역 번호:", path.num);
-                                        onToggle(path.num);
+                                        if (path.num !== undefined) onToggle(path.num);
                                     }
                                     : undefined
                             }
