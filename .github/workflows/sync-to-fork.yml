@@ -29,3 +29,38 @@ jobs:
                     -H "Accept: application/vnd.github.v3+json" \
                     https://api.github.com/repos/techupgrgbcn-crypto/goormgb-frontend/dispatches \
                     -d @-
+
+            - name: Notify Discord (Staging/Prod only)
+              if: github.ref_name == 'staging' || github.ref_name == 'prod'
+              env:
+                  WEBHOOK_STAGING: ${{ secrets.DISCORD_WEBHOOK_STAGING }}
+                  WEBHOOK_PROD: ${{ secrets.DISCORD_WEBHOOK_PROD }}
+                  BRANCH: ${{ github.ref_name }}
+                  COMMIT_MSG: ${{ github.event.head_commit.message }}
+              run: |
+                  if [ "$BRANCH" = "staging" ]; then
+                    WEBHOOK="$WEBHOOK_STAGING"
+                    EMOJI="🧪"
+                    ENV_NAME="Staging"
+                    COLOR=3447003
+                  else
+                    WEBHOOK="$WEBHOOK_PROD"
+                    EMOJI="🚀"
+                    ENV_NAME="Production"
+                    COLOR=15105570
+                  fi
+                  curl -X POST "$WEBHOOK" \
+                    -H "Content-Type: application/json" \
+                    -d "{
+                      \"embeds\": [{
+                        \"title\": \"${EMOJI} ${ENV_NAME} 배포\",
+                        \"color\": ${COLOR},
+                        \"fields\": [
+                          {\"name\": \"Branch\", \"value\": \"${BRANCH}\", \"inline\": true},
+                          {\"name\": \"Author\", \"value\": \"${{ github.actor }}\", \"inline\": true},
+                          {\"name\": \"Commit\", \"value\": \"[${GITHUB_SHA::7}](https://github.com/${{ github.repository }}/commit/${{ github.sha }})\", \"inline\": false}
+                        ],
+                        \"footer\": {\"text\": \"PlayBall Frontend\"},
+                        \"timestamp\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"
+                      }]
+                    }"
