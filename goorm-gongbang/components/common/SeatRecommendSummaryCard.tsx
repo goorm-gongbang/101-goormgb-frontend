@@ -2,7 +2,7 @@
 
 import { cn } from "@/lib/utils";
 
-type SeatColor = "orange" | "red" | "navy" | "green";
+type SeatColor = "orange" | "red" | "navy" | "green" | "gray" | "purple" | "blue";
 
 export type SeatRecommendItem = {
     id: string;
@@ -32,6 +32,13 @@ const badgeClassMap: Record<SeatColor, string> = {
         "bg-indigo-900 outline-slate-600",
     green:
         "bg-lime-600 outline-lime-500",
+    gray:
+        "bg-[var(--foundation-brown-500)] outline-[var(--foundation-brown-400)",
+    purple:
+        "bg-[var(--foundation-purple-500)] outline-[var(--foundation-purple-400)",
+    blue:
+        "bg-[var(--foundation-blue-500)] outline-[var(--foundation-blue-400)",
+    
 };
 
 export function SeatRecommendSummaryCard({

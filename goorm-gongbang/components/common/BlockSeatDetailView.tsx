@@ -1,23 +1,17 @@
 "use client";
 
+import { X } from "lucide-react";
 import { useMemo, useState } from "react";
-import { ChevronDown, X } from "lucide-react";
 import { StadiumMap } from "@/components/my/StadiumMap";
-
-type SeatStatus = "available" | "sold";
-
-type SeatRow = {
-  rowLabel: string;
-  seats: SeatStatus[];
-};
+import type { SectionBlock, SectionBlockSeatStatus } from "@/lib/types";
 
 type Props = {
   selectedIndices: number[];
-  blockNumbers: number[];
-  selectedBlockNumber: number;
-  selectedSeats: string[];
-  onSelectBlock: (blockNumber: number) => void;
-  onToggleSeat: (seatKey: string) => void;
+  blocks: SectionBlock[];
+  activeBlockId: number | null;
+  selectedSeatIds: number[];
+  onSelectBlock: (blockId: number) => void;
+  onToggleSeat: (seatId: number) => void;
 };
 
 const BLOCK_WIDTH = 288;
@@ -26,111 +20,96 @@ const BLOCK_TOP = 200;
 const BLOCK_START_LEFT = 100;
 const CANVAS_HEIGHT = 849;
 
-function getSeatRows(blockNumber: number): SeatRow[] {
-  return [
-    { rowLabel: "1", seats: Array(14).fill("available" as SeatStatus) },
-    { rowLabel: "2", seats: Array(14).fill("available" as SeatStatus) },
-    { rowLabel: "3", seats: Array(14).fill("available" as SeatStatus) },
-    { rowLabel: "4", seats: Array(7).fill("available" as SeatStatus) },
-    { rowLabel: "5", seats: Array(7).fill("available" as SeatStatus) },
-    { rowLabel: "6", seats: Array(7).fill("available" as SeatStatus) },
-    { rowLabel: "7", seats: Array(7).fill("available" as SeatStatus) },
-    { rowLabel: "8", seats: Array(14).fill("available" as SeatStatus) },
-    { rowLabel: "9", seats: Array(14).fill("available" as SeatStatus) },
-    { rowLabel: "10", seats: Array(14).fill("available" as SeatStatus) },
-    { rowLabel: "11", seats: Array(14).fill("available" as SeatStatus) },
-    { rowLabel: "12", seats: Array(14).fill("available" as SeatStatus) },
-    { rowLabel: "13", seats: Array(14).fill("available" as SeatStatus) },
-    { rowLabel: "14", seats: Array(14).fill("available" as SeatStatus) },
-    { rowLabel: "15", seats: Array(14).fill("available" as SeatStatus) },
-    { rowLabel: "16", seats: Array(14).fill("available" as SeatStatus) },
-    { rowLabel: "17", seats: Array(14).fill("available" as SeatStatus) },
-    { rowLabel: "18", seats: Array(14).fill("available" as SeatStatus) },
-    { rowLabel: "19", seats: Array(14).fill("available" as SeatStatus) },
-    { rowLabel: "20", seats: Array(14).fill("available" as SeatStatus) },
-    { rowLabel: "21", seats: Array(14).fill("available" as SeatStatus) },
-    { rowLabel: "22", seats: Array(14).fill("available" as SeatStatus) },
-  ];
+function getSeatClassName(
+  saleStatus: SectionBlockSeatStatus,
+  isSelected: boolean,
+) {
+  if (isSelected) {
+    return "border border-[var(--foundation-orange-800)] bg-[var(--foundation-orange-600)] text-[var(--foundation-orange-50)]";
+  }
+
+  switch (saleStatus) {
+    case "AVAILABLE":
+      return "border border-[var(--foundation-orange-500)] bg-[var(--foundation-orange-300)] text-transparent";
+    case "HELD":
+      return "border border-[var(--foundation-neutral-820)] bg-[var(--foundation-neutral-920)] text-transparent";
+    case "BLOCKED":
+      return "border border-[var(--foundation-neutral-760)] bg-[var(--foundation-neutral-860)] text-transparent";
+    case "SOLD_OUT":
+      return "border border-[var(--foundation-neutral-800)] bg-[var(--background-interactive-neutral-default)] text-transparent";
+    default:
+      return "border border-[var(--foundation-neutral-800)] bg-[var(--background-interactive-neutral-default)] text-transparent";
+  }
 }
 
-function getSeatClassName(status: SeatStatus, isSelected: boolean) {
-  if (isSelected) {
-    return "bg-[var(--foundation-orange-600)] outline outline-1 outline-[var(--foundation-orange-800)]";
-  }
-
-  if (status === "sold") {
-    return "border border-[var(--foundation-neutral-800)] bg-[var(--background-interactive-neutral-default)]";
-  }
-
-  return "border border-[var(--foundation-orange-500)] bg-[var(--foundation-orange-300)]";
+function isSeatDisabled(saleStatus: SectionBlockSeatStatus) {
+  return saleStatus !== "AVAILABLE";
 }
 
 function SeatBlock({
-  blockNumber,
+  block,
   left,
-  selectedSeats,
+  selectedSeatIds,
   onSelectBlock,
   onToggleSeat,
 }: {
-  blockNumber: number;
+  block: SectionBlock;
   left: number;
-  selectedSeats: string[];
-  onSelectBlock: (blockNumber: number) => void;
-  onToggleSeat: (seatKey: string) => void;
+  selectedSeatIds: number[];
+  onSelectBlock: (blockId: number) => void;
+  onToggleSeat: (seatId: number) => void;
 }) {
-  const rows = useMemo(() => getSeatRows(blockNumber), [blockNumber]);
+  const rows = useMemo(() => block.rows, [block.rows]);
 
   return (
     <div
       className="absolute inline-flex w-72 flex-col items-center justify-start"
       style={{ left, top: BLOCK_TOP }}
-      onMouseEnter={() => onSelectBlock(blockNumber)}
+      onMouseEnter={() => onSelectBlock(block.blockId)}
     >
       <div className="text-center text-3xl font-semibold text-[var(--foundation-neutral-240)] font-['Pretendard']">
-        {blockNumber}
+        {block.displayName}
       </div>
 
       <div className="inline-flex items-center justify-start gap-2 overflow-hidden bg-[var(--foundation-neutral-white)] py-4 pl-2.5 pr-5 shadow-[0px_12px_30px_rgba(0,0,0,0.14)]">
-        <div className="inline-flex w-60 flex-col items-start justify-start gap-1">
+        <div className="inline-flex w-63 flex-col items-start justify-start gap-1">
           {rows.map((row) => (
             <div
-              key={`${blockNumber}-${row.rowLabel}`}
+              key={`${block.blockId}-${row.rowNo}`}
               className={[
                 "inline-flex self-stretch items-center gap-2",
-                ["4", "5", "6", "7"].includes(row.rowLabel)
-                  ? "justify-center"
-                  : "justify-start",
+                [4, 5, 6, 7].includes(row.rowNo) ? "justify-center" : "justify-start",
               ].join(" ")}
             >
-              <div className="inline-flex w-4 flex-col items-end justify-center gap-2">
+              <div className="inline-flex w-6 flex-col items-end justify-center gap-2">
                 <div className="text-center text-[10.13px] font-semibold text-[var(--foundation-neutral-240)] font-['Pretendard']">
-                  {row.rowLabel}
+                  {row.rowNo}
                 </div>
               </div>
 
-              <div className="flex items-center justify-start gap-1">
-                {row.seats.map((seatStatus, seatIndex) => {
-                  const seatKey = `${blockNumber}-${row.rowLabel}-${seatIndex + 1}`;
-                  const isSelected = selectedSeats.includes(seatKey);
+              <div className="flex flex-wrap items-center justify-start gap-1">
+                {row.seats.map((seat) => {
+                  const isSelected = selectedSeatIds.includes(seat.seatId);
+                  const disabled = isSeatDisabled(seat.saleStatus);
 
                   return (
                     <button
-                      key={seatKey}
+                      key={seat.seatId}
                       type="button"
-                      disabled={seatStatus === "sold"}
+                      disabled={disabled}
+                      aria-label={`${block.displayName} ${row.rowNo}열 ${seat.seatNo}번`}
                       onClick={() => {
-                        onSelectBlock(blockNumber);
-                        onToggleSeat(seatKey);
+                        onSelectBlock(block.blockId);
+                        onToggleSeat(seat.seatId);
                       }}
                       className={[
-                        "relative flex h-3 w-3 items-center justify-center rounded-[3.04px]",
-                        seatStatus === "sold" ? "cursor-not-allowed" : "cursor-pointer",
-                        getSeatClassName(seatStatus, isSelected),
+                        "relative flex h-3 w-3 items-center justify-center rounded-[3.04px] text-[8px] font-semibold transition-colors",
+                        disabled ? "cursor-not-allowed" : "cursor-pointer",
+                        getSeatClassName(seat.saleStatus, isSelected),
                       ].join(" ")}
+                      title={`${row.rowNo}열 ${seat.seatNo}번 (${seat.saleStatus})`}
                     >
-                      {isSelected ? (
-                        <ChevronDown className="text-[var(--foundation-orange-50)]" />
-                      ) : null}
+                      {isSelected ? "✓" : null}
                     </button>
                   );
                 })}
@@ -145,8 +124,8 @@ function SeatBlock({
 
 export function BlockSeatDetailView({
   selectedIndices,
-  blockNumbers,
-  selectedSeats,
+  blocks,
+  selectedSeatIds,
   onSelectBlock,
   onToggleSeat,
 }: Props) {
@@ -155,21 +134,17 @@ export function BlockSeatDetailView({
   const canvasWidth = Math.max(
     1389,
     BLOCK_START_LEFT * 2 +
-    blockNumbers.length * BLOCK_WIDTH +
-    Math.max(0, blockNumbers.length - 1) * BLOCK_GAP,
+    blocks.length * BLOCK_WIDTH +
+    Math.max(0, blocks.length - 1) * BLOCK_GAP,
   );
 
   return (
     <div className="relative w-full self-stretch overflow-hidden">
       <div className="absolute right-2 top-2 z-30 sm:right-4 sm:top-4">
         <div className="overflow-hidden rounded-2xl bg-[var(--foundation-neutral-white)] shadow-[0px_0px_20px_0px_rgba(0,0,0,0.15)]">
-          <div
-            className={[
-              "flex items-center justify-between gap-3 px-1 py-1"
-            ].join(" ")}
-          >
-            <div className="text-xs font-semibold text-[var(--foundation-neutral-640)] sm:text-sm">
-
+          <div className="flex items-center justify-between gap-3 px-1 py-1">
+            <div className="px-2 text-xs font-semibold text-[var(--foundation-neutral-640)] sm:text-sm">
+              블럭 위치
             </div>
 
             <button
@@ -177,7 +152,7 @@ export function BlockSeatDetailView({
               onClick={() => setIsMapOpen((prev) => !prev)}
               className="cursor-pointer rounded-md px-2 py-1 text-xs font-semibold text-[var(--foundation-neutral-500)] transition-colors hover:bg-[var(--foundation-neutral-50)] hover:text-[var(--foundation-neutral-700)]"
             >
-              {isMapOpen ? <X className="h-4 w-4" /> : "펼치기"}
+              {isMapOpen ? <X className="h-4 w-4" /> : "열기"}
             </button>
           </div>
 
@@ -194,16 +169,24 @@ export function BlockSeatDetailView({
           className="relative overflow-hidden bg-[var(--foundation-neutral-900)]"
           style={{ width: canvasWidth, height: CANVAS_HEIGHT }}
         >
-          {blockNumbers.map((blockNumber, index) => (
+          {blocks.map((block, index) => (
             <SeatBlock
-              key={blockNumber}
-              blockNumber={blockNumber}
+              key={block.blockId}
+              block={block}
               left={BLOCK_START_LEFT + index * (BLOCK_WIDTH + BLOCK_GAP)}
-              selectedSeats={selectedSeats}
+              selectedSeatIds={selectedSeatIds}
               onSelectBlock={onSelectBlock}
               onToggleSeat={onToggleSeat}
             />
           ))}
+
+          {blocks.length === 0 ? (
+            <div className="flex h-full w-full items-center justify-center">
+              <div className="rounded-xl bg-[var(--foundation-neutral-white)] px-6 py-4 text-sm font-medium text-[var(--foundation-neutral-500)] shadow-[0px_12px_30px_rgba(0,0,0,0.14)]">
+                조회 가능한 블럭 좌석이 없습니다.
+              </div>
+            </div>
+          ) : null}
         </div>
       </div>
     </div>

@@ -23,11 +23,11 @@ export function RecommendExitModal({ open, onExit, onClose }: Props) {
           </div>
         </div>
         <div className="inline-flex w-full items-center gap-2">
-          <SecondaryButton onClick={onExit} className="flex flex-1">
-            나가기
-          </SecondaryButton>
-          <PrimaryButton onClick={onClose} className="flex flex-1">
+          <SecondaryButton onClick={onClose} className="flex flex-1">
             계속 예매하기
+          </SecondaryButton>
+          <PrimaryButton onClick={onExit} className="flex flex-1 bg-[var(--foundation-red-500)] hover:bg-[var(--foundation-red-600)]">
+            화면 나가기
           </PrimaryButton>
         </div>
       </div>
