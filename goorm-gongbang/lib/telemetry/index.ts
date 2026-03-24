@@ -5,16 +5,13 @@
  * ```tsx
  * import { useTelemetry } from '@/lib/telemetry';
  *
- * function TicketingPage({ matchId }: { matchId: number }) {
+ * function TicketingPage({ matchId }: { matchId: string }) {
  *   const telemetry = useTelemetry({ matchId });
  *
- *   // 페이지 진입 시 현재 stage 갱신
+ *   // Stage 변경 시 자동으로 telemetry 전송
  *   useEffect(() => {
- *     telemetry.setStage('SEAT_STAGE');
+ *     telemetry.setStage('SEAT_SELECTION');
  *   }, []);
- *
- *   // 보호 API 호출 직전 현재 stage 기준으로 batch 전송
- *   await telemetry.flushCurrentStageAndSend();
  *
  *   return <div>...</div>;
  * }
@@ -24,19 +21,15 @@
 export * from './types';
 export * from './collector';
 export * from './api';
-export * from './runtime';
 
-import { useEffect, useRef, useCallback, useState } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { TelemetryCollector } from './collector';
 import { AITelemetryApi, AIApiError } from './api';
-import { registerTelemetryRuntime, unregisterTelemetryRuntime } from './runtime';
-import { resolveAiBaseUrl } from './baseUrl';
 import type {
   TelemetryConfig,
   TicketingStage,
   TelemetryEvent,
   ChallengeStartResponse,
-  ChallengeVerifyInput,
   ChallengeVerifyResponse,
 } from './types';
 
@@ -46,9 +39,12 @@ import type {
 
 export interface UseTelemetryOptions {
   /** 경기 ID */
-  matchId: number;
+  matchId: string;
 
-  /** AI API base URL (기본: NEXT_PUBLIC_API_BASE/NEXT_PUBLIC_API_URL 기반) */
+  /** 세션 ID (없으면 쿠키에서 읽음) */
+  sid?: string;
+
+  /** AI API base URL (기본: /ai) */
   aiBaseUrl?: string;
 
   /** 디버그 모드 */
@@ -62,14 +58,11 @@ export interface TelemetryInstance {
   /** 현재 Stage */
   stage: TicketingStage;
 
-  /** Stage 변경 */
-  setStage: (stage: TicketingStage) => void;
+  /** Stage 변경 (telemetry 자동 전송) */
+  setStage: (stage: TicketingStage) => Promise<void>;
 
   /** 수동 flush (API 호출 없이 버퍼 반환) */
   flush: () => TelemetryEvent[];
-
-  /** 현재 Stage 기준으로 telemetry 전송 */
-  flushCurrentStageAndSend: () => Promise<number>;
 
   /** 수집 시작 */
   start: () => void;
@@ -84,18 +77,19 @@ export interface TelemetryInstance {
   startChallenge: () => Promise<ChallengeStartResponse>;
 
   /** VQA 챌린지 답변 제출 */
-  verifyChallenge: (request: ChallengeVerifyInput) => Promise<ChallengeVerifyResponse>;
+  verifyChallenge: (challengeId: string, answer: string) => Promise<ChallengeVerifyResponse>;
 }
 
 /**
  * Telemetry React Hook
  *
- * 사용자 행동을 수집하고, 필요한 시점에 현재 Stage 기준으로 AI Runtime에 전송
+ * Stage 전환 시 자동으로 수집된 이벤트를 AI Runtime에 전송
  */
 export function useTelemetry(options: UseTelemetryOptions): TelemetryInstance {
-  const { matchId, aiBaseUrl = resolveAiBaseUrl(), debug = false, autoStart = true } = options;
-  const [stage, setStageState] = useState<TicketingStage>('QUEUE_ENTER_PRECLICK');
-  const previousStageRef = useRef<TicketingStage>('QUEUE_ENTER_PRECLICK');
+  const { matchId, aiBaseUrl = '/ai', debug = false, autoStart = true } = options;
+
+  // 세션 ID 가져오기
+  const sid = options.sid ?? getSessionId();
 
   // Collector와 API 인스턴스
   const collectorRef = useRef<TelemetryCollector | null>(null);
@@ -104,6 +98,7 @@ export function useTelemetry(options: UseTelemetryOptions): TelemetryInstance {
   // 초기화
   useEffect(() => {
     const config: TelemetryConfig = {
+      sid,
       matchId,
       aiBaseUrl,
       debug,
@@ -120,62 +115,34 @@ export function useTelemetry(options: UseTelemetryOptions): TelemetryInstance {
     return () => {
       collectorRef.current?.stop();
     };
-  }, [matchId, aiBaseUrl, debug, autoStart]);
+  }, [sid, matchId, aiBaseUrl, debug, autoStart]);
 
-  // Stage 변경
-  const setStage = useCallback((stage: TicketingStage): void => {
-    const collector = collectorRef.current;
-
-    if (!collector) {
-      console.warn('[Telemetry] Not initialized');
-      return;
-    }
-
-    if (stage !== 'VQA_CHALLENGE') {
-      previousStageRef.current = stage;
-    }
-
-    collector.setStage(stage);
-    setStageState(stage);
-  }, []);
-
-  // 현재 Stage 기준 telemetry 전송
-  const flushCurrentStageAndSend = useCallback(async (): Promise<number> => {
+  // Stage 변경 및 telemetry 전송
+  const setStage = useCallback(async (stage: TicketingStage): Promise<void> => {
     const collector = collectorRef.current;
     const api = apiRef.current;
 
     if (!collector || !api) {
       console.warn('[Telemetry] Not initialized');
-      return 0;
+      return;
     }
 
-    const stage = collector.getStage();
-    const events = collector.flush();
+    // Stage 변경 및 버퍼 flush
+    const events = collector.setStage(stage);
 
-    try {
-      await api.sendTelemetry(matchId, stage, events);
-      if (debug) {
+    // 이벤트가 있으면 전송
+    if (events.length > 0) {
+      try {
+        await api.sendTelemetry(sid, matchId, stage, events);
+        if (debug) {
+          console.log(`[Telemetry] Sent ${events.length} events for stage ${stage}`);
+        }
+      } catch (error) {
+        console.error('[Telemetry] Failed to send telemetry:', error);
+        // 실패해도 계속 진행 (fail-open)
       }
-      return events.length;
-    } catch (error) {
-      console.error('[Telemetry] Failed to send telemetry:', error);
-      return 0;
     }
-  }, [matchId, debug]);
-
-  useEffect(() => {
-    const runtime = {
-      flushCurrentStageAndSend,
-      setStage,
-      getStage: () => stage,
-    };
-
-    registerTelemetryRuntime(runtime);
-
-    return () => {
-      unregisterTelemetryRuntime(runtime);
-    };
-  }, [flushCurrentStageAndSend, setStage, stage]);
+  }, [sid, matchId, debug]);
 
   // 수동 flush
   const flush = useCallback((): TelemetryEvent[] => {
@@ -197,13 +164,13 @@ export function useTelemetry(options: UseTelemetryOptions): TelemetryInstance {
     if (!api) return false;
 
     try {
-      const result = await api.precheck(matchId, cfToken);
+      const result = await api.precheck(sid, matchId, cfToken);
       return result.allowed;
     } catch (error) {
       console.error('[Telemetry] Precheck failed:', error);
       return true; // fail-open
     }
-  }, [matchId]);
+  }, [sid, matchId]);
 
   // VQA 챌린지
   const startChallenge = useCallback(async (): Promise<ChallengeStartResponse> => {
@@ -211,43 +178,53 @@ export function useTelemetry(options: UseTelemetryOptions): TelemetryInstance {
     if (!api) {
       throw new AIApiError('Not initialized', 0);
     }
-    setStage('VQA_CHALLENGE');
-    return api.startChallenge(matchId);
-  }, [matchId, setStage]);
+    return api.startChallenge(sid, matchId);
+  }, [sid, matchId]);
 
   const verifyChallenge = useCallback(
-    async (request: ChallengeVerifyInput): Promise<ChallengeVerifyResponse> => {
+    async (challengeId: string, answer: string): Promise<ChallengeVerifyResponse> => {
       const api = apiRef.current;
       if (!api) {
         throw new AIApiError('Not initialized', 0);
       }
-
-      await flushCurrentStageAndSend();
-      const response = await api.verifyChallenge({
-        matchId,
-        ...request,
-      });
-
-      if (response.success) {
-        setStage(previousStageRef.current);
-      }
-
-      return response;
+      return api.verifyChallenge(sid, challengeId, answer);
     },
-    [flushCurrentStageAndSend, matchId, setStage]
+    [sid]
   );
 
   return {
-    stage,
+    stage: collectorRef.current?.getStage() ?? 'LANDING',
     setStage,
     flush,
-    flushCurrentStageAndSend,
     start,
     stop,
     precheck,
     startChallenge,
     verifyChallenge,
   };
+}
+
+// ============================================================================
+// 유틸리티
+// ============================================================================
+
+/**
+ * 쿠키에서 세션 ID 가져오기
+ */
+function getSessionId(): string {
+  if (typeof document === 'undefined') {
+    return '';
+  }
+
+  // X-Auth-Sid 헤더로 전송되는 세션 ID
+  // 쿠키 우선순위: sid > session_id > SESSIONID
+  const cookies = document.cookie.split(';').reduce((acc, cookie) => {
+    const [key, value] = cookie.trim().split('=');
+    acc[key] = value;
+    return acc;
+  }, {} as Record<string, string>);
+
+  return cookies['sid'] || cookies['session_id'] || cookies['SESSIONID'] || '';
 }
 
 /**
@@ -262,7 +239,7 @@ export function handleAuthzError(error: unknown): {
 } {
   if (error instanceof AIApiError) {
     return {
-      isChallenge: error.isChallengeRequired(),
+      isChallenge: error.isChallenceRequired(),
       isBlocked: error.isBlocked(),
       error,
     };
