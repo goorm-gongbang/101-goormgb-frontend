@@ -1,4 +1,99 @@
 /* ===========================
-   -용도
    브라우저 전용 관측/분석 유틸
+   - Grafana Faro 이벤트 래퍼
+   - 공통 필드 자동 포함
 =========================== */
+
+import { getFaro } from "./faro";
+
+type EventProps = Record<string, string | number | boolean | undefined>;
+
+/**
+ * 디바이스 타입 감지
+ */
+function getDeviceType(): "mobile" | "desktop" {
+  if (typeof window === "undefined") return "desktop";
+  return /Mobile|Android|iPhone|iPad/i.test(navigator.userAgent)
+    ? "mobile"
+    : "desktop";
+}
+
+/**
+ * 로그인 상태 확인 (zustand 직접 import 방지 - 순환참조)
+ */
+function getIsLoggedIn(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    const stored = localStorage.getItem("auth-storage");
+    if (!stored) return false;
+    const parsed = JSON.parse(stored);
+    return !!parsed?.state?.user;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * 공통 필드 생성
+ */
+function getCommonProps(
+  route: string,
+  extra?: EventProps
+): Record<string, string | number | boolean> {
+  const props: Record<string, string | number | boolean> = {
+    route,
+    device_type: getDeviceType(),
+    is_logged_in: getIsLoggedIn(),
+  };
+
+  // 추가 필드 병합 (undefined 제외)
+  if (extra) {
+    Object.entries(extra).forEach(([key, value]) => {
+      if (value !== undefined) {
+        props[key] = value;
+      }
+    });
+  }
+
+  return props;
+}
+
+/**
+ * 페이지 뷰 전송
+ */
+export function trackPageView(route: string, props?: EventProps): void {
+  if (typeof window === "undefined") return;
+
+  const faro = getFaro();
+  if (!faro) return;
+
+  faro.api?.pushEvent("page_view", getCommonProps(route, props));
+}
+
+/**
+ * 액션 이벤트 전송
+ */
+export function trackAction(name: string, props?: EventProps): void {
+  if (typeof window === "undefined") return;
+
+  const faro = getFaro();
+  if (!faro) return;
+
+  const route =
+    typeof window !== "undefined" ? window.location.pathname : "unknown";
+  faro.api?.pushEvent(name, getCommonProps(route, props));
+}
+
+/**
+ * 에러 이벤트 전송
+ */
+export function trackError(name: string, props?: EventProps): void {
+  if (typeof window === "undefined") return;
+
+  const faro = getFaro();
+  if (!faro) return;
+
+  const route =
+    typeof window !== "undefined" ? window.location.pathname : "unknown";
+  faro.api?.pushEvent(name, getCommonProps(route, props));
+}
