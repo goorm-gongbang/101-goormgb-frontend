@@ -28,16 +28,20 @@ function useWithAuth() {
  * 페이지 뷰 자동 트래킹 훅
  * - 컴포넌트 마운트 시 page_view 이벤트 전송
  * - 로그인 상태 자동 주입
+ * - props는 JSON.stringify로 안정적 의존성 처리
  */
 export function useTrackPageView(pageName: string, props?: EventProps) {
   const tracked = useRef(false);
   const { withAuth } = useWithAuth();
+  // props 객체를 안정적으로 비교하기 위해 JSON 문자열로 변환
+  const propsKey = props ? JSON.stringify(props) : "";
 
   useEffect(() => {
     if (tracked.current) return;
     tracked.current = true;
-    trackPageView(pageName, withAuth(props));
-  }, [pageName, props, withAuth]);
+    const parsedProps = propsKey ? JSON.parse(propsKey) : undefined;
+    trackPageView(pageName, withAuth(parsedProps));
+  }, [pageName, propsKey, withAuth]);
 }
 
 /**
@@ -78,7 +82,7 @@ export function useTrackError() {
 // ============================================
 
 /**
- * 로그인 트래킹 훅
+ * 로그인 트래킹 훅 (로그인 상태 자동 주입)
  * @example
  * const { onLoginSuccess, onLoginFail } = useLoginTracking("kakao");
  *
@@ -90,15 +94,17 @@ export function useTrackError() {
  * }
  */
 export function useLoginTracking(method: "kakao" | "google") {
+  const { withAuth } = useWithAuth();
+
   const onLoginSuccess = useCallback(() => {
-    trackAction("login_success", { method });
-  }, [method]);
+    trackAction("login_success", withAuth({ method }));
+  }, [method, withAuth]);
 
   const onLoginFail = useCallback(
     (error?: Error | string) => {
-      trackError("login_fail", error, { method });
+      trackError("login_fail", error, withAuth({ method }));
     },
-    [method]
+    [method, withAuth]
   );
 
   return { onLoginSuccess, onLoginFail };
