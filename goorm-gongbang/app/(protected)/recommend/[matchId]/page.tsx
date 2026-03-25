@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ChevronLeft } from "lucide-react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
@@ -31,10 +31,9 @@ import type {
   SeatEntryResponse,
   SeatGroupsEntryResponse,
   SectionBlock,
-  SectionBlockSeat,
-  SeatAssignmentResponse,
 } from "@/lib/types";
-import { useTelemetry } from "@/lib/telemetry";
+import { VQAChallenge } from "@/lib/telemetry/components";
+import { TelemetryProvider, useTelemetryContext } from "@/lib/telemetry/context";
 
 type SeatListItem = {
   sectionId: number;
@@ -58,6 +57,25 @@ type SelectedSeatDetail = {
   blockDisplayName: string;
   sectionName: string;
 };
+
+type VqaPromptState = {
+  reason: "proactive" | "fallback";
+  requestName: string;
+};
+
+class VqaChallengeCancelledError extends Error {
+  constructor() {
+    super("VQA challenge was cancelled.");
+    this.name = "VqaChallengeCancelledError";
+  }
+}
+
+class ProtectedRequestCancelledError extends Error {
+  constructor() {
+    super("Protected request was cancelled.");
+    this.name = "ProtectedRequestCancelledError";
+  }
+}
 
 const PRICE_TEXT_MAP: Record<string, string> = {
   익사이팅존: "주중: 28,000원, 주말: 33,000/매",
@@ -99,9 +117,7 @@ const toSeatSections = (seatGroupsEntry: SeatGroupsEntryResponse): SeatSection[]
 };
 
 export default function Page() {
-  const router = useRouter();
   const params = useParams();
-  const searchParams = useSearchParams();
 
   const matchId = useMemo(() => {
     const raw = (params as Record<string, string | string[] | undefined>)?.matchId;
@@ -109,12 +125,18 @@ export default function Page() {
     const parsed = value ? Number(value) : NaN;
     return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
   }, [params]);
-  // AI telemetry 연동: 서비스 레이어 preflight flush가 동작하려면
-  // 페이지 진입 시 telemetry runtime이 먼저 등록돼 있어야 한다.
-  const { setStage } = useTelemetry({
-    matchId: matchId ?? 0,
-    autoStart: matchId !== null,
-  });
+
+  return (
+    <TelemetryProvider matchId={matchId ?? 0} autoStart={matchId !== null}>
+      <RecommendPageContent key={matchId ?? "unknown-match"} matchId={matchId} />
+    </TelemetryProvider>
+  );
+}
+
+function RecommendPageContent({ matchId }: { matchId: number | null }) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { setStage } = useTelemetryContext();
 
   const recommendationEnabled = searchParams.get("recommendationEnabled") === "true";
   const initialQueueRank = searchParams.get("queueRank")
@@ -126,6 +148,11 @@ export default function Page() {
 
   const pollingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hasHandledQueueEndRef = useRef(false);
+  const isVqaVerifiedRef = useRef(false);
+  const vqaDeferredRef = useRef<{
+    promise: Promise<boolean>;
+    resolve: (value: boolean) => void;
+  } | null>(null);
 
   const [queueStatus, setQueueStatus] = useState<QueueStatusType | null>(null);
   const [queueRank, setQueueRank] = useState<number | null>(initialQueueRank);
@@ -157,8 +184,9 @@ export default function Page() {
   const [isExitModalOpen, setIsExitModalOpen] = useState(false);
   const [isSoldOutModalOpen, setIsSoldOutModalOpen] = useState(false);
   const [isSeatUnavailableModalOpen, setIsSeatUnavailableModalOpen] = useState(false);
+  const [vqaPrompt, setVqaPrompt] = useState<VqaPromptState | null>(null);
 
-  const matchInfo = recommendationEnabled ? seatEntry?.match ?? null : seatGroupsEntry?.match ?? null;
+  const matchInfo = isPreferredRecommendOn ? seatEntry?.match ?? null : seatGroupsEntry?.match ?? null;
   const homeClub = matchInfo?.homeClub ?? null;
   const awayClub = matchInfo?.awayClub ?? null;
   const stadiumName = matchInfo?.stadium?.koName ?? "";
@@ -214,12 +242,12 @@ export default function Page() {
     return selectedSeatIds.length > 0;
   }, [isPreferredRecommendOn, selectedRecommendId, selectedSeatIds.length]);
 
-  const clearQueuePolling = () => {
+  const clearQueuePolling = useCallback(() => {
     if (pollingTimeoutRef.current) {
       clearTimeout(pollingTimeoutRef.current);
       pollingTimeoutRef.current = null;
     }
-  };
+  }, []);
 
   useEffect(() => {
     if (matchId === null) return;
@@ -228,10 +256,20 @@ export default function Page() {
     setStage("SEAT_STAGE");
   }, [matchId, setStage]);
 
-  const scheduleNextPoll = (ms: number, callback: () => void) => {
+  useEffect(() => {
+    return () => {
+      if (!vqaDeferredRef.current) return;
+
+      const pending = vqaDeferredRef.current;
+      vqaDeferredRef.current = null;
+      pending.resolve(false);
+    };
+  }, []);
+
+  const scheduleNextPoll = useCallback((ms: number, callback: () => void) => {
     clearQueuePolling();
     pollingTimeoutRef.current = setTimeout(callback, ms);
-  };
+  }, [clearQueuePolling]);
 
   const toRecommendItems = (response: BlockRecommendationResponse): SeatRecommendItem[] =>
     response.blocks.map((block) => ({
@@ -264,6 +302,79 @@ export default function Page() {
     router.push(`/matches/${matchId}`);
   };
 
+  const settleVqaPrompt = useCallback((passed: boolean) => {
+    const pending = vqaDeferredRef.current;
+    vqaDeferredRef.current = null;
+    setVqaPrompt(null);
+    isVqaVerifiedRef.current = passed;
+    pending?.resolve(passed);
+  }, []);
+
+  const requestVqaGate = useCallback(
+    (
+      reason: VqaPromptState["reason"],
+      requestName: string,
+      force = false,
+    ): Promise<boolean> => {
+      if (!force && isVqaVerifiedRef.current) {
+        return Promise.resolve(true);
+      }
+
+      if (vqaDeferredRef.current) {
+        return vqaDeferredRef.current.promise;
+      }
+
+      let resolvePromise!: (value: boolean) => void;
+      const promise = new Promise<boolean>((resolve) => {
+        resolvePromise = resolve;
+      });
+
+      vqaDeferredRef.current = {
+        promise,
+        resolve: resolvePromise,
+      };
+
+      setVqaPrompt({ reason, requestName });
+
+      if (reason === "proactive") {
+        console.log(`[Recommend][VQA] READY gate requested before ${requestName}`);
+      } else {
+        console.log(`[Recommend][VQA] 428 fallback requested for ${requestName}`);
+      }
+
+      return promise;
+    },
+    [],
+  );
+
+  const executeProtectedRequest = useCallback(
+    async <T,>(requestName: string, requestFactory: () => Promise<T>): Promise<T> => {
+      const verified = await requestVqaGate("proactive", requestName);
+      if (!verified) {
+        throw new VqaChallengeCancelledError();
+      }
+
+      try {
+        return await requestFactory();
+      } catch (error) {
+        if (!(error instanceof ApiError) || error.status !== 428) {
+          throw error;
+        }
+
+        isVqaVerifiedRef.current = false;
+        console.log(`[Recommend][VQA] 428 received from ${requestName}; retrying after challenge`);
+
+        const retryVerified = await requestVqaGate("fallback", requestName, true);
+        if (!retryVerified) {
+          throw new VqaChallengeCancelledError();
+        }
+
+        return await requestFactory();
+      }
+    },
+    [requestVqaGate],
+  );
+
   const handleSelectSeatListItem = async (item: SeatListItem) => {
     if (!matchId) return;
 
@@ -275,11 +386,18 @@ export default function Page() {
     setSectionBlocksLoading(true);
 
     try {
-      const response = await getSectionBlocks(matchId, item.sectionId);
+      const response = await executeProtectedRequest(
+        `GET /seat/matches/${matchId}/sections/${item.sectionId}/blocks`,
+        () => getSectionBlocks(matchId, item.sectionId),
+      );
       console.log("getSectionBlocks:", response);
       setSectionBlocks(response.blocks);
       setActiveBlockId(response.blocks[0]?.blockId ?? null);
     } catch (e) {
+      if (e instanceof VqaChallengeCancelledError) {
+        return;
+      }
+
       const error = e as { status?: number };
 
       if (error.status === 401) {
@@ -327,7 +445,7 @@ export default function Page() {
     );
   };
 
-  const handleQueueEnd = (message: string) => {
+  const handleQueueEnd = useCallback((message: string) => {
     if (hasHandledQueueEndRef.current) return;
     hasHandledQueueEndRef.current = true;
 
@@ -338,14 +456,17 @@ export default function Page() {
     if (matchId) {
       router.push(`/matches/${matchId}`);
     }
-  };
+  }, [clearQueuePolling, matchId, router]);
 
   const handleAssignRecommendedSeats = async () => {
     if (!matchId || !selectedRecommendId || assigning) return;
 
     try {
       setAssigning(true);
-      const response = await assignRecommendedSeats(matchId, selectedRecommendId);
+      const response = await executeProtectedRequest(
+        `POST /seat/matches/${matchId}/recommendations/blocks/${selectedRecommendId}/assign`,
+        () => assignRecommendedSeats(matchId, selectedRecommendId),
+      );
       console.log("SeatAssignmentResponse:", response);
 
       const params = new URLSearchParams({
@@ -355,6 +476,10 @@ export default function Page() {
 
       router.push(`/pay/${matchId}?${params.toString()}`);
     } catch (e) {
+      if (e instanceof VqaChallengeCancelledError) {
+        return;
+      }
+
       const error = e as { status?: number };
 
       if (error.status === 401) {
@@ -397,9 +522,14 @@ export default function Page() {
     try {
       setAssigning(true);
 
-      console.log("createSeatHold-matchId-REQ: ", matchId);
-      console.log("createSeatHold-selectedSeatIds-REQ: ", selectedSeatIds);
-      const response = await createSeatHold(matchId, { seatIds: selectedSeatIds });
+      console.log("createSeatHoldREQ: ", selectedSeatIds);
+      const response = await executeProtectedRequest(
+        `POST /seat/matches/${matchId}/seat-holds`,
+        () =>
+          createSeatHold(matchId, {
+            seatIds: selectedSeatIds,
+          }),
+      );
 
       console.log("createSeatHold:", response);
 
@@ -410,6 +540,10 @@ export default function Page() {
 
       router.push(`/pay/${matchId}?${params.toString()}`);
     } catch (e) {
+      if (e instanceof VqaChallengeCancelledError) {
+        return;
+      }
+
       const error = e as { status?: number };
 
       if (error.status === 400) {
@@ -475,60 +609,9 @@ export default function Page() {
         }
 
         if (status === "READY") {
+          console.log("[Recommend][Queue] READY reached; proactive VQA gate will open.");
           setIsFindingSeat(false);
           clearQueuePolling();
-          setLoading(true);
-
-          try {
-            if (isPreferredRecommendOn) {
-              const seatEntryResponse = await getRecommendationSeatEntry(matchId);
-              console.log("seatEntryResponse:", seatEntryResponse);
-              if (cancelled) return;
-
-              setSeatEntry(seatEntryResponse);
-
-              const preferredBlockIds = seatEntryResponse.seatSession.preferredBlockIds ?? [];
-              setSelectedSeatBlocks(preferredBlockIds);
-              setPreferredRecommendBlocks(preferredBlockIds);
-
-              const blockRecommendationResponse = await getRecommendationBlocks(matchId);
-              console.log("blockRecommendationResponse:", blockRecommendationResponse);
-              if (cancelled) return;
-
-              setRecommendItems(toRecommendItems(blockRecommendationResponse));
-            } else {
-              const seatGroupsResponse = await getSeatGroupsEntry(matchId);
-              console.log("seatGroupsResponse:", seatGroupsResponse);
-              if (cancelled) return;
-
-              setSeatGroupsEntry(seatGroupsResponse);
-              setSeatSections(toSeatSections(seatGroupsResponse));
-            }
-          } catch (e) {
-            const error = e as { status?: number };
-
-            if (error.status === 401) {
-              toast.error("유효하지 않은 입장 토큰입니다.");
-              router.push(`/matches/${matchId}`);
-              return;
-            }
-            if (error.status === 404) {
-              setIsSoldOutModalOpen(true);
-              return;
-            }
-            if (error.status === 410) {
-              toast.error("입장 가능 시간이 만료되었습니다.");
-              router.push(`/matches/${matchId}`);
-              return;
-            }
-
-            toast.error("좌석 정보를 불러오는 중 오류가 발생했습니다.");
-          } finally {
-            if (!cancelled) {
-              setLoading(false);
-            }
-          }
-
           return;
         }
 
@@ -564,13 +647,115 @@ export default function Page() {
       }
     };
 
-    poll();
+    void poll();
 
     return () => {
       cancelled = true;
       clearQueuePolling();
     };
-  }, [matchId, queueStatus, isPreferredRecommendOn, router]);
+  }, [clearQueuePolling, handleQueueEnd, matchId, router, scheduleNextPoll]);
+
+  useEffect(() => {
+    if (!matchId || queueStatus !== "READY") return;
+
+    let cancelled = false;
+
+    const getActiveRequest = <T,>(requestFactory: () => Promise<T>) => {
+      return async (): Promise<T> => {
+        if (cancelled) {
+          throw new ProtectedRequestCancelledError();
+        }
+
+        return requestFactory();
+      };
+    };
+
+    const loadSeatAccess = async () => {
+      setLoading(true);
+
+      if (isPreferredRecommendOn) {
+        setSeatEntry(null);
+        setRecommendItems([]);
+        setPreferredRecommendBlocks([]);
+      } else {
+        setSeatGroupsEntry(null);
+        setSeatSections([]);
+      }
+
+      try {
+        if (isPreferredRecommendOn) {
+          const seatEntryResponse = await executeProtectedRequest(
+            `GET /seat/matches/${matchId}/recommendations/seat-entry`,
+            getActiveRequest(() => getRecommendationSeatEntry(matchId)),
+          );
+          if (cancelled) return;
+
+          console.log("[Recommend][Entry] recommendation seat entry loaded after VQA");
+          setSeatEntry(seatEntryResponse);
+
+          const preferredBlockIds = seatEntryResponse.seatSession.preferredBlockIds ?? [];
+          setSelectedSeatBlocks(preferredBlockIds);
+          setPreferredRecommendBlocks(preferredBlockIds);
+
+          const blockRecommendationResponse = await executeProtectedRequest(
+            `GET /seat/matches/${matchId}/recommendations/blocks`,
+            getActiveRequest(() => getRecommendationBlocks(matchId)),
+          );
+          if (cancelled) return;
+
+          console.log("[Recommend][Entry] recommendation blocks loaded after VQA");
+          setRecommendItems(toRecommendItems(blockRecommendationResponse));
+        } else {
+          const seatGroupsResponse = await executeProtectedRequest(
+            `GET /seat/matches/${matchId}/seat-groups`,
+            getActiveRequest(() => getSeatGroupsEntry(matchId)),
+          );
+          if (cancelled) return;
+
+          console.log("[Recommend][Entry] seat groups loaded after VQA");
+          setSeatGroupsEntry(seatGroupsResponse);
+          setSeatSections(toSeatSections(seatGroupsResponse));
+        }
+      } catch (e) {
+        if (
+          cancelled ||
+          e instanceof VqaChallengeCancelledError ||
+          e instanceof ProtectedRequestCancelledError
+        ) {
+          return;
+        }
+
+        const error = e as { status?: number };
+
+        if (error.status === 401) {
+          toast.error("유효하지 않은 입장 토큰입니다.");
+          router.push(`/matches/${matchId}`);
+          return;
+        }
+        if (error.status === 404) {
+          setIsSoldOutModalOpen(true);
+          return;
+        }
+        if (error.status === 410) {
+          toast.error("입장 가능 시간이 만료되었습니다.");
+          router.push(`/matches/${matchId}`);
+          return;
+        }
+
+        toast.error("좌석 정보를 불러오는 중 오류가 발생했습니다.");
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    };
+
+    void loadSeatAccess();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [executeProtectedRequest, isPreferredRecommendOn, matchId, queueStatus, router]);
 
   return (
     <div className="flex min-h-screen w-full flex-col items-center bg-white">
@@ -885,6 +1070,23 @@ export default function Page() {
           open={isFindingSeat && queueStatus === "WAITING"}
           rank={queueRank}
           totalWaitingCount={totalWaitingCount}
+        />
+      )}
+
+      {vqaPrompt && (
+        <VQAChallenge
+          onSuccess={() => {
+            console.log(
+              `[Recommend][VQA] success (${vqaPrompt.reason}) for ${vqaPrompt.requestName}`,
+            );
+            settleVqaPrompt(true);
+          }}
+          onCancel={() => {
+            console.log(
+              `[Recommend][VQA] cancelled (${vqaPrompt.reason}) for ${vqaPrompt.requestName}`,
+            );
+            settleVqaPrompt(false);
+          }}
         />
       )}
     </div>
