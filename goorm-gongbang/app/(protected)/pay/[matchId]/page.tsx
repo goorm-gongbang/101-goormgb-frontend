@@ -339,31 +339,12 @@ export default function Page() {
             });
 
             if (paymentResult.paymentMethod === "BANK_TRANSFER") {
-
-                const params = new URLSearchParams({
-
-                    stadiumName: orderSheet?.match.stadium.koName ?? "",
-                    stadiumAddress: orderSheet?.match.stadium.address ?? "",
-                    matchAt: orderSheet?.match.matchAt ?? "",
-                    totalAmount: String(totalAmount),
-                    fee: String(fee),
-                    seatLabels: JSON.stringify(
-                        seats.map((seat) => ({
-                            label: `${seat.sectionName} ${seat.blockCode}블럭 ${seat.rowNo}열 ${seat.seatNo}번`,
-                            price: seat.adultPrice,
-                        }))
-                    ),
-
-                    cashReceiptApplied: cashReceiptResult ? "true" : "false",
-                    cashReceiptPurpose: cashReceiptResult?.purpose ?? "",
-                    cashReceiptNumber: cashReceiptResult?.number ?? "",
-                });
-
                 router.push(`/pay/${matchId}/bank-account?${params.toString()}`);
                 return;
             }
 
             router.push(`/pay/${matchId}/complete?${params.toString()}`);
+
         } catch (e) {
             const error = e as { status?: number };
 

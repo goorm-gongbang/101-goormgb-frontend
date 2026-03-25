@@ -17,10 +17,17 @@ export default function BankAccountPage() {
     const totalAmount = Number(searchParams.get("totalAmount") ?? "0");
     const fee = Number(searchParams.get("fee") ?? "0");
 
-    const seatRows = JSON.parse(searchParams.get("seatLabels") ?? "[]") as Array<{
-        label: string;
-        price: number;
-    }>;
+    const seatRows = (() => {
+        try {
+            return JSON.parse(searchParams.get("seatLabels") ?? "[]") as Array<{
+                label: string;
+                price: number;
+            }>;
+        } catch (e) {
+            console.error("seatLabels 파싱 오류:", e);
+            return [];
+        }
+    })();
 
 
     const naverMapUrl = `https://map.naver.com/p/search/${encodeURIComponent(stadiumAddress)}`;

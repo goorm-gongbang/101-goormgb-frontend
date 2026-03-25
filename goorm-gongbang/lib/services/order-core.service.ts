@@ -96,7 +96,7 @@ export const saveOnboardingPreferencesBlocks = (body: PreferredBlockUpdateReques
 
 /* 주문서 조회 */
 export const getOrderSheet = (
-  matchId: number,
+  matchId: string | number,
   seatIds: number[],
 ) =>
   auth.get<OrderSheetResponse>(
