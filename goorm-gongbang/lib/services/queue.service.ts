@@ -22,6 +22,8 @@ export type {
 
 /* 대기열 진입 */
 export const enterQueue = async (matchId: string | number) => {
+  // AI telemetry 연동: ext_authz가 queue enter를 평가하기 전에
+  // 현재 stage raw batch를 먼저 AI 서버에 반영한다.
   await flushTelemetryBeforeProtectedRequest();
 
   return auth.post<QueueEnterResponse>(

@@ -117,8 +117,10 @@ export default function MatchDetailSectionResponsive({
     const n = str ? Number(str) : NaN;
     return Number.isFinite(n) && n > 0 ? n : null;
   }, [params]);
+  // AI telemetry 연동: 서비스 레이어 preflight flush가 동작하려면
+  // 페이지 진입 시 telemetry runtime이 먼저 등록돼 있어야 한다.
   const { setStage } = useTelemetry({
-    matchId: matchId ? String(matchId) : "",
+    matchId: matchId ?? 0,
     autoStart: matchId !== null,
   });
 
@@ -142,7 +144,9 @@ export default function MatchDetailSectionResponsive({
 
   useEffect(() => {
     if (matchId === null) return;
-    setStage("LANDING");
+    // AI telemetry 연동: 현재 화면을 queue enter 직전 구간으로만 라벨링한다.
+    // 기존 예매 비즈니스 로직이나 화면 이동 흐름은 바꾸지 않는다.
+    setStage("QUEUE_ENTER_PRECLICK");
   }, [matchId, setStage]);
 
   const handleBlockToggle = (blockNum: number) => {

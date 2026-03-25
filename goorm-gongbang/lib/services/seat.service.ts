@@ -34,6 +34,7 @@ export const getRecommendationSeatEntry = (matchId: string | number) =>
 
 /* 추천 ON - 추천 블럭 리스트 조회 */
 export const getRecommendationBlocks = async (matchId: string | number) => {
+  // AI telemetry 연동: 보호 API 평가 전에 현재 좌석 탐색 batch를 선반영한다.
   await flushTelemetryBeforeProtectedRequest();
 
   return auth.get<BlockRecommendationResponse>(
@@ -46,6 +47,7 @@ export const assignRecommendedSeats = async (
   matchId: string | number,
   blockId: string | number,
 ) => {
+  // AI telemetry 연동: 자동 배정 요청 직전 최신 seat-stage raw batch를 전송한다.
   await flushTelemetryBeforeProtectedRequest();
 
   return auth.post<SeatAssignmentResponse>(
@@ -55,6 +57,7 @@ export const assignRecommendedSeats = async (
 
 /* 추천 OFF - 구역 리스트 조회 */
 export const getSeatGroupsEntry = async (matchId: string | number) => {
+  // AI telemetry 연동: 보호 API 평가 전에 현재 좌석 탐색 batch를 선반영한다.
   await flushTelemetryBeforeProtectedRequest();
 
   return auth.get<SeatGroupsEntryResponse>(
@@ -67,6 +70,7 @@ export const getSectionBlocks = async (
   matchId: string | number,
   sectionId: string | number,
 ) => {
+  // AI telemetry 연동: 블럭 상세 조회 직전 최신 seat-stage raw batch를 전송한다.
   await flushTelemetryBeforeProtectedRequest();
 
   return auth.get<SectionBlocksResponse>(
@@ -79,6 +83,7 @@ export const createSeatHold = async (
   matchId: string | number,
   body: SeatHoldCreateRequest,
 ) => {
+  // AI telemetry 연동: hold 생성 직전 최신 seat-stage raw batch를 전송한다.
   await flushTelemetryBeforeProtectedRequest();
 
   return auth.post<SeatHoldCreateResponse, SeatHoldCreateRequest>(

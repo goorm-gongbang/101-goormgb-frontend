@@ -109,8 +109,10 @@ export default function Page() {
     const parsed = value ? Number(value) : NaN;
     return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
   }, [params]);
+  // AI telemetry 연동: 서비스 레이어 preflight flush가 동작하려면
+  // 페이지 진입 시 telemetry runtime이 먼저 등록돼 있어야 한다.
   const { setStage } = useTelemetry({
-    matchId: matchId ? String(matchId) : "",
+    matchId: matchId ?? 0,
     autoStart: matchId !== null,
   });
 
@@ -221,7 +223,9 @@ export default function Page() {
 
   useEffect(() => {
     if (matchId === null) return;
-    setStage("QUEUE_WAITING");
+    // AI telemetry 연동: 현재 화면을 좌석 탐색 구간으로만 라벨링한다.
+    // 기존 좌석 추천/선점 비즈니스 로직에는 관여하지 않는다.
+    setStage("SEAT_STAGE");
   }, [matchId, setStage]);
 
   const scheduleNextPoll = (ms: number, callback: () => void) => {
@@ -500,8 +504,6 @@ export default function Page() {
               setSeatGroupsEntry(seatGroupsResponse);
               setSeatSections(toSeatSections(seatGroupsResponse));
             }
-
-            setStage("SEAT_SELECTION");
           } catch (e) {
             const error = e as { status?: number };
 
@@ -568,7 +570,7 @@ export default function Page() {
       cancelled = true;
       clearQueuePolling();
     };
-  }, [matchId, queueStatus, isPreferredRecommendOn, router, setStage]);
+  }, [matchId, queueStatus, isPreferredRecommendOn, router]);
 
   return (
     <div className="flex min-h-screen w-full flex-col items-center bg-white">
