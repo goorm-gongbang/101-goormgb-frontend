@@ -1,7 +1,7 @@
 /* ===========================
    Grafana Faro 초기화
    - 프론트엔드 관측성 (RUM, Tracing)
-   - 중복 초기화 방지
+   - API 호출만 추적 (범위 제한)
 =========================== */
 
 import { initializeFaro, getWebInstrumentations } from "@grafana/faro-web-sdk";
@@ -10,6 +10,13 @@ import { TracingInstrumentation } from "@grafana/faro-web-tracing";
 type FaroInstance = ReturnType<typeof initializeFaro>;
 
 let faroInstance: FaroInstance | null = null;
+
+// Tracing 대상 API (내부 API만 - 정적 파일/외부 요청 제외)
+const TRACE_TARGET_URLS = [
+  /api\.staging\.playball\.one/,
+  /api\.playball\.one/,
+  /api\.dev\.goormgb\.space/,
+];
 
 /**
  * Faro 초기화 (클라이언트 전용)
@@ -41,8 +48,10 @@ export function initFaro(): FaroInstance | null {
     instrumentations: [
       // 기본 웹 계측 (console, errors, web vitals 등)
       ...getWebInstrumentations(),
-      // 분산 추적 (traceparent 전파)
-      new TracingInstrumentation(),
+      // 분산 추적 - 내부 API만 추적 (외부/정적 파일 제외)
+      new TracingInstrumentation({
+        propagateTraceHeaderCorsUrls: TRACE_TARGET_URLS,
+      }),
     ],
   });
 
