@@ -21,6 +21,13 @@ import type {
   ClubMonthMatches,
   OnboardingPreferencesResponse,
   PreferredBlockUpdateRequest,
+  OrderSheetResponse,
+  CreateOrderRequest,
+  CreateOrderResponse,
+  ProcessPaymentRequest,
+  ProcessPaymentResponse,
+  CreateCashReceiptRequest,
+  CreateCashReceiptResponse
 } from "@/lib/types";
 
 // Re-export types for convenience
@@ -86,3 +93,39 @@ export const getOnboardingPreferences = () =>
 /* 선호 구역 수정 */
 export const saveOnboardingPreferencesBlocks = (body: PreferredBlockUpdateRequest) =>
   auth.put(`${API_BASE_URL}/order/onboarding/preferred-blocks`, body);
+
+/* 주문서 조회 */
+export const getOrderSheet = (
+  matchId: number,
+  seatIds: number[],
+) =>
+  auth.get<OrderSheetResponse>(
+    `${API_BASE_URL}/order/mypage/orders/sheet?matchId=${matchId}&seatIds=${seatIds.join(",")}`
+  );
+
+/* 주문 생성 */
+export const createOrder = (body: CreateOrderRequest) =>
+  auth.post<CreateOrderResponse, CreateOrderRequest>(
+    `${API_BASE_URL}/order/mypage/orders`,
+    body,
+  );
+
+/* 결제 처리 */
+export const processPayment = (
+  orderId: number,
+  body: ProcessPaymentRequest,
+) =>
+  auth.post<ProcessPaymentResponse, ProcessPaymentRequest>(
+    `${API_BASE_URL}/order/mypage/orders/${orderId}/payment`,
+    body,
+  );
+
+/* 현금 영수증 신청 */
+export const createCashReceipt = (
+  orderId: number,
+  body: CreateCashReceiptRequest,
+) =>
+  auth.post<CreateCashReceiptResponse, CreateCashReceiptRequest>(
+    `${API_BASE_URL}/order/mypage/orders/${orderId}/cash-receipt`,
+    body,
+  );

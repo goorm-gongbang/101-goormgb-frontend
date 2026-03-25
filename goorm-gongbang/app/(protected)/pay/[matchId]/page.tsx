@@ -1,78 +1,225 @@
 ﻿"use client";
-import { useState, useEffect } from "react";
+import { toast } from "sonner";
+import { useState, useEffect, useMemo } from "react";
 import { ChevronLeft, Minus, Plus } from "lucide-react";
+import { CDN_CLUBS_BASE_URL } from "@/lib/api/config";
 import { TicketingNavigator } from "@/components/common/TicketingNavigator";
 import { CancelOrderModal } from "@/components/common/CancelOrderModal";
 import { RefundPolicyModal } from "@/components/common/RefundPolicyModal";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { ChevronRight } from "lucide-react";
 import { PaymentTimeoutModal } from "@/components/common/PaymentTimeoutModal";
 import { PrimaryButton, SecondaryButton } from "@/components/common/Button";
+import { PaymentFailureModal } from "@/components/common/PaymentFailureModal";
+import {
+    getOrderSheet,
+    createOrder,
+    processPayment,
+    createCashReceipt
+} from "@/lib/services";
+import type {
+    OrderSheetResponse,
+    CreateOrderRequest,
+} from "@/lib/types";
+
+type TicketKey =
+    | "normal"
+    | "disabled"
+    | "veteran"
+    | "child"
+    | "infant"
+    | "senior"
+    | "youth";
+
+type TicketOption = {
+    key: TicketKey;
+    title: string;
+    description?: string;
+    note?: string;
+    tone?: "default" | "muted";
+};
+
+const INITIAL_TICKET_COUNTS: Record<TicketKey, number> = {
+    normal: 0,
+    disabled: 0,
+    veteran: 0,
+    child: 0,
+    infant: 0,
+    senior: 0,
+    youth: 0,
+};
+
+const TICKET_OPTIONS_BY_SECTION: Array<{ sectionLabel: string; options: TicketOption[]; }> =
+    [
+        {
+            sectionLabel: "기본가",
+            options: [{ key: "normal", title: "일반" }],
+        },
+        {
+            sectionLabel: "기본 할인",
+            options: [
+                { key: "disabled", title: "장애인", description: "1급 ~ 3급" },
+                { key: "veteran", title: "국가유공자", description: "국가유공자 & 병역명문가" },
+                { key: "child", title: "어린이", description: "36개월 ~ 초등학생" },
+                { key: "infant", title: "미취학 아동", description: "36개월 미만, 보호자 좌석 미점유 시" },
+                { key: "senior", title: "경로자", description: "만 65세 이상", note: "외야 그린석 한정", tone: "muted" },
+                { key: "youth", title: "청소년/군경", description: "중·고생, 일반 사병", note: "외야 그린석 한정", tone: "muted" },
+            ],
+        },
+    ];
 
 export default function Page() {
     const router = useRouter();
     const params = useParams<{ matchId: string }>();
+    const searchParams = useSearchParams();
     const matchId = Array.isArray(params.matchId) ? params.matchId[0] : params.matchId;
+    const seatIds = useMemo(() => searchParams.get("seatIds")?.split(",").map((v) => Number(v)).filter((v) => Number.isFinite(v)) ?? [], [searchParams]);
 
-    const [step, setStep] = useState<"ticket" | "payment">("ticket");
+    const [orderSheet, setOrderSheet] = useState<OrderSheetResponse | null>(null);
+    const [isLoadingOrderSheet, setIsLoadingOrderSheet] = useState(true);
 
-    const handleNextStep = () => {
-        if (!canProceed) return;
-        setStep("payment");
+    const match = orderSheet?.match;
+    const seats = orderSheet?.seats ?? [];
+    const summary = orderSheet?.summary;
+    const maxSelectableTicketCount = seats.length;
+    const normalTicketPrice = seats[0]?.adultPrice ?? 0;
+    const [ticketCounts, setTicketCounts] = useState<Record<TicketKey, number>>(INITIAL_TICKET_COUNTS);
+    const ticketPrices = useMemo<Record<TicketKey, number>>( // 티켓 가격 정책
+        () => ({
+            normal: normalTicketPrice,
+            disabled: normalTicketPrice * 0.5,
+            veteran: normalTicketPrice * 0.5,
+            child: normalTicketPrice * 0.5,
+            infant: 0,
+            senior: normalTicketPrice * 0.5,
+            youth: Math.max(normalTicketPrice - 2000, 0),
+        }),
+        [normalTicketPrice]
+    );
+    const selectedTicketCount = useMemo(
+        () => Object.values(ticketCounts).reduce((sum, count) => sum + count, 0),
+        [ticketCounts]
+    );
+    const remainingSelectableTicketCount = Math.max(maxSelectableTicketCount - selectedTicketCount, 0);
+    const ticketAmount = useMemo(
+        () => (Object.keys(ticketCounts) as TicketKey[]).reduce(
+            (sum, key) => sum + ticketCounts[key] * ticketPrices[key],
+            0
+        ),
+        [ticketCounts, ticketPrices]
+    );
+    const fee = summary?.bookingFee ?? 0;
+    const discount = 0;
+    const totalAmount = ticketAmount + fee - discount;
+    const seatLabels = seats.map((seat) => `${seat.sectionName} ${seat.blockCode}블럭 ${seat.rowNo}열 ${seat.seatNo}번`);
+    const matchTitle = match ? `${match.homeClub.koName} vs ${match.awayClub.koName}` : "-";
+
+    const formatMatchAt = (value?: string) => {
+        if (!value) return "-";
+        const date = new Date(value);
+        return new Intl.DateTimeFormat("ko-KR", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+            weekday: "short",
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: false,
+        }).format(date);
     };
 
-    const handleSubmitPayment = () => {
-        if (!canSubmitPayment || !matchId) return;
+    const formatCancelDeadline = (value?: string) => {
+        if (!value) return "-";
 
-        if (paymentMethod === "toss" || paymentMethod === "kakao") {
-            router.push(`/pay/${matchId}/complete?method=${paymentMethod}`);
-            return;
-        }
+        const matchDate = new Date(value);
+        if (Number.isNaN(matchDate.getTime())) return "-";
 
-        if (paymentMethod === "bank") {
-            router.push(`/pay/${matchId}/bank-account`);
+        const cancelDeadline = new Date(matchDate);
+        cancelDeadline.setDate(cancelDeadline.getDate() - 1);
+        cancelDeadline.setHours(23, 59, 0, 0);
+
+        return new Intl.DateTimeFormat("ko-KR", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+            weekday: "short",
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: false,
+            timeZone: "Asia/Seoul",
+        }).format(cancelDeadline);
+    };
+
+    const won = (n: number) => `${n.toLocaleString("ko-KR")} 원`;
+    const getTicketPriceLabel = (key: TicketKey) => ticketPrices[key] === 0 ? "무료" : won(ticketPrices[key]);
+    const canIncreaseTicket = !isLoadingOrderSheet && selectedTicketCount < maxSelectableTicketCount;
+    const canDecreaseTicket = (key: TicketKey) => !isLoadingOrderSheet && ticketCounts[key] > 0;
+
+    const changeCount = (key: TicketKey, diff: number) => {
+        setTicketCounts((prev) => {
+            const nextValue = Math.max(0, prev[key] + diff);
+            const currentTotal = Object.values(prev).reduce((sum, count) => sum + count, 0);
+            const nextTotal = currentTotal - prev[key] + nextValue;
+
+            if (nextTotal > maxSelectableTicketCount) { return prev; }
+            return { ...prev, [key]: nextValue };
+        });
+    };
+
+
+    const [step, setStep] = useState<"ticket" | "payment">("ticket");
+    const [createdOrderId, setCreatedOrderId] = useState<number | null>(null);
+    const [isCreatingOrder, setIsCreatingOrder] = useState(false);
+
+    const handleNextStep = async () => {
+        if (!canProceed || !matchId || !orderSheet || isCreatingOrder) return;
+
+        try {
+            setIsCreatingOrder(true);
+
+            const body: CreateOrderRequest = {
+                matchId: Number(matchId),
+                matchSeatIds: seats.map((seat) => seat.matchSeatId),
+                totalPrice: totalAmount,
+                ordererName: name.trim(),
+                ordererEmail: email.trim(),
+                ordererPhone: phoneDigits,
+                ordererBirthDate: birthDigits,
+            };
+
+            console.log("CreateOrderRequest:", body);
+            const createdOrder = await createOrder(body);
+            console.log("CreateOrderResponse:", createdOrder);
+
+            setCreatedOrderId(createdOrder.orderId);
+            setStep("payment");
+        } catch (e) {
+            const error = e as { status?: number };
+
+            if (error.status === 400) {
+                toast.error("요청 값 오류 또는 좌석 선점 만료");
+                return;
+            }
+            if (error.status === 401) {
+                toast.error("인증 필요");
+                return;
+            }
+            if (error.status === 403) {
+                toast.error("선점 소유권 없음");
+                return;
+            }
+            if (error.status === 404) {
+                toast.error("경기 또는 좌석 선점 없음");
+                return;
+            }
+
+            toast.error("주문 생성 중 오류가 발생했습니다.");
+        } finally {
+            setIsCreatingOrder(false);
         }
     };
 
     const [remainingSeconds, setRemainingSeconds] = useState(5 * 60);
-
-    const PRICE = {
-        normal: 20000,   // 일반
-        disabled: 10000, // 장애인
-        veteran: 10000,  // 국가유공자
-        child: 10000,    // 어린이
-        infant: 0,       // 미취학 아동
-        senior: 4500,    // 경로자
-        youth: 7000,     // 청소년/군경
-    } as const;
-
-    type TicketKey = keyof typeof PRICE;
-
-    const [ticketCounts, setTicketCounts] = useState<Record<TicketKey, number>>({
-        normal: 2,
-        disabled: 0,
-        veteran: 0,
-        child: 0,
-        infant: 0,
-        senior: 0,
-        youth: 0,
-    });
-
-    const changeCount = (key: keyof typeof ticketCounts, diff: number) => {
-        setTicketCounts((prev) => ({
-            ...prev,
-            [key]: Math.max(0, prev[key] + diff), // 0 미만 방지
-        }));
-    };
-
-    const ticketAmount = (Object.keys(PRICE) as TicketKey[]).reduce(
-        (sum, key) => sum + PRICE[key] * ticketCounts[key], 0
-    );
-
-    const fee = ticketAmount > 0 ? 2000 : 0;
-    const discount = 0;
-    const totalAmount = ticketAmount + fee - discount;
-    const won = (n: number) => `${n.toLocaleString("ko-KR")} 원`;
 
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
@@ -82,6 +229,7 @@ export default function Page() {
     const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
     const [isRefundModalOpen, setIsRefundModalOpen] = useState(false);
     const [isPaymentTimeoutModalOpen, setIsPaymentTimeoutModalOpen] = useState(false);
+    const [isPaymentFailureModalOpen, setIsPaymentFailureModalOpen] = useState(false);
 
     const formatPhone = (value: string) => {
         const digits = value.replace(/\D/g, "").slice(0, 11); // 숫자만, 최대 11자리
@@ -98,7 +246,8 @@ export default function Page() {
     const isPhoneValid = /^01[0-9]\d{7,8}$/.test(phoneDigits) && phoneDigits.length === 11;
     const birthDigits = onlyDigits(birth);
     const isBirthValid = /^\d{6}$/.test(birthDigits);
-    const canProceed = isNameValid && isEmailValid && isPhoneValid && isBirthValid;
+    const hasAssignedAllTickets = !isLoadingOrderSheet && maxSelectableTicketCount > 0 && selectedTicketCount === maxSelectableTicketCount;
+    const canProceed = isNameValid && isEmailValid && isPhoneValid && isBirthValid && hasAssignedAllTickets;
 
     const [paymentMethod, setPaymentMethod] = useState<"toss" | "kakao" | "bank">("toss");
     const [cashReceipt, setCashReceipt] = useState<"apply" | "none">("none");
@@ -120,19 +269,140 @@ export default function Page() {
 
     const [receiptPurpose, setReceiptPurpose] = useState<"personal" | "business">("personal");
 
-    const handleBack = () => {
-        if (step === "payment") {
-            setStep("ticket");
-            return;
-        }
-
-        if (!matchId) {
-            router.back();
-            return;
-        }
-
-        router.push(`/recommend/${matchId}`);
+    const toPaymentMethod = (method: "toss" | "kakao" | "bank"): "TOSS_PAY" | "KAKAO_PAY" | "BANK_TRANSFER" => {
+        if (method === "bank") return "BANK_TRANSFER";
+        if (method === "kakao") return "KAKAO_PAY";
+        return "TOSS_PAY";
     };
+
+    const toCashReceiptPurpose = (purpose: "personal" | "business"): "PERSONAL_DEDUCTION" | "BUSINESS_EXPENSE" => {
+        return purpose === "business"
+            ? "BUSINESS_EXPENSE"
+            : "PERSONAL_DEDUCTION";
+    };
+
+
+    const handleSubmitPayment = async () => {
+        if (!canSubmitPayment || !matchId || !createdOrderId || isCreatingOrder) return;
+
+        try {
+            setIsCreatingOrder(true);
+
+            const paymentBody = {
+                paymentMethod: toPaymentMethod(paymentMethod),
+            };
+
+            let cashReceiptResult = null;
+
+            console.log("processPaymentReq:", paymentBody);
+            const paymentResult = await processPayment(createdOrderId, paymentBody);
+            console.log("processPaymentRes:", paymentResult);
+
+            // 현금 영수증
+            if (cashReceipt === "apply") {
+                console.log("cashReceiptResultcreatedOrderIdREQ:", createdOrderId);
+                console.log("cashReceiptResultreceiptPurposeREQ:", toCashReceiptPurpose(receiptPurpose));
+                console.log("cashReceiptResultcashReceiptPhoneREQ:", cashReceiptPhone.replace(/\D/g, ""));
+                cashReceiptResult = await createCashReceipt(createdOrderId, {
+                    purpose: toCashReceiptPurpose(receiptPurpose),
+                    number: cashReceiptPhone.replace(/\D/g, ""),
+                });
+                console.log("cashReceiptResult:", cashReceiptResult);
+            }
+
+            const params = new URLSearchParams({
+                orderId: String(paymentResult.orderId),
+                paymentMethod: paymentResult.paymentMethod,
+                paymentStatus: paymentResult.paymentStatus,
+                paidAt: paymentResult.paidAt ?? "",
+
+                bank: paymentResult.account?.bank ?? "",
+                accountNumber: paymentResult.account?.accountNumber ?? "",
+                holder: paymentResult.account?.holder ?? "",
+                depositDeadline: paymentResult.account?.depositDeadline ?? "",
+
+                stadiumName: orderSheet?.match.stadium.koName ?? "",
+                stadiumAddress: orderSheet?.match.stadium.address ?? "",
+                matchAt: orderSheet?.match.matchAt ?? "",
+                totalAmount: String(totalAmount),
+                fee: String(fee),
+                seatLabels: JSON.stringify(
+                    seats.map((seat) => ({
+                        label: `${seat.sectionName} ${seat.blockCode}블럭 ${seat.rowNo}열 ${seat.seatNo}번`,
+                        price: seat.adultPrice,
+                    }))
+                ),
+
+                cashReceiptApplied: cashReceiptResult ? "true" : "false",
+                cashReceiptPurpose: cashReceiptResult?.purpose ?? "",
+                cashReceiptNumber: cashReceiptResult?.number ?? "",
+            });
+
+            if (paymentResult.paymentMethod === "BANK_TRANSFER") {
+
+                const params = new URLSearchParams({
+
+                    stadiumName: orderSheet?.match.stadium.koName ?? "",
+                    stadiumAddress: orderSheet?.match.stadium.address ?? "",
+                    matchAt: orderSheet?.match.matchAt ?? "",
+                    totalAmount: String(totalAmount),
+                    fee: String(fee),
+                    seatLabels: JSON.stringify(
+                        seats.map((seat) => ({
+                            label: `${seat.sectionName} ${seat.blockCode}블럭 ${seat.rowNo}열 ${seat.seatNo}번`,
+                            price: seat.adultPrice,
+                        }))
+                    ),
+
+                    cashReceiptApplied: cashReceiptResult ? "true" : "false",
+                    cashReceiptPurpose: cashReceiptResult?.purpose ?? "",
+                    cashReceiptNumber: cashReceiptResult?.number ?? "",
+                });
+
+                router.push(`/pay/${matchId}/bank-account?${params.toString()}`);
+                return;
+            }
+
+            router.push(`/pay/${matchId}/complete?${params.toString()}`);
+        } catch (e) {
+            const error = e as { status?: number };
+
+            if (error.status === 400) {
+                toast.error("이미 결제 완료 또는 잘못된 요청");
+                return;
+            }
+            if (error.status === 401) {
+                toast.error("인증 필요");
+                return;
+            }
+            if (error.status === 403) {
+                toast.error("주문 소유권 없음");
+                return;
+            }
+            if (error.status === 404) {
+                toast.error("주문 없음");
+                return;
+            }
+
+            toast.error("결제 처리 중 오류가 발생했습니다.");
+            setIsPaymentFailureModalOpen(true);
+        } finally {
+            setIsCreatingOrder(false);
+        }
+    };
+
+
+    useEffect(() => {
+        if (maxSelectableTicketCount === 0) {
+            setTicketCounts(INITIAL_TICKET_COUNTS);
+            return;
+        }
+
+        setTicketCounts({
+            ...INITIAL_TICKET_COUNTS,
+            normal: maxSelectableTicketCount,
+        });
+    }, [maxSelectableTicketCount]);
 
     useEffect(() => {
         if (isPaymentTimeoutModalOpen) return;
@@ -151,6 +421,53 @@ export default function Page() {
         return () => clearInterval(timer);
     }, [isPaymentTimeoutModalOpen]);
 
+    useEffect(() => {
+        if (!matchId || seatIds.length === 0) {
+            toast.error("좌석 정보가 없습니다.");
+            setIsLoadingOrderSheet(false);
+            return;
+        }
+
+        const fetchOrderSheet = async () => {
+            try {
+                setIsLoadingOrderSheet(true);
+                console.log("getOrderSheetREQ matchId:", matchId);
+                console.log("getOrderSheetREQ seatIds:", seatIds);
+
+                const response = await getOrderSheet(matchId, seatIds);
+
+                console.log("getOrderSheet:", response);
+                setOrderSheet(response);
+            } catch (e) {
+                const error = e as { status?: number };
+
+                if (error.status === 400) {
+                    toast.error("요청 파라미터 오류 또는 선점 만료");
+                    return;
+                }
+                if (error.status === 401) {
+                    toast.error("인증 필요");
+                    return;
+                }
+                if (error.status === 403) {
+                    toast.error("선점 소유권 없음");
+                    return;
+                }
+                if (error.status === 404) {
+                    toast.error("경기 또는 좌석 선점 없음");
+                    return;
+                }
+
+                toast.error("주문서 조회 중 오류가 발생했습니다.");
+            } finally {
+                setIsLoadingOrderSheet(false);
+            }
+        };
+
+        fetchOrderSheet();
+    }, [matchId, seatIds]);
+
+
     return (
         <div className="w-full min-h-screen flex flex-col items-center bg-[var(--foundation-neutral-980)] ">
             <div className="w-full border-b border-[var(--foundation-neutral-880)] bg-white">
@@ -164,7 +481,7 @@ export default function Page() {
                             data-stroke="False"
                             className="cursor-pointer w-10 h-10 rounded-md flex shrink-0 justify-center items-center"
                             aria-label="뒤로가기"
-                            onClick={handleBack}
+                            onClick={() => setIsCancelModalOpen(true)}
                         >
                             <ChevronLeft
                                 className="w-6 h-6 text-[var(--foundation-neutral-160)]"
@@ -174,11 +491,11 @@ export default function Page() {
 
                         <div className="min-w-0 flex flex-wrap items-center gap-x-2 gap-y-1 sm:gap-x-3">
                             <div className="text-[var(--foundation-neutral-240)] text-sm sm:text-base lg:text-lg font-semibold leading-5 sm:leading-6">
-                                2026년 3월 29일 (일) 14:00
+                                {formatMatchAt(match?.matchAt)}
                             </div>
 
                             <div className="text-[var(--foundation-neutral-240)] text-sm sm:text-base lg:text-lg font-semibold leading-5 sm:leading-6">
-                                LG vs KT
+                                {matchTitle}
                             </div>
 
                             <div className="hidden sm:block text-[var(--foundation-neutral-600)] text-sm sm:text-base leading-5">
@@ -193,14 +510,15 @@ export default function Page() {
                                     className="w-7 h-7 sm:w-8 sm:h-8 bg-white inline-flex flex-col justify-center items-center overflow-hidden shrink-0"
                                 >
                                     <img
-                                        className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white object-cover"
-                                        src="https://goormgb-assets.s3.ap-northeast-2.amazonaws.com/static/clubs/hanwha-eagles.png"
-                                        alt="logo"
+                                        className="h-full w-full object-cover"
+                                        src={resolveLogoSrc("lg-twins.png")}
+                                        alt={"홈 구단 로고"}
                                     />
+
                                 </div>
 
                                 <div className="min-w-0 text-[var(--foundation-neutral-400)] text-sm sm:text-base font-medium leading-5 sm:leading-6 truncate">
-                                    잠실종합운동장 잠실야구장
+                                    {match?.stadium.koName ?? "-"}
                                 </div>
                             </div>
                         </div>
@@ -222,139 +540,76 @@ export default function Page() {
                                         <div className="self-stretch justify-center text-[var(--foundation-neutral-240)] text-lg sm:text-xl font-bold font-['Pretendard'] leading-7">티켓 선택</div>
                                     </div>
                                     <div className="self-stretch p-4 bg-[var(--foundation-neutral-white)] rounded-[10px] outline outline-1 outline-offset-[-1px] outline-[var(--foundation-neutral-940)] flex flex-col justify-start items-start gap-4">
-                                        <div className="self-stretch inline-flex justify-start items-start gap-2">
-                                            <div className="w-20 justify-center text-[var(--foundation-neutral-600)] text-sm sm:text-base font-medium font-['Pretendard'] leading-6">기본가</div>
-                                            <div className="flex-1 inline-flex flex-col justify-start items-start gap-2">
-                                                <div className="self-stretch inline-flex justify-start items-start gap-2 sm:gap-10">
-                                                    <div className="flex-1 min-w-0 flex items-start gap-2">
-                                                        <div className="flex-1 min-w-0 break-keep text-[var(--foundation-neutral-240)] text-sm sm:text-base font-semibold font-['Pretendard'] leading-6">일반</div>
-                                                        <div className="shrink-0 min-w-[76px] text-right text-[var(--foundation-neutral-240)] text-sm sm:text-base font-semibold font-['Pretendard'] leading-6">20,000 원</div>
+                                        {TICKET_OPTIONS_BY_SECTION.map((section, sectionIndex) => (
+                                            <div key={section.sectionLabel} className="self-stretch flex flex-col gap-4">
+                                                {sectionIndex > 0 && (
+                                                    <div className="self-stretch h-0 outline outline-1 outline-offset-[-0.50px] outline-[var(--foundation-neutral-900)]" />
+                                                )}
+                                                <div className="self-stretch inline-flex justify-start items-start gap-2">
+                                                    <div className="w-20 justify-center text-[var(--foundation-neutral-600)] text-sm sm:text-base font-medium font-['Pretendard'] leading-6">
+                                                        {section.sectionLabel}
                                                     </div>
-                                                    <div className="rounded-xl flex justify-center items-center gap-2">
-                                                        <div className="flex justify-start items-center gap-0.5">
-                                                            <div onClick={() => changeCount("normal", -1)} data-rounded="Medium" data-size="small" data-status="Default" data-stroke="True" className="cursor-pointer w-7 h-7 px-4 py-2 bg-[var(--foundation-neutral-960)] rounded-md flex justify-center items-center">
-                                                                <Minus className="w-4 h-4 shrink-0 text-[var(--foundation-neutral-440)]" strokeWidth={1.75} />
-                                                            </div>
-                                                            <div className="w-8 h-8 px-4 py-2 rounded-md flex justify-center items-center">
-                                                                <div className="justify-center text-[var(--foundation-neutral-240)] text-base font-medium font-['Pretendard'] leading-6">{ticketCounts.normal}</div>
-                                                            </div>
-                                                            <div onClick={() => changeCount("normal", +1)} data-rounded="Medium" data-size="small" data-status="Default" data-stroke="True" className="cursor-pointer w-7 h-7 px-4 py-2 bg-[var(--foundation-neutral-960)] rounded-md flex justify-center items-center">
-                                                                <Plus className="w-4 h-4 shrink-0 text-[var(--foundation-neutral-440)]" strokeWidth={1.75} />
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div className="self-stretch h-0 outline outline-1 outline-offset-[-0.50px] outline-[var(--foundation-neutral-900)]" />
-                                        <div className="self-stretch inline-flex justify-start items-start gap-2">
-                                            <div className="w-20 justify-center text-[var(--foundation-neutral-600)] text-sm sm:text-base font-medium font-['Pretendard'] leading-6">기본 할인</div>
-                                            <div className="flex-1 inline-flex flex-col justify-start items-start gap-2">
-                                                <div className="self-stretch inline-flex justify-start items-start gap-2 sm:gap-10">
-                                                    <div className="flex-1 min-w-0 flex items-start gap-2">
-                                                        <div className="flex-1 min-w-0 break-keep text-[var(--foundation-neutral-240)] text-sm sm:text-base font-semibold font-['Pretendard'] leading-6"><span>장애인</span><span className="block lg:inline">(1급 ~ 3급)</span></div>
-                                                        <div className="shrink-0 min-w-[76px] text-right text-[var(--foundation-neutral-240)] text-sm sm:text-base font-semibold font-['Pretendard'] leading-6">10,000 원</div>
-                                                    </div>
-                                                    <div className="flex justify-start items-center gap-0.5">
-                                                        <div onClick={() => changeCount("disabled", -1)} data-rounded="Medium" data-size="small" data-status="Default" data-stroke="True" className="cursor-pointer w-7 h-7 px-4 py-2 bg-[var(--foundation-neutral-960)] rounded-md flex justify-center items-center">
-                                                            <Minus className="w-4 h-4 shrink-0 text-[var(--foundation-neutral-440)]" strokeWidth={1.75} />
-                                                        </div>
-                                                        <div className="w-8 h-8 px-4 py-2 rounded-md flex justify-center items-center">
-                                                            <div className="justify-center text-[var(--foundation-neutral-600)] text-base font-medium font-['Pretendard'] leading-6">{ticketCounts.disabled}</div>
-                                                        </div>
-                                                        <div onClick={() => changeCount("disabled", +1)} data-rounded="Medium" data-size="small" data-status="Default" data-stroke="True" className="cursor-pointer w-7 h-7 px-4 py-2 bg-[var(--foundation-neutral-960)] rounded-md flex justify-center items-center">
-                                                            <Plus className="w-4 h-4 shrink-0 text-[var(--foundation-neutral-440)]" strokeWidth={1.75} />
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div className="self-stretch inline-flex justify-start items-start gap-2 sm:gap-10">
-                                                    <div className="flex-1 min-w-0 flex items-start gap-2">
-                                                        <div className="flex-1 min-w-0 break-keep text-[var(--foundation-neutral-240)] text-sm sm:text-base font-semibold font-['Pretendard'] leading-6"><span>국가유공자</span><span className="block lg:inline">(국가유공자 & 병역명문가)</span></div>
-                                                        <div className="shrink-0 min-w-[76px] text-right text-[var(--foundation-neutral-240)] text-sm sm:text-base font-semibold font-['Pretendard'] leading-6">10,000 원</div>
-                                                    </div>
-                                                    <div className="flex justify-start items-center gap-0.5">
-                                                        <div onClick={() => changeCount("veteran", -1)} data-rounded="Medium" data-size="small" data-status="Default" data-stroke="True" className="cursor-pointer w-7 h-7 px-4 py-2 bg-[var(--foundation-neutral-960)] rounded-md flex justify-center items-center">
-                                                            <Minus className="w-4 h-4 shrink-0 text-[var(--foundation-neutral-440)]" strokeWidth={1.75} />
-                                                        </div>
-                                                        <div className="w-8 h-8 px-4 py-2 rounded-md flex justify-center items-center">
-                                                            <div className="justify-center text-[var(--foundation-neutral-600)] text-base font-medium font-['Pretendard'] leading-6">{ticketCounts.veteran}</div>
-                                                        </div>
-                                                        <div onClick={() => changeCount("veteran", +1)} data-rounded="Medium" data-size="small" data-status="Default" data-stroke="True" className="cursor-pointer w-7 h-7 px-4 py-2 bg-[var(--foundation-neutral-960)] rounded-md flex justify-center items-center">
-                                                            <Plus className="w-4 h-4 shrink-0 text-[var(--foundation-neutral-440)]" strokeWidth={1.75} />
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div className="self-stretch inline-flex justify-start items-start gap-2 sm:gap-10">
-                                                    <div className="flex-1 min-w-0 flex items-start gap-2">
-                                                        <div className="flex-1 min-w-0 break-keep text-[var(--foundation-neutral-240)] text-sm sm:text-base font-semibold font-['Pretendard'] leading-6"><span>어린이</span><span className="block lg:inline">(36개월 ~ 초등학생)</span></div>
-                                                        <div className="shrink-0 min-w-[76px] text-right text-[var(--foundation-neutral-240)] text-sm sm:text-base font-semibold font-['Pretendard'] leading-6">10,000 원</div>
-                                                    </div>
-                                                    <div className="flex justify-start items-center gap-0.5">
-                                                        <div onClick={() => changeCount("child", -1)} data-rounded="Medium" data-size="small" data-status="Default" data-stroke="True" className="cursor-pointer w-7 h-7 px-4 py-2 bg-[var(--foundation-neutral-960)] rounded-md flex justify-center items-center">
-                                                            <Minus className="w-4 h-4 shrink-0 text-[var(--foundation-neutral-440)]" strokeWidth={1.75} />
-                                                        </div>
-                                                        <div className="w-8 h-8 px-4 py-2 rounded-md flex justify-center items-center">
-                                                            <div className="justify-center text-[var(--foundation-neutral-600)] text-base font-medium font-['Pretendard'] leading-6">{ticketCounts.child}</div>
-                                                        </div>
-                                                        <div onClick={() => changeCount("child", +1)} data-rounded="Medium" data-size="small" data-status="Default" data-stroke="True" className="cursor-pointer w-7 h-7 px-4 py-2 bg-[var(--foundation-neutral-960)] rounded-md flex justify-center items-center">
-                                                            <Plus className="w-4 h-4 shrink-0 text-[var(--foundation-neutral-440)]" strokeWidth={1.75} />
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div className="self-stretch inline-flex justify-start items-start gap-2 sm:gap-10">
-                                                    <div className="flex-1 min-w-0 flex items-start gap-2">
-                                                        <div className="flex-1 min-w-0 break-keep text-[var(--foundation-neutral-240)] text-sm sm:text-base font-semibold font-['Pretendard'] leading-6"><span>미취학 아동</span><span className="block lg:inline">(36개월 미만, 보호자 좌석 미점유 시)</span></div>
-                                                        <div className="shrink-0 min-w-[76px] text-right text-[var(--foundation-neutral-240)] text-sm sm:text-base font-semibold font-['Pretendard'] leading-6">무료</div>
-                                                    </div>
-                                                    <div className="flex justify-start items-center gap-0.5">
-                                                        <div onClick={() => changeCount("infant", -1)} data-rounded="Medium" data-size="small" data-status="Default" data-stroke="True" className="cursor-pointer w-7 h-7 px-4 py-2 bg-[var(--foundation-neutral-960)] rounded-md flex justify-center items-center">
-                                                            <Minus className="w-4 h-4 shrink-0 text-[var(--foundation-neutral-440)]" strokeWidth={1.75} />
-                                                        </div>
-                                                        <div className="w-8 h-8 px-4 py-2 rounded-md flex justify-center items-center">
-                                                            <div className="justify-center text-[var(--foundation-neutral-600)] text-base font-medium font-['Pretendard'] leading-6">{ticketCounts.infant}</div>
-                                                        </div>
-                                                        <div onClick={() => changeCount("infant", +1)} data-rounded="Medium" data-size="small" data-status="Default" data-stroke="True" className="cursor-pointer w-7 h-7 px-4 py-2 bg-[var(--foundation-neutral-960)] rounded-md flex justify-center items-center">
-                                                            <Plus className="w-4 h-4 shrink-0 text-[var(--foundation-neutral-440)]" strokeWidth={1.75} />
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div className="self-stretch inline-flex justify-start items-start gap-2 sm:gap-10">
-                                                    <div className="flex-1 min-w-0 flex items-start gap-2">
-                                                        <div className="flex-1 min-w-0 break-keep text-[var(--foundation-neutral-800)] text-sm sm:text-base font-semibold font-['Pretendard'] leading-6"><span>경로자</span><span className="block lg:inline">(만 65세 이상)</span></div>
-                                                        <div className="hidden lg:block shrink-0 text-[var(--foundation-neutral-800)] text-xs font-medium font-['Pretendard'] leading-4">외야 그린석 한정</div>
-                                                        <div className="shrink-0 min-w-[76px] text-right text-[var(--foundation-neutral-800)] text-sm sm:text-base font-semibold font-['Pretendard'] leading-6">4,500 원</div>
-                                                    </div>
-                                                    <div className="flex justify-start items-center gap-0.5">
-                                                        <div onClick={() => changeCount("senior", -1)} data-rounded="Medium" data-size="small" data-status="Default" data-stroke="True" className="cursor-pointer w-7 h-7 px-4 py-2 bg-[var(--foundation-neutral-960)] rounded-md flex justify-center items-center">
-                                                            <Minus className="w-4 h-4 shrink-0 text-[var(--foundation-neutral-440)]" strokeWidth={1.75} />
-                                                        </div>
-                                                        <div className="w-8 h-8 px-4 py-2 rounded-md flex justify-center items-center">
-                                                            <div className="justify-center text-[var(--foundation-neutral-800)] text-base font-medium font-['Pretendard'] leading-6">{ticketCounts.senior}</div>
-                                                        </div>
-                                                        <div onClick={() => changeCount("senior", +1)} data-rounded="Medium" data-size="small" data-status="Default" data-stroke="True" className="cursor-pointer w-7 h-7 px-4 py-2 bg-[var(--foundation-neutral-960)] rounded-md flex justify-center items-center">
-                                                            <Plus className="w-4 h-4 shrink-0 text-[var(--foundation-neutral-440)]" strokeWidth={1.75} />
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div className="self-stretch inline-flex justify-start items-start gap-2 sm:gap-10">
-                                                    <div className="flex-1 min-w-0 flex items-start gap-2">
-                                                        <div className="flex-1 min-w-0 break-keep text-[var(--foundation-neutral-800)] text-sm sm:text-base font-semibold font-['Pretendard'] leading-6"><span>청소년/군경</span><span className="block lg:inline">(중·고생, 일반 사병)</span></div>
-                                                        <div className="hidden lg:block shrink-0 text-[var(--foundation-neutral-800)] text-xs font-medium font-['Pretendard'] leading-4">외야 그린석 한정</div>
-                                                        <div className="shrink-0 min-w-[76px] text-right text-[var(--foundation-neutral-800)] text-sm sm:text-base font-semibold font-['Pretendard'] leading-6">7,000 원</div>
-                                                    </div>
-                                                    <div className="flex justify-start items-center gap-0.5">
-                                                        <div onClick={() => changeCount("youth", -1)} data-rounded="Medium" data-size="small" data-status="Default" data-stroke="True" className="cursor-pointer w-7 h-7 px-4 py-2 bg-[var(--foundation-neutral-960)] rounded-md flex justify-center items-center">
-                                                            <Minus className="w-4 h-4 shrink-0 text-[var(--foundation-neutral-440)]" strokeWidth={1.75} />
-                                                        </div>
-                                                        <div className="w-8 h-8 px-4 py-2 rounded-md flex justify-center items-center">
-                                                            <div className="justify-center text-[var(--foundation-neutral-800)] text-base font-medium font-['Pretendard'] leading-6">{ticketCounts.youth}</div>
-                                                        </div>
-                                                        <div onClick={() => changeCount("youth", +1)} data-rounded="Medium" data-size="small" data-status="Default" data-stroke="True" className="cursor-pointer w-7 h-7 px-4 py-2 bg-[var(--foundation-neutral-960)] rounded-md flex justify-center items-center">
-                                                            <Plus className="w-4 h-4 shrink-0 text-[var(--foundation-neutral-440)]" strokeWidth={1.75} />
-                                                        </div>
+                                                    <div className="flex-1 inline-flex flex-col justify-start items-start gap-2">
+                                                        {section.options.map((option) => {
+                                                            const isMuted = option.tone === "muted";
+                                                            const textTone = isMuted
+                                                                ? "text-[var(--foundation-neutral-800)]"
+                                                                : "text-[var(--foundation-neutral-240)]";
+                                                            const countTone = isMuted
+                                                                ? "text-[var(--foundation-neutral-800)]"
+                                                                : "text-[var(--foundation-neutral-600)]";
+
+                                                            return (
+                                                                <div key={option.key} className="self-stretch inline-flex justify-start items-start gap-2 sm:gap-10">
+                                                                    <div className="flex-1 min-w-0 flex items-start gap-2">
+                                                                        <div className={`flex-1 min-w-0 break-keep text-sm sm:text-base font-semibold font-['Pretendard'] leading-6 ${textTone}`}>
+                                                                            <span>{option.title}</span>
+                                                                            {option.description && (
+                                                                                <span className="block lg:inline">({option.description})</span>
+                                                                            )}
+                                                                        </div>
+                                                                        {option.note && (
+                                                                            <div className={`hidden lg:block shrink-0 text-xs font-medium font-['Pretendard'] leading-4 ${textTone}`}>
+                                                                                {option.note}
+                                                                            </div>
+                                                                        )}
+                                                                        <div className={`shrink-0 min-w-[76px] text-right text-sm sm:text-base font-semibold font-['Pretendard'] leading-6 ${textTone}`}>
+                                                                            {getTicketPriceLabel(option.key)}
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="flex justify-start items-center gap-0.5">
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => changeCount(option.key, -1)}
+                                                                            disabled={!canDecreaseTicket(option.key)}
+                                                                            className="cursor-pointer w-7 h-7 px-4 py-2 bg-[var(--foundation-neutral-960)] rounded-md flex justify-center items-center disabled:opacity-40 disabled:cursor-not-allowed"
+                                                                        >
+                                                                            <Minus className="w-4 h-4 shrink-0 text-[var(--foundation-neutral-440)]" strokeWidth={1.75} />
+                                                                        </button>
+                                                                        <div className="w-8 h-8 px-4 py-2 rounded-md flex justify-center items-center">
+                                                                            <div className={`justify-center text-base font-medium font-['Pretendard'] leading-6 ${countTone}`}>
+                                                                                {ticketCounts[option.key]}
+                                                                            </div>
+                                                                        </div>
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => changeCount(option.key, +1)}
+                                                                            disabled={!canIncreaseTicket}
+                                                                            className="cursor-pointer w-7 h-7 px-4 py-2 bg-[var(--foundation-neutral-960)] rounded-md flex justify-center items-center disabled:opacity-40 disabled:cursor-not-allowed"
+                                                                        >
+                                                                            <Plus className="w-4 h-4 shrink-0 text-[var(--foundation-neutral-440)]" strokeWidth={1.75} />
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        })}
                                                     </div>
                                                 </div>
                                             </div>
+                                        ))}
+                                        <div className="self-stretch text-right text-sm font-medium font-['Pretendard'] leading-5 text-[var(--foundation-neutral-600)]">
+                                            {maxSelectableTicketCount}좌석 중 {selectedTicketCount}좌석 선택
+                                            {remainingSelectableTicketCount > 0 && ` · ${remainingSelectableTicketCount}좌석 남음`}
                                         </div>
                                     </div>
                                 </div>
@@ -748,7 +1003,7 @@ export default function Page() {
                                                                     setIsCashReceiptEditing(false);
                                                                 }}
                                                                 className="flex-1 min-w-20"
-                                                                >
+                                                            >
                                                                 확인
                                                             </PrimaryButton>
                                                         </div>
@@ -925,17 +1180,23 @@ export default function Page() {
                                     <div className="self-stretch flex flex-col justify-start items-start gap-2">
                                         <div className="self-stretch inline-flex justify-center items-start gap-2">
                                             <div className="justify-center text-[var(--foundation-neutral-600)] text-sm font-medium font-['Pretendard'] leading-5">경기 장소</div>
-                                            <div className="flex-1 text-right justify-center text-[var(--foundation-neutral-240)] text-sm font-medium font-['Pretendard'] leading-5">서울 송파구 올림픽로 19-2 서울종합운동장</div>
+                                            <div className="flex-1 text-right justify-center text-[var(--foundation-neutral-240)] text-sm font-medium font-['Pretendard'] leading-5">{match?.stadium.address ?? "-"}</div>
                                         </div>
                                         <div className="self-stretch inline-flex justify-center items-center gap-2">
                                             <div className="justify-center text-[var(--foundation-neutral-600)] text-sm font-medium font-['Pretendard'] leading-5">경기 시간</div>
-                                            <div className="flex-1 text-right justify-center text-[var(--foundation-neutral-240)] text-sm font-medium font-['Pretendard'] leading-5">2026년 3월 29일 (일) 14:00 </div>
+                                            <div className="flex-1 text-right justify-center text-[var(--foundation-neutral-240)] text-sm font-medium font-['Pretendard'] leading-5">{formatMatchAt(match?.matchAt)}</div>
                                         </div>
                                         <div className="self-stretch inline-flex justify-start items-start gap-2">
                                             <div className="justify-center text-[var(--foundation-neutral-600)] text-sm font-medium font-['Pretendard'] leading-5">선택 좌석</div>
                                             <div className="flex-1 inline-flex flex-col justify-center items-start gap-0.5">
-                                                <div className="self-stretch text-right justify-center text-[var(--foundation-blue-600)] text-sm font-medium font-['Pretendard'] leading-5">오렌지석 206블럭 3열 13번</div>
-                                                <div className="self-stretch text-right justify-center text-[var(--foundation-blue-600)] text-sm font-medium font-['Pretendard'] leading-5">오렌지석 206블럭 3열 14번</div>
+                                                {seatLabels.map((label) => (
+                                                    <div
+                                                        key={label}
+                                                        className="self-stretch text-right justify-center text-[var(--foundation-blue-600)] text-sm font-medium font-['Pretendard'] leading-5"
+                                                    >
+                                                        {label}
+                                                    </div>
+                                                ))}
                                             </div>
                                         </div>
                                     </div>
@@ -966,7 +1227,7 @@ export default function Page() {
                                 <div className="self-stretch flex flex-col justify-start items-start gap-2">
                                     <div className="self-stretch inline-flex justify-start items-center gap-2">
                                         <div className="w-20 justify-center text-[var(--foundation-neutral-600)] text-sm font-medium font-['Pretendard'] leading-5">취소 기한</div>
-                                        <div className="flex-1 justify-center text-[var(--foundation-neutral-240)] text-sm font-medium font-['Pretendard'] leading-5">2026년 2월 11일 (수) 23:59</div>
+                                        <div className="flex-1 justify-center text-[var(--foundation-neutral-240)] text-sm font-medium font-['Pretendard'] leading-5">{formatCancelDeadline(match?.matchAt)}</div>
                                     </div>
                                     <div className="self-stretch inline-flex justify-start items-center gap-2">
                                         <div className="w-20 justify-center text-[var(--foundation-neutral-600)] text-sm font-medium font-['Pretendard'] leading-5">취소 수수료</div>
@@ -1023,6 +1284,11 @@ export default function Page() {
                                     >
                                         다음 단계
                                     </PrimaryButton>
+
+                                    <PaymentFailureModal
+                                        open={isPaymentFailureModalOpen}
+                                        onClose={() => setIsPaymentFailureModalOpen(false)}
+                                    />
                                 </div>
                             </div>
                         </div>
@@ -1031,4 +1297,10 @@ export default function Page() {
             </div>
         </div>
     );
+}
+
+function resolveLogoSrc(input: string) {
+    if (/^https?:\/\//i.test(input)) return input;
+    if (!CDN_CLUBS_BASE_URL) return input;
+    return new URL(input.replace(/^\//, ""), CDN_CLUBS_BASE_URL).toString();
 }

@@ -170,7 +170,7 @@ export type SeatHoldCreateRequest = {
 
 export type SeatHoldCreateResponse = {
   matchId: number;
-  seatIds: number[];
+  matchSeatIds: number[];
   seatCount: number;
   holdExpiresAt: string;
 };
