@@ -57,6 +57,18 @@ const nextConfig = {
     NEXT_PUBLIC_FARO_URL: process.env.NEXT_PUBLIC_FARO_URL || "",
     NEXT_PUBLIC_RELEASE: process.env.NEXT_PUBLIC_RELEASE || "1.0.0",
   },
+
+  // API 프록시 설정 (로컬 개발 환경)
+  async rewrites() {
+    const apiBase = process.env.NEXT_PUBLIC_API_BASE || "https://api.dev.goormgb.space";
+    return [
+      // AI Runtime API (/ai/*)
+      {
+        source: "/ai/:path*",
+        destination: `${apiBase}/ai/:path*`,
+      },
+    ];
+  },
 };
 
 export default nextConfig;
