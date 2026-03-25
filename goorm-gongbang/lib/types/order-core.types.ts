@@ -235,3 +235,103 @@ export interface CalendarMatch {
   saleStatus: SaleStatus;
   isHomeMatch: boolean;
 }
+
+/* 주문서 조회 */
+export type OrderSheetResponse = {
+  match: {
+    matchId: number;
+    matchAt: string;
+    homeClub: { clubId: number; koName: string };
+    awayClub: { clubId: number; koName: string };
+    stadium: { stadiumId: number; koName: string; address: string };
+  };
+  seats: {
+    matchSeatId: number;
+    sectionId: number;
+    sectionName: string;
+    blockId: number;
+    blockCode: string;
+    rowNo: number;
+    seatNo: number;
+    adultPrice: number;
+  }[];
+  summary: {
+    seatCount: number;
+    bookingFee: number;
+  };
+};
+
+/* 주문 생성 */
+export type CreateOrderRequest = {
+  matchId: number;
+  matchSeatIds: number[];
+  totalPrice: number;
+  ordererName: string;
+  ordererEmail: string;
+  ordererPhone: string;
+  ordererBirthDate: string;
+};
+
+export type OrderStatusType =
+  | "PAYMENT_PENDING"
+  | "PAID"
+  | "CANCEL_REQUESTED"
+  | "CANCELLED"
+  | "REFUND_PROCESSING"
+  | "REFUND_COMPLETED";
+
+export type CreateOrderResponse = {
+  orderId: number;
+  status: OrderStatusType;
+  matchId: number;
+  seatCount: number;
+  totalAmount: number;
+  bookingFee: number;
+  createdAt: string;
+};
+
+/* 결제 처리 */
+export type PaymentMethodType =
+  | "BANK_TRANSFER"
+  | "TOSS_PAY"
+  | "KAKAO_PAY";
+
+export type PaymentStatusType =
+  | "PENDING"
+  | "COMPLETED"
+  | "CANCELLED"
+  | "REFUNDED";
+
+export type ProcessPaymentRequest = {
+  paymentMethod: PaymentMethodType;
+};
+
+export type ProcessPaymentResponse = {
+  orderId: number;
+  orderStatus: OrderStatusType;
+  paymentMethod: PaymentMethodType;
+  paymentStatus: PaymentStatusType;
+  paidAt: string | null;
+  account: {
+    bank: string;
+    accountNumber: string;
+    holder: string;
+    depositDeadline: string;
+  } | null;
+};
+
+/* 현금 영수증 신청 */
+export type CashReceiptPurposeType =
+  | "PERSONAL_DEDUCTION"
+  | "BUSINESS_EXPENSE";
+
+export type CreateCashReceiptRequest = {
+  purpose: CashReceiptPurposeType;
+  number: string;
+};
+
+export type CreateCashReceiptResponse = {
+  orderId: number;
+  purpose: CashReceiptPurposeType;
+  number: string;
+};

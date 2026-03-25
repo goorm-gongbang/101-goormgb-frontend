@@ -32,6 +32,7 @@ import type {
   SeatGroupsEntryResponse,
   SectionBlock,
   SectionBlockSeat,
+  SeatAssignmentResponse,
 } from "@/lib/types";
 
 type SeatListItem = {
@@ -95,52 +96,6 @@ const toSeatSections = (seatGroupsEntry: SeatGroupsEntryResponse): SeatSection[]
     })),
   }));
 };
-
-function formatMatchAt(matchAt?: string) {
-  if (!matchAt) return "";
-
-  return new Intl.DateTimeFormat("ko-KR", {
-    timeZone: "Asia/Seoul",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-    weekday: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  }).format(new Date(matchAt));
-}
-
-function resolveLogoSrc(input: string) {
-  if (/^https?:\/\//i.test(input)) return input;
-  if (!CDN_CLUBS_BASE_URL) return input;
-  return new URL(input.replace(/^\//, ""), CDN_CLUBS_BASE_URL).toString();
-}
-
-function findSeatDetail(
-  blocks: SectionBlock[],
-  seatId: number,
-  sectionName: string,
-): SelectedSeatDetail | null {
-  for (const block of blocks) {
-    for (const row of block.rows) {
-      const seat = row.seats.find((item) => item.seatId === seatId);
-      if (seat) {
-        return {
-          seatId: seat.seatId,
-          seatNo: seat.seatNo,
-          rowNo: row.rowNo,
-          blockId: block.blockId,
-          blockCode: block.blockCode,
-          blockDisplayName: block.displayName,
-          sectionName,
-        };
-      }
-    }
-  }
-
-  return null;
-}
 
 export default function Page() {
   const router = useRouter();
@@ -376,8 +331,15 @@ export default function Page() {
 
     try {
       setAssigning(true);
-      await assignRecommendedSeats(matchId, selectedRecommendId);
-      router.push(`/pay/${matchId}`);
+      const response = await assignRecommendedSeats(matchId, selectedRecommendId);
+      console.log("SeatAssignmentResponse:", response);
+
+      const params = new URLSearchParams({
+        matchId: String(response.matchId),
+        seatIds: response.assignedSeats.map((seat) => seat.matchSeatId).join(","),
+      });
+
+      router.push(`/pay/${matchId}?${params.toString()}`);
     } catch (e) {
       const error = e as { status?: number };
 
@@ -421,14 +383,18 @@ export default function Page() {
     try {
       setAssigning(true);
 
-      console.log("createSeatHoldREQ: ", selectedSeatIds);
-      const response = await createSeatHold(matchId, {
-        seatIds: selectedSeatIds,
-      });
+      console.log("createSeatHold-matchId-REQ: ", matchId);
+      console.log("createSeatHold-selectedSeatIds-REQ: ", selectedSeatIds);
+      const response = await createSeatHold(matchId, { seatIds: selectedSeatIds });
 
       console.log("createSeatHold:", response);
 
-      router.push(`/pay/${matchId}`);
+      const params = new URLSearchParams({
+        matchId: String(response.matchId),
+        seatIds: response.matchSeatIds.join(","),
+      });
+
+      router.push(`/pay/${matchId}?${params.toString()}`);
     } catch (e) {
       const error = e as { status?: number };
 
@@ -570,6 +536,7 @@ export default function Page() {
         if (e instanceof ApiError) {
           if (e.status === 410) {
             handleQueueEnd("좌석 진입 가능 시간이 만료되었습니다.");
+            router.push(`/matches/${matchId}`);
             return;
           }
           if (e.status === 404) {
@@ -623,8 +590,8 @@ export default function Page() {
                   {homeLogoImg ? (
                     <img
                       className="h-full w-full object-cover"
-                      src={resolveLogoSrc(homeLogoImg)}
-                      alt={homeClub?.koName ?? "홈 구단 로고"}
+                      src={resolveLogoSrc("lg-twins.png")}
+                      alt={"홈 구단 로고"}
                     />
                   ) : null}
                 </div>
@@ -930,4 +897,50 @@ function RecommendSeatSkeleton() {
       ))}
     </div>
   );
+}
+
+function formatMatchAt(matchAt?: string) {
+  if (!matchAt) return "";
+
+  return new Intl.DateTimeFormat("ko-KR", {
+    timeZone: "Asia/Seoul",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    weekday: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(new Date(matchAt));
+}
+
+function resolveLogoSrc(input: string) {
+  if (/^https?:\/\//i.test(input)) return input;
+  if (!CDN_CLUBS_BASE_URL) return input;
+  return new URL(input.replace(/^\//, ""), CDN_CLUBS_BASE_URL).toString();
+}
+
+function findSeatDetail(
+  blocks: SectionBlock[],
+  seatId: number,
+  sectionName: string,
+): SelectedSeatDetail | null {
+  for (const block of blocks) {
+    for (const row of block.rows) {
+      const seat = row.seats.find((item) => item.seatId === seatId);
+      if (seat) {
+        return {
+          seatId: seat.seatId,
+          seatNo: seat.seatNo,
+          rowNo: row.rowNo,
+          blockId: block.blockId,
+          blockCode: block.blockCode,
+          blockDisplayName: block.displayName,
+          sectionName,
+        };
+      }
+    }
+  }
+
+  return null;
 }
