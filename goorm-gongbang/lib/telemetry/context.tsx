@@ -12,7 +12,7 @@
  *
  * export default function TicketingLayout({ children, params }) {
  *   return (
- *     <TelemetryProvider matchId={params.matchId}>
+ *     <TelemetryProvider matchId={Number(params.matchId)}>
  *       {children}
  *     </TelemetryProvider>
  *   );
@@ -25,7 +25,7 @@
  *   const { setStage } = useTelemetryContext();
  *
  *   useEffect(() => {
- *     setStage('SEAT_SELECTION');
+ *     setStage('SEAT_STAGE');
  *   }, []);
  * }
  * ```

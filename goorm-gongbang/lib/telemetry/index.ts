@@ -5,12 +5,12 @@
  * ```tsx
  * import { useTelemetry } from '@/lib/telemetry';
  *
- * function TicketingPage({ matchId }: { matchId: string }) {
+ * function TicketingPage({ matchId }: { matchId: number }) {
  *   const telemetry = useTelemetry({ matchId });
  *
  *   // 페이지 진입 시 현재 stage 갱신
  *   useEffect(() => {
- *     telemetry.setStage('SEAT_SELECTION');
+ *     telemetry.setStage('SEAT_STAGE');
  *   }, []);
  *
  *   // 보호 API 호출 직전 현재 stage 기준으로 batch 전송
@@ -35,6 +35,8 @@ import type {
   TicketingStage,
   TelemetryEvent,
   ChallengeStartResponse,
+  ChallengeVerifyInput,
+  ChallengeVerifyRequest,
   ChallengeVerifyResponse,
 } from './types';
 
@@ -44,10 +46,7 @@ import type {
 
 export interface UseTelemetryOptions {
   /** 경기 ID */
-  matchId: string;
-
-  /** 세션 ID (없으면 쿠키에서 읽음) */
-  sid?: string;
+  matchId: number;
 
   /** AI API base URL (기본: /ai) */
   aiBaseUrl?: string;
@@ -85,7 +84,7 @@ export interface TelemetryInstance {
   startChallenge: () => Promise<ChallengeStartResponse>;
 
   /** VQA 챌린지 답변 제출 */
-  verifyChallenge: (challengeId: string, answer: string) => Promise<ChallengeVerifyResponse>;
+  verifyChallenge: (request: ChallengeVerifyInput) => Promise<ChallengeVerifyResponse>;
 }
 
 /**
@@ -95,10 +94,8 @@ export interface TelemetryInstance {
  */
 export function useTelemetry(options: UseTelemetryOptions): TelemetryInstance {
   const { matchId, aiBaseUrl = '/ai', debug = false, autoStart = true } = options;
-
-  // 세션 ID 가져오기
-  const sid = options.sid ?? getSessionId();
-  const [stage, setStageState] = useState<TicketingStage>('LANDING');
+  const [stage, setStageState] = useState<TicketingStage>('QUEUE_ENTER_PRECLICK');
+  const previousStageRef = useRef<TicketingStage>('QUEUE_ENTER_PRECLICK');
 
   // Collector와 API 인스턴스
   const collectorRef = useRef<TelemetryCollector | null>(null);
@@ -107,7 +104,6 @@ export function useTelemetry(options: UseTelemetryOptions): TelemetryInstance {
   // 초기화
   useEffect(() => {
     const config: TelemetryConfig = {
-      sid,
       matchId,
       aiBaseUrl,
       debug,
@@ -124,7 +120,7 @@ export function useTelemetry(options: UseTelemetryOptions): TelemetryInstance {
     return () => {
       collectorRef.current?.stop();
     };
-  }, [sid, matchId, aiBaseUrl, debug, autoStart]);
+  }, [matchId, aiBaseUrl, debug, autoStart]);
 
   // Stage 변경
   const setStage = useCallback((stage: TicketingStage): void => {
@@ -133,6 +129,10 @@ export function useTelemetry(options: UseTelemetryOptions): TelemetryInstance {
     if (!collector) {
       console.warn('[Telemetry] Not initialized');
       return;
+    }
+
+    if (stage !== 'VQA_CHALLENGE') {
+      previousStageRef.current = stage;
     }
 
     collector.setStage(stage);
@@ -153,7 +153,7 @@ export function useTelemetry(options: UseTelemetryOptions): TelemetryInstance {
     const events = collector.flush();
 
     try {
-      await api.sendTelemetry(sid, matchId, stage, events);
+      await api.sendTelemetry(matchId, stage, events);
       if (debug) {
         console.log(`[Telemetry] Sent ${events.length} events for stage ${stage}`);
       }
@@ -162,7 +162,7 @@ export function useTelemetry(options: UseTelemetryOptions): TelemetryInstance {
       console.error('[Telemetry] Failed to send telemetry:', error);
       return 0;
     }
-  }, [sid, matchId, debug]);
+  }, [matchId, debug]);
 
   useEffect(() => {
     const runtime = {
@@ -198,13 +198,13 @@ export function useTelemetry(options: UseTelemetryOptions): TelemetryInstance {
     if (!api) return false;
 
     try {
-      const result = await api.precheck(sid, matchId, cfToken);
+      const result = await api.precheck(matchId, cfToken);
       return result.allowed;
     } catch (error) {
       console.error('[Telemetry] Precheck failed:', error);
       return true; // fail-open
     }
-  }, [sid, matchId]);
+  }, [matchId]);
 
   // VQA 챌린지
   const startChallenge = useCallback(async (): Promise<ChallengeStartResponse> => {
@@ -212,18 +212,30 @@ export function useTelemetry(options: UseTelemetryOptions): TelemetryInstance {
     if (!api) {
       throw new AIApiError('Not initialized', 0);
     }
-    return api.startChallenge(sid, matchId);
-  }, [sid, matchId]);
+    setStage('VQA_CHALLENGE');
+    return api.startChallenge(matchId);
+  }, [matchId, setStage]);
 
   const verifyChallenge = useCallback(
-    async (challengeId: string, answer: string): Promise<ChallengeVerifyResponse> => {
+    async (request: ChallengeVerifyInput): Promise<ChallengeVerifyResponse> => {
       const api = apiRef.current;
       if (!api) {
         throw new AIApiError('Not initialized', 0);
       }
-      return api.verifyChallenge(sid, challengeId, answer);
+
+      await flushCurrentStageAndSend();
+      const response = await api.verifyChallenge({
+        matchId,
+        ...request,
+      });
+
+      if (response.success) {
+        setStage(previousStageRef.current);
+      }
+
+      return response;
     },
-    [sid]
+    [flushCurrentStageAndSend, matchId, setStage]
   );
 
   return {
@@ -237,29 +249,6 @@ export function useTelemetry(options: UseTelemetryOptions): TelemetryInstance {
     startChallenge,
     verifyChallenge,
   };
-}
-
-// ============================================================================
-// 유틸리티
-// ============================================================================
-
-/**
- * 쿠키에서 세션 ID 가져오기
- */
-function getSessionId(): string {
-  if (typeof document === 'undefined') {
-    return '';
-  }
-
-  // X-Auth-Sid 헤더로 전송되는 세션 ID
-  // 쿠키 우선순위: sid > session_id > SESSIONID
-  const cookies = document.cookie.split(';').reduce((acc, cookie) => {
-    const [key, value] = cookie.trim().split('=');
-    acc[key] = value;
-    return acc;
-  }, {} as Record<string, string>);
-
-  return cookies['sid'] || cookies['session_id'] || cookies['SESSIONID'] || '';
 }
 
 /**

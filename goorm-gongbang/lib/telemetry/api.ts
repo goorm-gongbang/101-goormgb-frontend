@@ -2,12 +2,13 @@
  * AI Telemetry SDK - API Client
  *
  * AI Runtime 엔드포인트 호출
- * - /ai/telemetry/ingest - 텔레메트리 전송
- * - /ai/precheck - Turnstile 검증
- * - /ai/challenge/start - VQA 챌린지 시작
- * - /ai/challenge/verify - VQA 챌린지 검증
+ * - /ai/telemetry/ingest
+ * - /ai/precheck
+ * - /ai/challenge/start
+ * - /ai/challenge/verify
  */
 
+import { authFetch } from '../api/fetch';
 import type {
   TelemetryEvent,
   TicketingStage,
@@ -26,7 +27,7 @@ export interface AIApiConfig {
   timeout?: number;
 }
 
-const DEFAULT_TIMEOUT = 5000; // 5초
+const DEFAULT_TIMEOUT = 5000;
 
 export class AITelemetryApi {
   private config: Required<AIApiConfig>;
@@ -38,101 +39,65 @@ export class AITelemetryApi {
     };
   }
 
-  /**
-   * 텔레메트리 데이터 전송
-   * 보호 API 호출 직전 등, 현재 Stage 기준 batch 전송
-   */
   async sendTelemetry(
-    sid: string,
-    matchId: string,
+    matchId: number,
     stage: TicketingStage,
     events: TelemetryEvent[]
   ): Promise<TelemetryIngestResponse> {
     const request: TelemetryIngestRequest = {
-      sid,
       matchId,
       stage,
       events,
-      meta: this.collectMeta(),
     };
 
-    return this.post<TelemetryIngestResponse>(
+    return this.post<TelemetryIngestResponse, TelemetryIngestRequest>(
       '/telemetry/ingest',
       request
     );
   }
 
-  /**
-   * Precheck (Cloudflare Turnstile 검증)
-   * 대기열 진입 전 호출
-   */
   async precheck(
-    sid: string,
-    matchId: string,
+    matchId: number,
     cfToken: string
   ): Promise<PrecheckResponse> {
     const request: PrecheckRequest = {
-      sid,
       matchId,
       cfToken,
     };
 
-    return this.post<PrecheckResponse>('/precheck', request);
+    return this.post<PrecheckResponse, PrecheckRequest>('/precheck', request);
   }
 
-  /**
-   * VQA 챌린지 시작
-   * ext_authz에서 REQUIRE_S3 응답 받았을 때 호출
-   */
-  async startChallenge(
-    sid: string,
-    matchId: string
-  ): Promise<ChallengeStartResponse> {
+  async startChallenge(matchId: number): Promise<ChallengeStartResponse> {
     const request: ChallengeStartRequest = {
-      sid,
       matchId,
-      challengeType: 'S3',
     };
 
-    return this.post<ChallengeStartResponse>('/challenge/start', request);
+    return this.post<ChallengeStartResponse, ChallengeStartRequest>(
+      '/challenge/start',
+      request
+    );
   }
 
-  /**
-   * VQA 챌린지 답변 제출
-   */
   async verifyChallenge(
-    sid: string,
-    challengeId: string,
-    answer: string
+    request: ChallengeVerifyRequest
   ): Promise<ChallengeVerifyResponse> {
-    const request: ChallengeVerifyRequest = {
-      sid,
-      challengeId,
-      answer,
-    };
-
-    return this.post<ChallengeVerifyResponse>('/challenge/verify', request);
+    return this.post<ChallengeVerifyResponse, ChallengeVerifyRequest>(
+      '/challenge/verify',
+      request
+    );
   }
 
-  // =========================================================================
-  // Private
-  // =========================================================================
-
-  private async post<T>(path: string, body: unknown): Promise<T> {
+  private async post<T, B>(path: string, body: B): Promise<T> {
     const url = `${this.config.baseUrl}${path}`;
-
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), this.config.timeout);
 
     try {
-      const response = await fetch(url, {
+      const response = await authFetch<B>(url, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(body),
+        body,
         signal: controller.signal,
-        credentials: 'include', // 쿠키 포함 (세션)
       });
 
       if (!response.ok) {
@@ -153,6 +118,7 @@ export class AITelemetryApi {
         if (error.name === 'AbortError') {
           throw new AIApiError('Request timeout', 408);
         }
+
         throw new AIApiError(error.message, 0);
       }
 
@@ -169,31 +135,8 @@ export class AITelemetryApi {
       return null;
     }
   }
-
-  private collectMeta(): TelemetryIngestRequest['meta'] {
-    if (typeof window === 'undefined') {
-      return {
-        userAgent: '',
-        screenWidth: 0,
-        screenHeight: 0,
-        timezone: '',
-        language: '',
-      };
-    }
-
-    return {
-      userAgent: navigator.userAgent,
-      screenWidth: window.screen.width,
-      screenHeight: window.screen.height,
-      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-      language: navigator.language,
-    };
-  }
 }
 
-/**
- * AI API 에러 클래스
- */
 export class AIApiError extends Error {
   constructor(
     message: string,
@@ -204,16 +147,10 @@ export class AIApiError extends Error {
     this.name = 'AIApiError';
   }
 
-  /**
-   * ext_authz REQUIRE_S3 응답인지 확인 (HTTP 428)
-   */
   isChallenceRequired(): boolean {
     return this.statusCode === 428;
   }
 
-  /**
-   * ext_authz BLOCK 응답인지 확인 (HTTP 403)
-   */
   isBlocked(): boolean {
     return this.statusCode === 403;
   }
