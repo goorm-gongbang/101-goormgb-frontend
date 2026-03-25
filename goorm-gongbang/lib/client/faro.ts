@@ -50,7 +50,9 @@ export function initFaro(): FaroInstance | null {
       ...getWebInstrumentations(),
       // 분산 추적 - 내부 API만 추적 (외부/정적 파일 제외)
       new TracingInstrumentation({
-        propagateTraceHeaderCorsUrls: TRACE_TARGET_URLS,
+        instrumentationOptions: {
+          propagateTraceHeaderCorsUrls: TRACE_TARGET_URLS,
+        },
       }),
     ],
   });

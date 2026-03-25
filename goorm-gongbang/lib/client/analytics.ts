@@ -68,22 +68,8 @@ function getDeviceType(): "mobile" | "desktop" {
 }
 
 /**
- * 로그인 상태 확인 (zustand 직접 import 방지 - 순환참조)
- */
-function getIsLoggedIn(): boolean {
-  if (typeof window === "undefined") return false;
-  try {
-    const stored = localStorage.getItem("auth-storage");
-    if (!stored) return false;
-    const parsed = JSON.parse(stored);
-    return !!parsed?.state?.user;
-  } catch {
-    return false;
-  }
-}
-
-/**
  * 공통 필드 생성 (Faro EventAttributes 호환 - string only)
+ * - is_logged_in은 훅(useAnalytics)에서 주입됨
  */
 function getCommonProps(
   route: string,
@@ -92,7 +78,6 @@ function getCommonProps(
   const base: Record<string, string> = {
     route,
     device_type: getDeviceType(),
-    is_logged_in: String(getIsLoggedIn()),
   };
 
   if (extra) {
