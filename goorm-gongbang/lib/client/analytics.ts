@@ -39,12 +39,10 @@ const DENIED_PATTERNS = [
 ];
 
 /**
- * 민감정보 필터링
+ * 민감정보 필터링 + string 변환 (Faro EventAttributes 호환)
  */
-function sanitizeProps(
-  props: EventProps
-): Record<string, string | number | boolean> {
-  const sanitized: Record<string, string | number | boolean> = {};
+function sanitizeProps(props: EventProps): Record<string, string> {
+  const sanitized: Record<string, string> = {};
 
   Object.entries(props).forEach(([key, value]) => {
     if (value === undefined) return;
@@ -52,7 +50,8 @@ function sanitizeProps(
     if (!ALLOWED_FIELDS.has(key)) return;
     // 금지 패턴 2차 체크
     if (DENIED_PATTERNS.some((pattern) => pattern.test(key))) return;
-    sanitized[key] = value;
+    // Faro는 string만 허용
+    sanitized[key] = String(value);
   });
 
   return sanitized;
@@ -84,16 +83,16 @@ function getIsLoggedIn(): boolean {
 }
 
 /**
- * 공통 필드 생성
+ * 공통 필드 생성 (Faro EventAttributes 호환 - string only)
  */
 function getCommonProps(
   route: string,
   extra?: EventProps
-): Record<string, string | number | boolean> {
-  const base: Record<string, string | number | boolean> = {
+): Record<string, string> {
+  const base: Record<string, string> = {
     route,
     device_type: getDeviceType(),
-    is_logged_in: getIsLoggedIn(),
+    is_logged_in: String(getIsLoggedIn()),
   };
 
   if (extra) {
@@ -142,7 +141,7 @@ export function trackError(
   if (!faro) return;
 
   const route = window.location.pathname;
-  const errorProps = {
+  const errorProps: Record<string, string> = {
     ...getCommonProps(route, props),
     error_type: error instanceof Error ? error.name : "Error",
     error_code: typeof error === "string" ? error : error?.message || "unknown",
