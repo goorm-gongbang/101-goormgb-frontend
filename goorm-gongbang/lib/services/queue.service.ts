@@ -6,6 +6,7 @@
 
 import { API_BASE_URL } from "@/lib/api/config";
 import { auth } from "@/lib/api/fetch";
+import { flushTelemetryBeforeProtectedRequest } from "@/lib/telemetry/runtime";
 import type {
   QueueEnterResponse,
   QueueStatusResponse,
@@ -20,10 +21,13 @@ export type {
 };
 
 /* 대기열 진입 */
-export const enterQueue = (matchId: string | number) =>
-  auth.post<QueueEnterResponse>(
+export const enterQueue = async (matchId: string | number) => {
+  await flushTelemetryBeforeProtectedRequest();
+
+  return auth.post<QueueEnterResponse>(
     `${API_BASE_URL}/queue/matches/${matchId}/enter`,
   );
+};
 
 /* 대기열 상태 조회 */
 export const getQueueStatus = (matchId: string | number) =>

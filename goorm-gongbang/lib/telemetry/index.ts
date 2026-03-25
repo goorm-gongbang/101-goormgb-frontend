@@ -8,10 +8,13 @@
  * function TicketingPage({ matchId }: { matchId: string }) {
  *   const telemetry = useTelemetry({ matchId });
  *
- *   // Stage 변경 시 자동으로 telemetry 전송
+ *   // 페이지 진입 시 현재 stage 갱신
  *   useEffect(() => {
  *     telemetry.setStage('SEAT_SELECTION');
  *   }, []);
+ *
+ *   // 보호 API 호출 직전 현재 stage 기준으로 batch 전송
+ *   await telemetry.flushCurrentStageAndSend();
  *
  *   return <div>...</div>;
  * }
@@ -21,10 +24,12 @@
 export * from './types';
 export * from './collector';
 export * from './api';
+export * from './runtime';
 
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import { TelemetryCollector } from './collector';
 import { AITelemetryApi, AIApiError } from './api';
+import { registerTelemetryRuntime, unregisterTelemetryRuntime } from './runtime';
 import type {
   TelemetryConfig,
   TicketingStage,
@@ -58,11 +63,14 @@ export interface TelemetryInstance {
   /** 현재 Stage */
   stage: TicketingStage;
 
-  /** Stage 변경 (telemetry 자동 전송) */
-  setStage: (stage: TicketingStage) => Promise<void>;
+  /** Stage 변경 */
+  setStage: (stage: TicketingStage) => void;
 
   /** 수동 flush (API 호출 없이 버퍼 반환) */
   flush: () => TelemetryEvent[];
+
+  /** 현재 Stage 기준으로 telemetry 전송 */
+  flushCurrentStageAndSend: () => Promise<number>;
 
   /** 수집 시작 */
   start: () => void;
@@ -83,13 +91,14 @@ export interface TelemetryInstance {
 /**
  * Telemetry React Hook
  *
- * Stage 전환 시 자동으로 수집된 이벤트를 AI Runtime에 전송
+ * 사용자 행동을 수집하고, 필요한 시점에 현재 Stage 기준으로 AI Runtime에 전송
  */
 export function useTelemetry(options: UseTelemetryOptions): TelemetryInstance {
   const { matchId, aiBaseUrl = '/ai', debug = false, autoStart = true } = options;
 
   // 세션 ID 가져오기
   const sid = options.sid ?? getSessionId();
+  const [stage, setStageState] = useState<TicketingStage>('LANDING');
 
   // Collector와 API 인스턴스
   const collectorRef = useRef<TelemetryCollector | null>(null);
@@ -117,32 +126,57 @@ export function useTelemetry(options: UseTelemetryOptions): TelemetryInstance {
     };
   }, [sid, matchId, aiBaseUrl, debug, autoStart]);
 
-  // Stage 변경 및 telemetry 전송
-  const setStage = useCallback(async (stage: TicketingStage): Promise<void> => {
+  // Stage 변경
+  const setStage = useCallback((stage: TicketingStage): void => {
+    const collector = collectorRef.current;
+
+    if (!collector) {
+      console.warn('[Telemetry] Not initialized');
+      return;
+    }
+
+    collector.setStage(stage);
+    setStageState(stage);
+  }, []);
+
+  // 현재 Stage 기준 telemetry 전송
+  const flushCurrentStageAndSend = useCallback(async (): Promise<number> => {
     const collector = collectorRef.current;
     const api = apiRef.current;
 
     if (!collector || !api) {
       console.warn('[Telemetry] Not initialized');
-      return;
+      return 0;
     }
 
-    // Stage 변경 및 버퍼 flush
-    const events = collector.setStage(stage);
+    const stage = collector.getStage();
+    const events = collector.flush();
 
-    // 이벤트가 있으면 전송
-    if (events.length > 0) {
-      try {
-        await api.sendTelemetry(sid, matchId, stage, events);
-        if (debug) {
-          console.log(`[Telemetry] Sent ${events.length} events for stage ${stage}`);
-        }
-      } catch (error) {
-        console.error('[Telemetry] Failed to send telemetry:', error);
-        // 실패해도 계속 진행 (fail-open)
+    try {
+      await api.sendTelemetry(sid, matchId, stage, events);
+      if (debug) {
+        console.log(`[Telemetry] Sent ${events.length} events for stage ${stage}`);
       }
+      return events.length;
+    } catch (error) {
+      console.error('[Telemetry] Failed to send telemetry:', error);
+      return 0;
     }
   }, [sid, matchId, debug]);
+
+  useEffect(() => {
+    const runtime = {
+      flushCurrentStageAndSend,
+      setStage,
+      getStage: () => stage,
+    };
+
+    registerTelemetryRuntime(runtime);
+
+    return () => {
+      unregisterTelemetryRuntime(runtime);
+    };
+  }, [flushCurrentStageAndSend, setStage, stage]);
 
   // 수동 flush
   const flush = useCallback((): TelemetryEvent[] => {
@@ -193,9 +227,10 @@ export function useTelemetry(options: UseTelemetryOptions): TelemetryInstance {
   );
 
   return {
-    stage: collectorRef.current?.getStage() ?? 'LANDING',
+    stage,
     setStage,
     flush,
+    flushCurrentStageAndSend,
     start,
     stop,
     precheck,

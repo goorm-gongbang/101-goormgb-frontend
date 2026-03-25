@@ -5,7 +5,8 @@
 =========================== */
 
 import { API_BASE_URL } from "@/lib/api/config";
-import { auth, pub } from "@/lib/api/fetch";
+import { auth } from "@/lib/api/fetch";
+import { flushTelemetryBeforeProtectedRequest } from "@/lib/telemetry/runtime";
 import type {
   BookingOptionsRequest,
   BookingOptionsResponse,
@@ -15,7 +16,7 @@ import type {
   SeatGroupsEntryResponse,
   SectionBlocksResponse,
   SeatHoldCreateRequest,
-  SeatHoldCreateResponse
+  SeatHoldCreateResponse,
 } from "@/lib/types";
 
 /* 예매 조건 저장 */
@@ -28,45 +29,60 @@ export const saveBookingOptions = (matchId: string | number, body: BookingOption
 /* 추천 ON - 추천 좌석 초기 진입 */
 export const getRecommendationSeatEntry = (matchId: string | number) =>
   auth.get<SeatEntryResponse>(
-    `${API_BASE_URL}/seat/matches/${matchId}/recommendations/seat-entry`
+    `${API_BASE_URL}/seat/matches/${matchId}/recommendations/seat-entry`,
   );
 
 /* 추천 ON - 추천 블럭 리스트 조회 */
-export const getRecommendationBlocks = (matchId: string | number) =>
-  auth.get<BlockRecommendationResponse>(
-    `${API_BASE_URL}/seat/matches/${matchId}/recommendations/blocks`
+export const getRecommendationBlocks = async (matchId: string | number) => {
+  await flushTelemetryBeforeProtectedRequest();
+
+  return auth.get<BlockRecommendationResponse>(
+    `${API_BASE_URL}/seat/matches/${matchId}/recommendations/blocks`,
   );
+};
 
 /* 추천 ON - 좌석 자동 배정 및 선점 */
-export const assignRecommendedSeats = (
+export const assignRecommendedSeats = async (
   matchId: string | number,
-  blockId: string | number
-) =>
-  auth.post<SeatAssignmentResponse>(
-    `${API_BASE_URL}/seat/matches/${matchId}/recommendations/blocks/${blockId}/assign`
+  blockId: string | number,
+) => {
+  await flushTelemetryBeforeProtectedRequest();
+
+  return auth.post<SeatAssignmentResponse>(
+    `${API_BASE_URL}/seat/matches/${matchId}/recommendations/blocks/${blockId}/assign`,
   );
+};
 
 /* 추천 OFF - 구역 리스트 조회 */
-export const getSeatGroupsEntry = (matchId: string | number) =>
-  auth.get<SeatGroupsEntryResponse>(
-    `${API_BASE_URL}/seat/matches/${matchId}/seat-groups`
+export const getSeatGroupsEntry = async (matchId: string | number) => {
+  await flushTelemetryBeforeProtectedRequest();
+
+  return auth.get<SeatGroupsEntryResponse>(
+    `${API_BASE_URL}/seat/matches/${matchId}/seat-groups`,
   );
+};
 
 /* 구역 클릭 → 블럭별 포도알 조회 */
-export const getSectionBlocks = (
+export const getSectionBlocks = async (
   matchId: string | number,
   sectionId: string | number,
-) =>
-  auth.get<SectionBlocksResponse>(
-    `${API_BASE_URL}/seat/matches/${matchId}/sections/${sectionId}/blocks`
+) => {
+  await flushTelemetryBeforeProtectedRequest();
+
+  return auth.get<SectionBlocksResponse>(
+    `${API_BASE_URL}/seat/matches/${matchId}/sections/${sectionId}/blocks`,
   );
+};
 
 /* 좌석 직접 선택 → Hold 생성 */
-export const createSeatHold = (
+export const createSeatHold = async (
   matchId: string | number,
   body: SeatHoldCreateRequest,
-) =>
-  auth.post<SeatHoldCreateResponse, SeatHoldCreateRequest>(
+) => {
+  await flushTelemetryBeforeProtectedRequest();
+
+  return auth.post<SeatHoldCreateResponse, SeatHoldCreateRequest>(
     `${API_BASE_URL}/seat/matches/${matchId}/seat-holds`,
     body,
   );
+};

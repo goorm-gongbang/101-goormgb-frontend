@@ -34,6 +34,7 @@ import type {
   SectionBlockSeat,
   SeatAssignmentResponse,
 } from "@/lib/types";
+import { useTelemetry } from "@/lib/telemetry";
 
 type SeatListItem = {
   sectionId: number;
@@ -108,6 +109,10 @@ export default function Page() {
     const parsed = value ? Number(value) : NaN;
     return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
   }, [params]);
+  const { setStage } = useTelemetry({
+    matchId: matchId ? String(matchId) : "",
+    autoStart: matchId !== null,
+  });
 
   const recommendationEnabled = searchParams.get("recommendationEnabled") === "true";
   const initialQueueRank = searchParams.get("queueRank")
@@ -213,6 +218,11 @@ export default function Page() {
       pollingTimeoutRef.current = null;
     }
   };
+
+  useEffect(() => {
+    if (matchId === null) return;
+    setStage("QUEUE_WAITING");
+  }, [matchId, setStage]);
 
   const scheduleNextPoll = (ms: number, callback: () => void) => {
     clearQueuePolling();
@@ -490,6 +500,8 @@ export default function Page() {
               setSeatGroupsEntry(seatGroupsResponse);
               setSeatSections(toSeatSections(seatGroupsResponse));
             }
+
+            setStage("SEAT_SELECTION");
           } catch (e) {
             const error = e as { status?: number };
 
@@ -556,7 +568,7 @@ export default function Page() {
       cancelled = true;
       clearQueuePolling();
     };
-  }, [matchId, queueStatus, isPreferredRecommendOn, router]);
+  }, [matchId, queueStatus, isPreferredRecommendOn, router, setStage]);
 
   return (
     <div className="flex min-h-screen w-full flex-col items-center bg-white">

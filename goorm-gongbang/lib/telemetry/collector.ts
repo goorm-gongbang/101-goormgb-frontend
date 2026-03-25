@@ -2,7 +2,7 @@
  * AI Telemetry SDK - Event Collector
  *
  * 사용자 행동 이벤트 수집 및 로컬 버퍼링
- * Stage 전환 시 flush() 호출하여 batch 전송
+ * 필요 시 flush() 호출하여 batch 전송
  */
 
 import type {
@@ -75,15 +75,12 @@ export class TelemetryCollector {
   }
 
   /**
-   * Stage 변경 및 버퍼 flush
+   * Stage 변경
    */
-  setStage(stage: TicketingStage): TelemetryEvent[] {
+  setStage(stage: TicketingStage): void {
     const previousStage = this.currentStage;
     this.currentStage = stage;
     this.log(`Stage changed: ${previousStage} -> ${stage}`);
-
-    // Stage 전환 시 버퍼 반환 (API 호출은 외부에서)
-    return this.flush();
   }
 
   /**

@@ -20,6 +20,7 @@ import { LoginRequiredModal } from "@/components/common/LoginRequiredModal";
 import { PreferredZoneModal } from "@/components/common/PreferredZoneModal";
 import Image from "next/image";
 import { toast } from "sonner";
+import { useTelemetry } from "@/lib/telemetry";
 
 /* ===========================
     UI TYPES
@@ -116,6 +117,10 @@ export default function MatchDetailSectionResponsive({
     const n = str ? Number(str) : NaN;
     return Number.isFinite(n) && n > 0 ? n : null;
   }, [params]);
+  const { setStage } = useTelemetry({
+    matchId: matchId ? String(matchId) : "",
+    autoStart: matchId !== null,
+  });
 
   const [enabled, setEnabled] = useState(true);
   const [nearbySeatEnabled, setNearbySeatEnabled] = useState(true);
@@ -134,6 +139,11 @@ export default function MatchDetailSectionResponsive({
 
   const [isPreferredZoneModalOpen, setIsPreferredZoneModalOpen] = useState(false);
   const [isLoginRequiredModalOpen, setIsLoginRequiredModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (matchId === null) return;
+    setStage("LANDING");
+  }, [matchId, setStage]);
 
   const handleBlockToggle = (blockNum: number) => {
     setSelectedBlocks((prev) =>
