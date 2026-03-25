@@ -40,7 +40,7 @@ export class AITelemetryApi {
 
   /**
    * 텔레메트리 데이터 전송
-   * Stage 전환 시 호출
+   * 보호 API 호출 직전 등, 현재 Stage 기준 batch 전송
    */
   async sendTelemetry(
     sid: string,
@@ -48,10 +48,6 @@ export class AITelemetryApi {
     stage: TicketingStage,
     events: TelemetryEvent[]
   ): Promise<TelemetryIngestResponse> {
-    if (events.length === 0) {
-      return { success: true, message: 'No events to send' };
-    }
-
     const request: TelemetryIngestRequest = {
       sid,
       matchId,
