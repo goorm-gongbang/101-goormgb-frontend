@@ -77,6 +77,28 @@ class ProtectedRequestCancelledError extends Error {
   }
 }
 
+const MAX_VQA_FALLBACK_RETRIES = 2;
+
+function getErrorStatus(error: unknown): number | null {
+  if (error instanceof ApiError) {
+    return error.status;
+  }
+
+  if (typeof error === "object" && error !== null && "status" in error) {
+    const raw = (error as { status?: unknown }).status;
+    if (typeof raw === "number") {
+      return raw;
+    }
+
+    const parsed = Number(raw);
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+
+  return null;
+}
+
 const PRICE_TEXT_MAP: Record<string, string> = {
   익사이팅존: "주중: 28,000원, 주말: 33,000/매",
   블루석: "주중: 22,000원, 주말: 24,000/매",
@@ -354,23 +376,36 @@ function RecommendPageContent({ matchId }: { matchId: number | null }) {
         throw new VqaChallengeCancelledError();
       }
 
-      try {
-        return await requestFactory();
-      } catch (error) {
-        if (!(error instanceof ApiError) || error.status !== 428) {
-          throw error;
+      for (let fallbackRetry = 0; fallbackRetry <= MAX_VQA_FALLBACK_RETRIES; fallbackRetry += 1) {
+        try {
+          return await requestFactory();
+        } catch (error) {
+          const status = getErrorStatus(error);
+          if (status !== 428) {
+            throw error;
+          }
+
+          if (fallbackRetry >= MAX_VQA_FALLBACK_RETRIES) {
+            console.warn(
+              `[Recommend][VQA] repeated 428 from ${requestName}; retries exhausted`,
+              error,
+            );
+            throw error;
+          }
+
+          isVqaVerifiedRef.current = false;
+          console.log(
+            `[Recommend][VQA] 428 received from ${requestName}; retrying after challenge (${fallbackRetry + 1}/${MAX_VQA_FALLBACK_RETRIES})`,
+          );
+
+          const retryVerified = await requestVqaGate("fallback", requestName, true);
+          if (!retryVerified) {
+            throw new VqaChallengeCancelledError();
+          }
         }
-
-        isVqaVerifiedRef.current = false;
-        console.log(`[Recommend][VQA] 428 received from ${requestName}; retrying after challenge`);
-
-        const retryVerified = await requestVqaGate("fallback", requestName, true);
-        if (!retryVerified) {
-          throw new VqaChallengeCancelledError();
-        }
-
-        return await requestFactory();
       }
+
+      throw new Error("unreachable");
     },
     [requestVqaGate],
   );
@@ -398,25 +433,31 @@ function RecommendPageContent({ matchId }: { matchId: number | null }) {
         return;
       }
 
-      const error = e as { status?: number };
+      const status = getErrorStatus(e);
 
-      if (error.status === 401) {
+      if (status === 401) {
         toast.error("유효하지 않은 입장 토큰입니다.");
         router.push(`/matches/${matchId}`);
         return;
       }
 
-      if (error.status === 404) {
+      if (status === 404) {
         toast.error("해당 구역의 좌석 정보를 찾을 수 없습니다.");
         return;
       }
 
-      if (error.status === 410) {
+      if (status === 410) {
         toast.error("좌석 진입 가능 시간이 만료되었습니다.");
         router.push(`/matches/${matchId}`);
         return;
       }
 
+      if (status === 428) {
+        toast.error("보안 인증이 필요합니다. 다시 시도해 주세요.");
+        return;
+      }
+
+      console.error("[Recommend] getSectionBlocks failed", e);
       toast.error("블럭 좌석 정보를 불러오는 중 오류가 발생했습니다.");
     } finally {
       setSectionBlocksLoading(false);
@@ -480,27 +521,37 @@ function RecommendPageContent({ matchId }: { matchId: number | null }) {
         return;
       }
 
-      const error = e as { status?: number };
+      const status = getErrorStatus(e);
 
-      if (error.status === 401) {
+      if (status === 401) {
         toast.error("유효하지 않은 입장 토큰입니다.");
         router.push(`/matches/${matchId}`);
         return;
       }
-      if (error.status === 404) {
+      if (status === 403) {
+        toast.error("보안 정책에 의해 요청이 차단되었습니다.");
+        return;
+      }
+      if (status === 404) {
         toast.error("연석 가능한 좌석을 찾을 수 없습니다.");
         return;
       }
-      if (error.status === 409) {
+      if (status === 409) {
         toast.error("다른 사용자가 좌석을 선택 중입니다.");
         return;
       }
-      if (error.status === 410) {
+      if (status === 410) {
         toast.error("입장 가능 시간이 만료되었습니다.");
         router.push(`/matches/${matchId}`);
         return;
       }
 
+      if (status === 428) {
+        toast.error("보안 인증이 다시 필요합니다. 예매를 다시 시도해 주세요.");
+        return;
+      }
+
+      console.error("[Recommend] assignRecommendedSeats failed", e);
       toast.error("좌석 배정 중 오류가 발생했습니다.");
     } finally {
       setAssigning(false);
@@ -544,35 +595,46 @@ function RecommendPageContent({ matchId }: { matchId: number | null }) {
         return;
       }
 
-      const error = e as { status?: number };
+      const status = getErrorStatus(e);
 
-      if (error.status === 400) {
+      if (status === 400) {
         toast.error("좌석 요청 값이 유효하지 않습니다.");
         return;
       }
 
-      if (error.status === 401) {
+      if (status === 401) {
         toast.error("유효하지 않은 입장 토큰입니다.");
         router.push(`/matches/${matchId}`);
         return;
       }
 
-      if (error.status === 404) {
+      if (status === 403) {
+        toast.error("보안 정책에 의해 요청이 차단되었습니다.");
+        return;
+      }
+
+      if (status === 404) {
         toast.error("좌석 또는 좌석 세션을 찾을 수 없습니다.");
         return;
       }
 
-      if (error.status === 409) {
+      if (status === 409) {
         toast.error("다른 사용자가 이미 좌석을 선점 중입니다.");
         return;
       }
 
-      if (error.status === 410) {
+      if (status === 410) {
         toast.error("입장 가능 시간이 만료되었습니다.");
         router.push(`/matches/${matchId}`);
         return;
       }
 
+      if (status === 428) {
+        toast.error("보안 인증이 다시 필요합니다. 예매를 다시 시도해 주세요.");
+        return;
+      }
+
+      console.error("[Recommend] createSeatHold failed", e);
       toast.error("좌석 Hold 생성 중 오류가 발생했습니다.");
       setIsSeatUnavailableModalOpen(true);
     } finally {
@@ -725,23 +787,29 @@ function RecommendPageContent({ matchId }: { matchId: number | null }) {
           return;
         }
 
-        const error = e as { status?: number };
+        const status = getErrorStatus(e);
 
-        if (error.status === 401) {
+        if (status === 401) {
           toast.error("유효하지 않은 입장 토큰입니다.");
           router.push(`/matches/${matchId}`);
           return;
         }
-        if (error.status === 404) {
+        if (status === 404) {
           setIsSoldOutModalOpen(true);
           return;
         }
-        if (error.status === 410) {
+        if (status === 410) {
           toast.error("입장 가능 시간이 만료되었습니다.");
           router.push(`/matches/${matchId}`);
           return;
         }
 
+        if (status === 428) {
+          toast.error("보안 인증이 필요합니다. 다시 시도해 주세요.");
+          return;
+        }
+
+        console.error("[Recommend] loadSeatAccess failed", e);
         toast.error("좌석 정보를 불러오는 중 오류가 발생했습니다.");
       } finally {
         if (!cancelled) {
