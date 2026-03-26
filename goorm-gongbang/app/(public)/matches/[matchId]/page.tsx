@@ -119,7 +119,7 @@ export default function MatchDetailSectionResponsive({
   }, [params]);
   // AI telemetry 연동: 서비스 레이어 preflight flush가 동작하려면
   // 페이지 진입 시 telemetry runtime이 먼저 등록돼 있어야 한다.
-  const { setStage } = useTelemetry({
+  const { setStage, precheck } = useTelemetry({
     matchId: matchId ?? 0,
     autoStart: matchId !== null,
   });
@@ -176,6 +176,14 @@ export default function MatchDetailSectionResponsive({
 
     try {
       const bookingResponse: BookingOptionsResponse = await saveBookingOptions(matchId, bookingBody);
+
+      // TODO(local-dev): Cloudflare Turnstile 미연동 상태라 로컬 통합 테스트용 dev token으로 precheck를 통과시킨다.
+      // 실제 연동 시 Turnstile 발급 토큰으로 교체 필요.
+      const precheckPassed = await precheck("ok-local-dev");
+      if (!precheckPassed) {
+        toast.error("보안 사전 검증에 실패했습니다. 잠시 후 다시 시도해 주세요.");
+        return;
+      }
 
       const queueResponse: QueueEnterResponse = await enterQueue(matchId);
 
