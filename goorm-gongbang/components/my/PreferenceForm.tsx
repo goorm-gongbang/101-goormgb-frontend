@@ -346,7 +346,7 @@ export function PreferenceForm() {
             {/* ══════════════════════════════
                 필수 질문 카드
             ══════════════════════════════ */}
-            <div className="bg-white rounded-2xl border border-[#E8E8E8] px-5 py-5">
+            <div className="bg-white rounded-xl border border-[#E8E8E8] px-5 py-5">
                 {/* 카드 헤더 */}
                 <div className="flex items-center gap-2 mb-3">
                     <h2 className="text-base font-bold text-[#1A1A1A]">필수 질문</h2>
@@ -377,7 +377,7 @@ export function PreferenceForm() {
                             <DropdownMenuTrigger asChild>
                                 <button
                                     type="button"
-                                    className="w-full sm:w-[320px] min-h-12 rounded-lg px-4 py-2 inline-flex justify-start items-center gap-1 overflow-hidden outline outline-[1px] outline-offset-[-1px]"
+                                    className="w-full sm:w-[320px] min-h-12 rounded-[12px] px-4 py-2 inline-flex justify-start items-center gap-1 overflow-hidden outline outline-[1px] outline-offset-[-1px]"
                                     style={{
                                         background: isClubOpen ? "var(--foundation-primary-10)" : "var(--background-white)",
                                         outlineColor: isClubOpen ? "var(--foundation-primary-500)" : "var(--stroke-interactive-neutral-default)",
@@ -454,7 +454,7 @@ export function PreferenceForm() {
             {/* ══════════════════════════════
                 선택 질문 카드 (접기/펼치기)
             ══════════════════════════════ */}
-            <div className="bg-white rounded-2xl border border-[#E8E8E8] overflow-hidden">
+            <div className="bg-white rounded-xl border border-[#E8E8E8] overflow-hidden">
                 {/* 카드 헤더 (클릭하면 토글) */}
                 <button
                     type="button"
@@ -571,7 +571,7 @@ export function PreferenceForm() {
             <button
                 type="button"
                 onClick={handleSave}
-                className="w-full py-3.5 bg-[var(--foundation-primary-500)] hover:bg-[var(--foundation-primary-600)] active:scale-[0.99] text-white text-sm font-semibold rounded-2xl transition-all"
+                className="w-full py-3.5 bg-[var(--foundation-primary-500)] hover:bg-[var(--foundation-primary-600)] active:scale-[0.99] text-white text-sm font-semibold rounded-[12px] transition-all"
             >
                 저장하기
             </button>

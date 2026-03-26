@@ -118,7 +118,7 @@ export function MyPageLayout({ children }: Props) {
                 {/* ─────────────────────────────────────
           프로필 카드
       ───────────────────────────────────── */}
-                <div className="bg-white rounded-2xl border border-[#E8E8E8] px-5 py-5">
+                <div className="bg-white rounded-xl border border-[#E8E8E8] px-5 py-5">
                     <div className="flex items-center gap-4">
 
                         {/* 프로필 이미지 */}
@@ -184,7 +184,7 @@ export function MyPageLayout({ children }: Props) {
                 {SECTIONS.map((section) => (
                     <div
                         key={section.title}
-                        className="bg-white rounded-2xl border border-[#E8E8E8] px-5 py-4"
+                        className="bg-white rounded-xl border border-[#E8E8E8] px-5 py-4"
                     >
                         {/* 섹션 제목 */}
                         <h2 className="text-[#1A1A1A] text-sm font-bold mb-3">
@@ -235,7 +235,7 @@ export function MyPageLayout({ children }: Props) {
                 {/* ─────────────────────────────────────
           로그아웃 / 회원 탈퇴 카드
       ───────────────────────────────────── */}
-                <div className="bg-white rounded-2xl border border-[#E8E8E8] px-5 py-1">
+                <div className="bg-white rounded-xl border border-[#E8E8E8] px-5 py-1">
                     {/* 로그아웃 */}
                     <button
                         type="button"
@@ -257,7 +257,7 @@ export function MyPageLayout({ children }: Props) {
 
                 {/* children (서브 페이지용) */}
                 {children && (
-                    <div className="bg-white rounded-2xl border border-[#E8E8E8]">
+                    <div className="bg-white rounded-xl border border-[#E8E8E8]">
                         {children}
                     </div>
                 )}
