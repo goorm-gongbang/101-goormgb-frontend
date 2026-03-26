@@ -19,6 +19,15 @@ import type {
   OnboardingStatusResponse,
   OnboardingPreferencesRequest,
   ClubMonthMatches,
+  OnboardingPreferencesResponse,
+  PreferredBlockUpdateRequest,
+  OrderSheetResponse,
+  CreateOrderRequest,
+  CreateOrderResponse,
+  ProcessPaymentRequest,
+  ProcessPaymentResponse,
+  CreateCashReceiptRequest,
+  CreateCashReceiptResponse
 } from "@/lib/types";
 
 // Re-export types for convenience
@@ -33,6 +42,8 @@ export type {
   ClubDetail,
   OnboardingStatusResponse,
   OnboardingPreferencesRequest,
+  OnboardingPreferencesResponse,
+  PreferredBlockUpdateRequest
 };
 
 /* 경기 목록 조회 */
@@ -74,3 +85,47 @@ export const getOnboardingStatus = () =>
 /* 온보딩 선호도 저장 */
 export const saveOnboardingPreferences = (body: OnboardingPreferencesRequest) =>
   auth.post(`${API_BASE_URL}/order/onboarding/preferences`, body);
+
+/* 온보딩 선호도 응답 */
+export const getOnboardingPreferences = () =>
+  auth.get<OnboardingPreferencesResponse>(`${API_BASE_URL}/order/onboarding/preferences`);
+
+/* 선호 구역 수정 */
+export const saveOnboardingPreferencesBlocks = (body: PreferredBlockUpdateRequest) =>
+  auth.put(`${API_BASE_URL}/order/onboarding/preferred-blocks`, body);
+
+/* 주문서 조회 */
+export const getOrderSheet = (
+  matchId: string | number,
+  seatIds: number[],
+) =>
+  auth.get<OrderSheetResponse>(
+    `${API_BASE_URL}/order/mypage/orders/sheet?matchId=${matchId}&seatIds=${seatIds.join(",")}`
+  );
+
+/* 주문 생성 */
+export const createOrder = (body: CreateOrderRequest) =>
+  auth.post<CreateOrderResponse, CreateOrderRequest>(
+    `${API_BASE_URL}/order/mypage/orders`,
+    body,
+  );
+
+/* 결제 처리 */
+export const processPayment = (
+  orderId: number,
+  body: ProcessPaymentRequest,
+) =>
+  auth.post<ProcessPaymentResponse, ProcessPaymentRequest>(
+    `${API_BASE_URL}/order/mypage/orders/${orderId}/payment`,
+    body,
+  );
+
+/* 현금 영수증 신청 */
+export const createCashReceipt = (
+  orderId: number,
+  body: CreateCashReceiptRequest,
+) =>
+  auth.post<CreateCashReceiptResponse, CreateCashReceiptRequest>(
+    `${API_BASE_URL}/order/mypage/orders/${orderId}/cash-receipt`,
+    body,
+  );

@@ -25,7 +25,8 @@ const nextConfig = {
   // 기존 OTel 및 권장 설정 유지
   compress: true,
   poweredByHeader: false,
-  productionBrowserSourceMaps: false,
+  // staging에서만 sourcemap 활성화 (디버깅용)
+  productionBrowserSourceMaps: process.env.NEXT_PUBLIC_ENV === "staging",
 
   // 보안 헤더 유지
   async headers() {
@@ -52,6 +53,9 @@ const nextConfig = {
     OTEL_EXPORTER_OTLP_ENDPOINT:
       process.env.OTEL_EXPORTER_OTLP_ENDPOINT ||
       "http://otel-collector:4318/v1/traces",
+    // Grafana Faro (프론트엔드 관측성)
+    NEXT_PUBLIC_FARO_URL: process.env.NEXT_PUBLIC_FARO_URL || "",
+    NEXT_PUBLIC_RELEASE: process.env.NEXT_PUBLIC_RELEASE || "1.0.0",
   },
 };
 

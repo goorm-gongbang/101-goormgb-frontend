@@ -7,26 +7,82 @@ import { RefundPolicyModal } from "@/components/common/RefundPolicyModal";
 import { PrimaryButton, SecondaryButton } from "@/components/common/Button";
 
 const paymentMethodLabel: Record<string, string> = {
-    toss: "토스페이 사용",
-    kakao: "카카오페이 사용",
-    bank: "무통장 입금",
+    BANK_TRANSFER: "무통장 입금 사용",
+    TOSS_PAY: "토스페이 사용",
+    KAKAO_PAY: "카카오페이 사용",
 };
-
-const seatRows = [
-    { label: "오렌지석 206블럭 3열 13번", price: "20,000 원" },
-    { label: "오렌지석 206블럭 3열 14번", price: "20,000 원" },
-];
-
-const stadiumAddress = "서울 송파구 올림픽로 19-2 서울종합운동장";
-
 
 export default function PaymentCompletePage() {
     const [isRefundModalOpen, setIsRefundModalOpen] = useState(false);
 
     const searchParams = useSearchParams();
-    const method = searchParams.get("method") ?? "toss";
-    const methodLabel = paymentMethodLabel[method] ?? "토스페이 사용";
+
+    const paymentMethod = searchParams.get("paymentMethod") ?? "TOSS_PAY";
+    const paymentStatus = searchParams.get("paymentStatus") ?? "";
+    const paidAt = searchParams.get("paidAt") ?? "";
+
+    const bank = searchParams.get("bank") ?? "";
+    const accountNumber = searchParams.get("accountNumber") ?? "";
+    const holder = searchParams.get("holder") ?? "";
+    const depositDeadline = searchParams.get("depositDeadline") ?? "";
+
+    const stadiumName = searchParams.get("stadiumName") ?? "";
+    const stadiumAddress = searchParams.get("stadiumAddress") ?? "";
+    const matchAt = searchParams.get("matchAt") ?? "";
+    const totalAmount = Number(searchParams.get("totalAmount") ?? "0");
+    const fee = Number(searchParams.get("fee") ?? "0");
+
+    const seatRows = (() => {
+        try {
+            return JSON.parse(searchParams.get("seatLabels") ?? "[]") as Array<{
+                label: string;
+                price: number;
+            }>;
+        } catch (e) {
+            console.error("seatLabels 파싱 오류:", e);
+            return [];
+        }
+    })();
+
     const naverMapUrl = `https://map.naver.com/p/search/${encodeURIComponent(stadiumAddress)}`;
+
+    const formatMatchAt = (value?: string) => {
+        if (!value) return "-";
+        const date = new Date(value);
+        return new Intl.DateTimeFormat("ko-KR", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+            weekday: "short",
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: false,
+        }).format(date);
+    };
+
+    const formatCancelDeadline = (value?: string) => {
+        if (!value) return "-";
+
+        const matchDate = new Date(value);
+        if (Number.isNaN(matchDate.getTime())) return "-";
+
+        const cancelDeadline = new Date(matchDate);
+        cancelDeadline.setDate(cancelDeadline.getDate() - 1);
+        cancelDeadline.setHours(23, 59, 0, 0);
+
+        return new Intl.DateTimeFormat("ko-KR", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+            weekday: "short",
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: false,
+            timeZone: "Asia/Seoul",
+        }).format(cancelDeadline);
+    };
+
+    const won = (n: number) => `${n.toLocaleString("ko-KR")} 원`;
 
     return (
         <div className="min-h-screen bg-[var(--foundation-neutral-980)] px-4 py-8 md:px-10">
@@ -57,13 +113,13 @@ export default function PaymentCompletePage() {
                             <div className="flex items-center gap-6">
                                 <div className="w-20 text-base font-medium text-[var(--foundation-neutral-600)]">결제 일시</div>
                                 <div className="flex-1 text-base font-medium text-[var(--foundation-neutral-240)]">
-                                    2026년 3월 22일 (일) 14:39
+                                    {formatMatchAt(paidAt)}
                                 </div>
                             </div>
                             <div className="flex items-center gap-6">
                                 <div className="w-20 text-base font-medium text-[var(--foundation-neutral-600)]">결제 수단</div>
                                 <div className="flex-1 text-base font-medium text-[var(--foundation-neutral-240)]">
-                                    {methodLabel}
+                                    {paymentMethodLabel[paymentMethod] ?? "토스페이 사용"}
                                 </div>
                             </div>
                         </div>
@@ -78,15 +134,15 @@ export default function PaymentCompletePage() {
                                 <div className="w-20 text-base font-medium text-[var(--foundation-neutral-600)]">경기 장소</div>
                                 <div className="flex-1">
                                     <div className="text-base font-semibold text-[var(--foundation-neutral-240)]">
-                                        잠실종합운동장 잠실야구장
+                                        {stadiumName || "-"}
                                     </div>
                                     <a
                                         href={naverMapUrl}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="mt-0.5 inline-flex items-center gap-1 text-xs text-[var(--foundation-neutral-600)]"
-                                        >
-                                        <span className="underline">{stadiumAddress}</span>
+                                    >
+                                        <span className="underline">{stadiumAddress || "-"}</span>
                                         <ExternalLink className="h-4 w-4" strokeWidth={1.5} />
                                     </a>
                                 </div>
@@ -95,7 +151,7 @@ export default function PaymentCompletePage() {
                             <div className="flex items-center gap-6">
                                 <div className="w-20 text-base font-medium text-[var(--foundation-neutral-600)]">경기 시간</div>
                                 <div className="flex-1 text-base font-semibold text-[var(--foundation-neutral-240)]">
-                                    2026년 3월 29일 (일) 14:00
+                                    {formatMatchAt(matchAt)}
                                 </div>
                             </div>
 
@@ -126,7 +182,7 @@ export default function PaymentCompletePage() {
                                         총 결제 금액
                                     </div>
                                     <div className="text-lg font-semibold text-[var(--foundation-primary-600)]">
-                                        42,000 원
+                                        {won(totalAmount) || 0}
                                     </div>
                                 </div>
 
@@ -136,17 +192,17 @@ export default function PaymentCompletePage() {
                                     {seatRows.map((seat) => (
                                         <div key={seat.label} className="flex justify-between gap-4">
                                             <div className="text-sm font-medium text-[var(--foundation-neutral-240)]">
-                                                {seat.label}
+                                                {seat.label || "-"}
                                             </div>
                                             <div className="text-sm font-medium text-[var(--foundation-neutral-240)]">
-                                                {seat.price}
+                                                1개
                                             </div>
                                         </div>
                                     ))}
 
                                     <div className="flex justify-between gap-4">
                                         <div className="text-sm font-medium text-[var(--foundation-neutral-240)]">수수료</div>
-                                        <div className="text-sm font-medium text-[var(--foundation-neutral-240)]">2,000 원</div>
+                                        <div className="text-sm font-medium text-[var(--foundation-neutral-240)]">{fee.toLocaleString() || "0"} 원</div>
                                     </div>
                                 </div>
                             </div>
@@ -155,7 +211,7 @@ export default function PaymentCompletePage() {
                                 <div className="flex items-center gap-6">
                                     <div className="w-20 text-sm font-medium text-[var(--foundation-neutral-600)]">취소 기한</div>
                                     <div className="flex-1 text-sm font-medium text-[var(--foundation-neutral-240)]">
-                                        2026년 2월 11일 (수) 23:59
+                                        {formatCancelDeadline(matchAt)}
                                     </div>
                                 </div>
 
@@ -182,9 +238,9 @@ export default function PaymentCompletePage() {
 
                     <div className="flex flex-col gap-2 md:flex-row">
                         <Link className="flex flex-1 h-10" href="/">
-                            <SecondaryButton 
-                                size="md" 
-                                tone="base" 
+                            <SecondaryButton
+                                size="md"
+                                tone="base"
                                 className="flex flex-1 h-10"
                             >
                                 홈으로
@@ -192,7 +248,7 @@ export default function PaymentCompletePage() {
                         </Link>
 
                         <Link className="flex flex-1 h-10" href="/my/tickets">
-                            <PrimaryButton 
+                            <PrimaryButton
                                 size="lg"
                                 tone="base"
                                 className="flex flex-1 h-10"

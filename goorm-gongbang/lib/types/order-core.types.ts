@@ -174,6 +174,30 @@ export type OnboardingPreferencesRequest = {
   preferences: Preference[];
 };
 
+/* 온보딩 선호도 응답 */
+export type OnboardingPreferencesResponse = {
+  favoriteClubId: number;
+  favoriteClubName: string;
+  cheerProximityPref: "NEAR" | "FAR" | "ANY";
+  preferredBlockIds: number[];
+  preferences: Array<{
+    priority: number;
+    viewpoint: "CENTER" | "INFIELD_1B" | "INFIELD_3B" | "OUTFIELD_L" | "OUTFIELD_C" | "OUTFIELD_R";
+    seatHeight: "LOW" | "MID" | "HIGH" | "ANY";
+    section: "CENTER_SIDE" | "MIDDLE" | "CORNER" | "ANY";
+    seatPositionPref: "AISLE" | "MIDDLE" | "ANY";
+    environmentPref: "SHADE" | "SUN_OK" | "ANY";
+    moodPref: "CHEERFUL" | "QUIET" | "ANY";
+    obstructionSensitivity: "NET_SENSITIVE" | "RAIL_PILLAR_SENSITIVE" | "NORMAL" | "ANY";
+    priceMode: "ANY" | "RANGE";
+    priceMin: number;
+    priceMax: number;
+  }>;
+};
+
+/* 선호 구역 수정 */
+export type PreferredBlockUpdateRequest = { preferredBlockIds: number[] }
+
 /** 구단 월별 경기 조회  - 상대팀 정보 */
 export type OpponentClub = {
   clubId: number;
@@ -211,3 +235,103 @@ export interface CalendarMatch {
   saleStatus: SaleStatus;
   isHomeMatch: boolean;
 }
+
+/* 주문서 조회 */
+export type OrderSheetResponse = {
+  match: {
+    matchId: number;
+    matchAt: string;
+    homeClub: { clubId: number; koName: string };
+    awayClub: { clubId: number; koName: string };
+    stadium: { stadiumId: number; koName: string; address: string };
+  };
+  seats: {
+    matchSeatId: number;
+    sectionId: number;
+    sectionName: string;
+    blockId: number;
+    blockCode: string;
+    rowNo: number;
+    seatNo: number;
+    adultPrice: number;
+  }[];
+  summary: {
+    seatCount: number;
+    bookingFee: number;
+  };
+};
+
+/* 주문 생성 */
+export type CreateOrderRequest = {
+  matchId: number;
+  matchSeatIds: number[];
+  totalPrice: number;
+  ordererName: string;
+  ordererEmail: string;
+  ordererPhone: string;
+  ordererBirthDate: string;
+};
+
+export type OrderStatusType =
+  | "PAYMENT_PENDING"
+  | "PAID"
+  | "CANCEL_REQUESTED"
+  | "CANCELLED"
+  | "REFUND_PROCESSING"
+  | "REFUND_COMPLETED";
+
+export type CreateOrderResponse = {
+  orderId: number;
+  status: OrderStatusType;
+  matchId: number;
+  seatCount: number;
+  totalAmount: number;
+  bookingFee: number;
+  createdAt: string;
+};
+
+/* 결제 처리 */
+export type PaymentMethodType =
+  | "BANK_TRANSFER"
+  | "TOSS_PAY"
+  | "KAKAO_PAY";
+
+export type PaymentStatusType =
+  | "PENDING"
+  | "COMPLETED"
+  | "CANCELLED"
+  | "REFUNDED";
+
+export type ProcessPaymentRequest = {
+  paymentMethod: PaymentMethodType;
+};
+
+export type ProcessPaymentResponse = {
+  orderId: number;
+  orderStatus: OrderStatusType;
+  paymentMethod: PaymentMethodType;
+  paymentStatus: PaymentStatusType;
+  paidAt: string | null;
+  account: {
+    bank: string;
+    accountNumber: string;
+    holder: string;
+    depositDeadline: string;
+  } | null;
+};
+
+/* 현금 영수증 신청 */
+export type CashReceiptPurposeType =
+  | "PERSONAL_DEDUCTION"
+  | "BUSINESS_EXPENSE";
+
+export type CreateCashReceiptRequest = {
+  purpose: CashReceiptPurposeType;
+  number: string;
+};
+
+export type CreateCashReceiptResponse = {
+  orderId: number;
+  purpose: CashReceiptPurposeType;
+  number: string;
+};

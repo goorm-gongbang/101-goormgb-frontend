@@ -8,6 +8,7 @@ import { TeamInfoCard } from "@/components/common/TeamInfoCard";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRouter } from "next/navigation";
+import { useMatchTracking } from "@/hooks/useAnalytics";
 import { getMatches, getClubs } from "@/lib/services";
 import { SaleStatus, Club, MatchesData, ClubsData } from "@/lib/types";
 import { ApiError } from "@/lib/api";
@@ -125,6 +126,7 @@ function TeamCardSkeleton() {
 
 export default function Home() {
   const router = useRouter();
+  const { onMatchClick } = useMatchTracking();
   const todayISO = useMemo(() => {
     const d = new Date();
     const yyyy = d.getFullYear();
@@ -292,7 +294,10 @@ export default function Home() {
                         key={m.matchId}
                         type="button"
                         disabled={!isClickable}
-                        onClick={() => router.push(`/matches/${m.matchId}`)}
+                        onClick={() => {
+                          onMatchClick({ match_slug: String(m.matchId) });
+                          router.push(`/matches/${m.matchId}`);
+                        }}
                         className="w-full max-w-[1074px] text-left cursor-pointer"
                       >
                         <MatchCard
