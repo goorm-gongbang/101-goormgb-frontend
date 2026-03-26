@@ -43,12 +43,17 @@ jobs:
                     EMOJI="🧪"
                     ENV_NAME="Staging"
                     COLOR=3447003
+                    SITE_URL="staging.playball.one"
                   else
                     WEBHOOK="$WEBHOOK_PROD"
                     EMOJI="🚀"
                     ENV_NAME="Production"
                     COLOR=15105570
+                    SITE_URL="playball.one"
                   fi
+
+                  COMMIT_SHORT="${GITHUB_SHA:0:7}"
+
                   curl -X POST "$WEBHOOK" \
                     -H "Content-Type: application/json" \
                     -d "{
@@ -58,7 +63,8 @@ jobs:
                         \"fields\": [
                           {\"name\": \"Branch\", \"value\": \"${BRANCH}\", \"inline\": true},
                           {\"name\": \"Author\", \"value\": \"${{ github.actor }}\", \"inline\": true},
-                          {\"name\": \"Commit\", \"value\": \"[${GITHUB_SHA::7}](https://github.com/${{ github.repository }}/commit/${{ github.sha }})\", \"inline\": false}
+                          {\"name\": \"Commit\", \"value\": \"[\`${COMMIT_SHORT}\`](https://github.com/${{ github.repository }}/commit/${{ github.sha }})\", \"inline\": false},
+                          {\"name\": \"Site\", \"value\": \"[${SITE_URL}](https://${SITE_URL})\", \"inline\": false}
                         ],
                         \"footer\": {\"text\": \"PlayBall Frontend\"},
                         \"timestamp\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"
