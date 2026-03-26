@@ -19,7 +19,7 @@ export function ReservationItem({ item, index, isLast, onActionClick }: Reservat
     today.setHours(0, 0, 0, 0);
     const isPastMatch = matchDate.getTime() < today.getTime();
 
-    const showActionBtn = (item.status === "PAYMENT_WAITING" || item.status === "RESERVED") && !isPastMatch;
+    const showActionBtn = (item.status === "PAYMENT_WAITING" || item.status === "RESERVED" || item.status === "UNDER_REVIEW") && !isPastMatch;
 
     // 진행 상태별 뱃지 배경색 렌더링 도우미 함수 
     const getBadgeColor = (status: ReservationStatus) => {
@@ -28,6 +28,8 @@ export function ReservationItem({ item, index, isLast, onActionClick }: Reservat
                 return "bg-[var(--foundation-primary-500)]"; // 초록색 테마
             case "RESERVED":
                 return "bg-[#3B82F6]"; // 파란색
+            case "UNDER_REVIEW":
+                return "bg-[var(--foundation-orange-500)]"; // 주황색 (확인 필요)
             case "CANCEL_PROCESSING":
             case "REFUND_PROCESSING":
             case "CANCEL_COMPLETED":
@@ -65,7 +67,7 @@ export function ReservationItem({ item, index, isLast, onActionClick }: Reservat
                         className="flex items-center text-[13px] font-bold text-[#666] hover:text-[#1A1A1A] transition-colors"
                         onClick={(e) => onActionClick(e, item)}
                     >
-                        {item.status === "PAYMENT_WAITING" ? "입금하기" : "취소하기"}
+                        {item.status === "PAYMENT_WAITING" ? "입금하기" : item.status === "UNDER_REVIEW" ? "문의하기" : "취소하기"}
                         <ChevronRight size={14} className="ml-0.5" />
                     </button>
                 )}
