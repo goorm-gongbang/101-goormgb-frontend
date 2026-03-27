@@ -263,7 +263,7 @@ export function handleAuthzError(error: unknown): {
 } {
   if (error instanceof AIApiError) {
     return {
-      isChallenge: error.isChallenceRequired(),
+      isChallenge: error.isChallengeRequired(),
       isBlocked: error.isBlocked(),
       error,
     };
