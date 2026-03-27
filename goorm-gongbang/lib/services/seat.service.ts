@@ -27,10 +27,14 @@ export const saveBookingOptions = (matchId: string | number, body: BookingOption
   );
 
 /* 추천 ON - 추천 좌석 초기 진입 */
-export const getRecommendationSeatEntry = (matchId: string | number) =>
-  auth.get<SeatEntryResponse>(
+export const getRecommendationSeatEntry = async (matchId: string | number) => {
+  // AI telemetry 연동: 보호 API 평가 전에 현재 좌석 탐색 batch를 선반영한다.
+  await flushTelemetryBeforeProtectedRequest();
+
+  return auth.get<SeatEntryResponse>(
     `${API_BASE_URL}/seat/matches/${matchId}/recommendations/seat-entry`,
   );
+};
 
 /* 추천 ON - 추천 블럭 리스트 조회 */
 export const getRecommendationBlocks = async (matchId: string | number) => {

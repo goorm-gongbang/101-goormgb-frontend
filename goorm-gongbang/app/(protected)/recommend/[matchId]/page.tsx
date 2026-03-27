@@ -376,7 +376,7 @@ function RecommendPageContent({ matchId }: { matchId: number | null }) {
         throw new VqaChallengeCancelledError();
       }
 
-      for (let fallbackRetry = 0; fallbackRetry <= MAX_VQA_FALLBACK_RETRIES; fallbackRetry += 1) {
+      for (let attemptIndex = 0; attemptIndex <= MAX_VQA_FALLBACK_RETRIES; attemptIndex += 1) {
         try {
           return await requestFactory();
         } catch (error) {
@@ -385,7 +385,7 @@ function RecommendPageContent({ matchId }: { matchId: number | null }) {
             throw error;
           }
 
-          if (fallbackRetry >= MAX_VQA_FALLBACK_RETRIES) {
+          if (attemptIndex >= MAX_VQA_FALLBACK_RETRIES) {
             console.warn(
               `[Recommend][VQA] repeated 428 from ${requestName}; retries exhausted`,
               error,
@@ -395,7 +395,7 @@ function RecommendPageContent({ matchId }: { matchId: number | null }) {
 
           isVqaVerifiedRef.current = false;
           console.log(
-            `[Recommend][VQA] 428 received from ${requestName}; retrying after challenge (${fallbackRetry + 1}/${MAX_VQA_FALLBACK_RETRIES})`,
+            `[Recommend][VQA] 428 received from ${requestName}; retrying after challenge (retry ${attemptIndex + 1}/${MAX_VQA_FALLBACK_RETRIES})`,
           );
 
           const retryVerified = await requestVqaGate("fallback", requestName, true);
