@@ -147,7 +147,7 @@ export class AIApiError extends Error {
     this.name = 'AIApiError';
   }
 
-  isChallenceRequired(): boolean {
+  isChallengeRequired(): boolean {
     return this.statusCode === 428;
   }
 
