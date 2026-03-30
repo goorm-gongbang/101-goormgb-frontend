@@ -9,6 +9,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { ChevronLeft } from "lucide-react";
 
 export default function PrivacyPolicyPage() {
     const router = useRouter();
@@ -38,12 +39,13 @@ export default function PrivacyPolicyPage() {
                 <button
                     type="button"
                     onClick={() => router.back()}
-                    className="mb-4 text-sm text-[#9E9E9E] hover:text-[#1A1A1A] transition-colors"
+                    className="mb-8 text-[13px] font-medium text-[#7A7A7A] hover:text-[#1A1A1A] transition-colors flex items-center gap-1"
                 >
-                    ← 이전으로 돌아가기
+                    <ChevronLeft className="w-4 h-4" />
+                    이전으로 돌아가기
                 </button>
 
-                <div className="bg-white rounded-2xl border border-[#E8E8E8] px-6 py-8 md:px-10">
+                <div className="bg-white rounded-xl border border-[#E8E8E8] px-6 py-8 md:px-10">
                     <h1 className="text-2xl font-bold text-[#1A1A1A] mb-8">개인정보 처리방침</h1>
 
                     <div className="space-y-8 text-[15px] leading-7 text-[#3D3D3D]">

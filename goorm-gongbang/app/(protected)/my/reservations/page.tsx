@@ -13,11 +13,12 @@ import { ReservationItem } from "@/components/my/ReservationItem";
    - 백엔드 측 API (예: GET /api/v1/my/reservations) 명세에 맞추어 아래 Mock 데이터를 실제 Type으로 변경하세요.
    - status 필드의 경우 Enum Type("PAYMENT_WAITING", "RESERVED", "CANCEL_PROCESSING", "REFUND_PROCESSING") 활용을 권장합니다.
 =========================== */
-export type ReservationStatus = "PAYMENT_WAITING" | "RESERVED" | "CANCEL_PROCESSING" | "REFUND_PROCESSING" | "CANCEL_COMPLETED" | "REFUND_COMPLETED";
+export type ReservationStatus = "PAYMENT_WAITING" | "RESERVED" | "UNDER_REVIEW" | "CANCEL_PROCESSING" | "REFUND_PROCESSING" | "CANCEL_COMPLETED" | "REFUND_COMPLETED";
 
 export const RESERVATION_STATUS_MAP: Record<ReservationStatus, string> = {
     PAYMENT_WAITING: "입금 대기",
     RESERVED: "결제 완료",
+    UNDER_REVIEW: "정밀 확인 중",
     CANCEL_PROCESSING: "취소 처리 중",
     REFUND_PROCESSING: "환불 처리 중",
     CANCEL_COMPLETED: "취소 완료",
@@ -40,6 +41,7 @@ export const MOCK_RESERVATIONS: Reservation[] = [
     { id: "3", date: "2026. 03. 31 (18:30)", matchTitle: "LG 트윈스 vs KIA 타이거즈", location: "잠실", count: 2, seat: "오렌지석 206블럭 F열 23번, 24번", status: "CANCEL_PROCESSING" },
     { id: "2", date: "2026. 03. 29 (14:00)", matchTitle: "LG 트윈스 vs kt 위즈", location: "잠실", count: 3, seat: "오렌지석 206블럭 3열 13번, 14번", status: "RESERVED" },
     { id: "1", date: "2026. 03. 28 (14:00)", matchTitle: "LG 트윈스 vs kt 위즈", location: "잠실", count: 2, seat: "오렌지석 201블럭 H열 13번, 14번", status: "PAYMENT_WAITING" },
+    { id: "13", date: "2026. 04. 05 (14:00)", matchTitle: "LG 트윈스 vs 키움 히어로즈", location: "잠실", count: 2, seat: "블루석 108블럭 K열 10번, 11번", status: "UNDER_REVIEW" }, // 테스트용 추가
     { id: "10", date: "2025. 10. 27 (18:30)", matchTitle: "LG 트윈스 vs 한화 이글스", location: "잠실", count: 5, seat: "오렌지석 206블럭 F열 23번, 24번", status: "RESERVED" },
     { id: "9", date: "2025. 10. 26 (14:00)", matchTitle: "LG 트윈스 vs 한화 이글스", location: "잠실", count: 2, seat: "오렌지석 206블럭 F열 23번, 24번", status: "RESERVED" },
     { id: "8", date: "2025. 10. 01 (18:30)", matchTitle: "LG 트윈스 vs NC 다이노즈", location: "잠실", count: 1, seat: "오렌지석 206블럭 F열 23번, 24번", status: "RESERVED" },
@@ -89,6 +91,9 @@ export default function ReservationsPage() {
         e.stopPropagation();
         if (item.status === "PAYMENT_WAITING") {
             setIsDepositModalOpen(true);
+        } else if (item.status === "UNDER_REVIEW") {
+            // "고객센터 문의" 액션 - 1:1 문의 페이지로 이동
+            router.push("/my/support");
         } else if (item.status === "RESERVED") {
             // "오렌지석 201블럭 H열 13번, 14번" 파싱
             const parts = item.seat.split(" ");
@@ -142,9 +147,10 @@ export default function ReservationsPage() {
                     <button
                         type="button"
                         onClick={() => router.back()}
-                        className="text-[13px] text-[#9E9E9E] hover:text-[#1A1A1A] transition-colors self-start font-medium"
+                        className="mb-8 text-[13px] font-medium text-[#7A7A7A] hover:text-[#1A1A1A] transition-colors flex items-center gap-1"
                     >
-                        &lt; 이전으로 돌아가기
+                        <ChevronLeft className="w-4 h-4" />
+                        이전으로 돌아가기
                     </button>
                     <h1 className="text-[24px] font-bold text-[#1A1A1A]">예매 내역</h1>
                 </div>
