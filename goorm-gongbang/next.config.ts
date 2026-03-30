@@ -56,9 +56,6 @@ const nextConfig = {
       process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api",
     NEXT_PUBLIC_API_BASE: AI_RUNTIME_API_BASE,
     NEXT_PUBLIC_ENV: process.env.NEXT_PUBLIC_ENV || "development",
-    OTEL_EXPORTER_OTLP_ENDPOINT:
-      process.env.OTEL_EXPORTER_OTLP_ENDPOINT ||
-      "http://otel-collector:4318/v1/traces",
     // Grafana Faro (프론트엔드 관측성)
     NEXT_PUBLIC_FARO_URL: process.env.NEXT_PUBLIC_FARO_URL || "",
     NEXT_PUBLIC_RELEASE: process.env.NEXT_PUBLIC_RELEASE || "1.0.0",
