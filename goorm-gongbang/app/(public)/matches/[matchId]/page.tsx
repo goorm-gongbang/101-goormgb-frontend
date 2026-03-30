@@ -20,6 +20,7 @@ import { LoginRequiredModal } from "@/components/common/LoginRequiredModal";
 import { PreferredZoneModal } from "@/components/common/PreferredZoneModal";
 import Image from "next/image";
 import { toast } from "sonner";
+import { useTelemetry } from "@/lib/telemetry";
 
 /* ===========================
     UI TYPES
@@ -116,6 +117,12 @@ export default function MatchDetailSectionResponsive({
     const n = str ? Number(str) : NaN;
     return Number.isFinite(n) && n > 0 ? n : null;
   }, [params]);
+  // AI telemetry 연동: 서비스 레이어 preflight flush가 동작하려면
+  // 페이지 진입 시 telemetry runtime이 먼저 등록돼 있어야 한다.
+  const { setStage, precheck } = useTelemetry({
+    matchId: matchId ?? 0,
+    autoStart: matchId !== null,
+  });
 
   const [enabled, setEnabled] = useState(true);
   const [nearbySeatEnabled, setNearbySeatEnabled] = useState(true);
@@ -134,6 +141,13 @@ export default function MatchDetailSectionResponsive({
 
   const [isPreferredZoneModalOpen, setIsPreferredZoneModalOpen] = useState(false);
   const [isLoginRequiredModalOpen, setIsLoginRequiredModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (matchId === null) return;
+    // AI telemetry 연동: 현재 화면을 queue enter 직전 구간으로만 라벨링한다.
+    // 기존 예매 비즈니스 로직이나 화면 이동 흐름은 바꾸지 않는다.
+    setStage("QUEUE_ENTER_PRECLICK");
+  }, [matchId, setStage]);
 
   const handleBlockToggle = (blockNum: number) => {
     setSelectedBlocks((prev) =>
@@ -162,6 +176,14 @@ export default function MatchDetailSectionResponsive({
 
     try {
       const bookingResponse: BookingOptionsResponse = await saveBookingOptions(matchId, bookingBody);
+
+      // TODO(local-dev): Cloudflare Turnstile 미연동 상태라 로컬 통합 테스트용 dev token으로 precheck를 통과시킨다.
+      // 실제 연동 시 Turnstile 발급 토큰으로 교체 필요.
+      const precheckPassed = await precheck("ok-local-dev");
+      if (!precheckPassed) {
+        toast.error("보안 사전 검증에 실패했습니다. 잠시 후 다시 시도해 주세요.");
+        return;
+      }
 
       const queueResponse: QueueEnterResponse = await enterQueue(matchId);
 
