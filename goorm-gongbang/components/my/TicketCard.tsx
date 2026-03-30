@@ -1,7 +1,7 @@
 import { ChevronRight } from "lucide-react";
 import { TicketInfo } from "@/components/my/TicketDetailModal";
 
-export type TicketStatus = "PAYMENT_WAITING" | "RESERVED";
+export type TicketStatus = "PAYMENT_WAITING" | "RESERVED" | "UNDER_REVIEW";
 
 export interface Ticket extends TicketInfo {
     id: string;
@@ -42,10 +42,11 @@ export function TicketCard({ ticket, onClick, onDeposit, onCancel }: TicketCardP
 
     // Card Styles
     const isWaiting = ticket.status === "PAYMENT_WAITING";
+    const isUnderReview = ticket.status === "UNDER_REVIEW";
 
     return (
         <div
-            className={`bg-white rounded-[20px] p-6 border border-[#E8E8E8] flex flex-col transition-all ${!isWaiting ? "hover:border-[var(--foundation-primary-500)] hover:shadow-sm cursor-pointer" : ""}`}
+            className={`bg-white rounded-xl p-6 border border-[#E8E8E8] flex flex-col transition-all ${!isWaiting ? "hover:border-[var(--foundation-primary-500)] hover:shadow-sm cursor-pointer" : ""}`}
             onClick={!isWaiting ? () => onClick(ticket) : undefined}
         >
             {/* 상단: 뱃지들 & 우측 버튼 */}
@@ -64,6 +65,14 @@ export function TicketCard({ ticket, onClick, onDeposit, onCancel }: TicketCardP
                             className="px-[10px] py-[4px] rounded-[100px] text-white text-[13px] font-bold bg-[var(--foundation-primary-500)]"
                         >
                             입금 대기
+                        </div>
+                    )}
+                    {/* 정밀 확인 중 뱃지 */}
+                    {isUnderReview && (
+                        <div
+                            className="px-[10px] py-[4px] rounded-[100px] text-white text-[13px] font-bold bg-[var(--foundation-orange-500)]"
+                        >
+                            정밀 확인 중
                         </div>
                     )}
                 </div>
@@ -86,10 +95,15 @@ export function TicketCard({ ticket, onClick, onDeposit, onCancel }: TicketCardP
                                 className="flex items-center text-[15px] font-bold text-[#333333] hover:underline"
                                 onClick={(e) => {
                                     e.stopPropagation();
-                                    onCancel(ticket);
+                                    if (isUnderReview) {
+                                        // 문의하기 (Reservations 페이지와 동일하게 처리하도록 유도하거나, Support 페이지로 이동)
+                                        window.location.href = "/my/support";
+                                    } else {
+                                        onCancel(ticket);
+                                    }
                                 }}
                             >
-                                취소하기 <ChevronRight size={18} className="ml-0.5" />
+                                {isUnderReview ? "문의하기" : "취소하기"} <ChevronRight size={18} className="ml-0.5" />
                             </button>
                         )
                     )}

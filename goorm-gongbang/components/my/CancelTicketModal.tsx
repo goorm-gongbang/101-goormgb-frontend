@@ -75,7 +75,7 @@ export function CancelTicketModal({ isOpen, onClose, ticketInfo, paymentAmount, 
 
             {/* Modal Body */}
             {step === "CONFIRM" ? (
-                <div className="relative w-full max-w-[600px] bg-white rounded-[24px] px-8 py-10 shadow-xl animate-in zoom-in-95 fade-in duration-200">
+                <div className="relative w-full max-w-[600px] bg-white rounded-xl px-8 py-10 shadow-xl animate-in zoom-in-95 fade-in duration-200">
                     <h3 className="text-[20px] font-bold text-[#1A1A1A] mb-6 leading-tight break-keep">
                         {ticketInfo.matchTitle} ({ticketInfo.dateStr || `${ticketInfo.date} ${ticketInfo.time}`}) 경기를 취소하시겠어요?
                     </h3>
@@ -110,20 +110,20 @@ export function CancelTicketModal({ isOpen, onClose, ticketInfo, paymentAmount, 
                     <div className="flex gap-3">
                         <button
                             onClick={handleClose}
-                            className="flex-1 py-4 rounded-2xl bg-[#E8E8E8] text-[#1A1A1A] text-[16px] font-bold hover:bg-[#D4D4D4] transition-colors active:scale-[0.99]"
+                            className="flex-1 py-4 rounded-[12px] bg-[#E8E8E8] text-[#1A1A1A] text-[16px] font-bold hover:bg-[#D4D4D4] transition-colors active:scale-[0.99]"
                         >
                             예매 유지하기
                         </button>
                         <button
                             onClick={handleCancelProceed}
-                            className="flex-1 py-4 rounded-2xl bg-[var(--foundation-red-500)] text-white text-[16px] font-bold hover:bg-[#E63946] transition-colors active:scale-[0.99]"
+                            className="flex-1 py-4 rounded-[12px] bg-[var(--foundation-red-500)] text-white text-[16px] font-bold hover:bg-[#E63946] transition-colors active:scale-[0.99]"
                         >
                             취소 진행하기
                         </button>
                     </div>
                 </div>
             ) : (
-                <div className="relative w-full max-w-[480px] bg-white rounded-[24px] px-8 py-10 shadow-xl animate-in zoom-in-95 fade-in duration-200">
+                <div className="relative w-full max-w-[480px] bg-white rounded-xl px-8 py-10 shadow-xl animate-in zoom-in-95 fade-in duration-200">
                     <h3 className="text-[20px] font-bold text-[#1A1A1A] mb-5">
                         예매가 취소되었습니다
                     </h3>
@@ -140,7 +140,7 @@ export function CancelTicketModal({ isOpen, onClose, ticketInfo, paymentAmount, 
 
                     <button
                         onClick={handleClose}
-                        className="w-full py-4 rounded-2xl bg-[var(--foundation-primary-500)] text-white text-[16px] font-bold hover:bg-[var(--foundation-primary-600)] transition-colors active:scale-[0.99]"
+                        className="w-full py-4 rounded-[12px] bg-[var(--foundation-primary-500)] text-white text-[16px] font-bold hover:bg-[var(--foundation-primary-600)] transition-colors active:scale-[0.99]"
                     >
                         확인
                     </button>

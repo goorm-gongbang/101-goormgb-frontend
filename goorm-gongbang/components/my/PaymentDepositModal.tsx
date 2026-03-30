@@ -41,7 +41,7 @@ export function PaymentDepositModal({ isOpen, onClose, depositInfo }: PaymentDep
             />
 
             {/* Modal Body */}
-            <div className="relative w-full max-w-[440px] bg-white rounded-[24px] px-8 py-10 shadow-xl animate-in zoom-in-95 fade-in duration-200">
+            <div className="relative w-full max-w-[440px] bg-white rounded-xl px-8 py-10 shadow-xl animate-in zoom-in-95 fade-in duration-200">
 
                 {/* Header */}
                 <div className="flex flex-col items-center text-center gap-1 mb-8">
@@ -91,7 +91,7 @@ export function PaymentDepositModal({ isOpen, onClose, depositInfo }: PaymentDep
                 {/* Confirm Button */}
                 <button
                     onClick={onClose}
-                    className="w-full py-3.5 rounded-2xl bg-[var(--foundation-primary-500)] text-white text-[15px] font-bold hover:bg-[var(--foundation-primary-600)] transition-colors active:scale-[0.99]"
+                    className="w-full py-3.5 rounded-[12px] bg-[var(--foundation-primary-500)] text-white text-[15px] font-bold hover:bg-[var(--foundation-primary-600)] transition-colors active:scale-[0.99]"
                 >
                     확인
                 </button>

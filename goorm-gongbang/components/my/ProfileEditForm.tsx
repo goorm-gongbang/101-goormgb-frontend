@@ -32,7 +32,7 @@ export function ProfileEditForm() {
     return (
         <div className="flex flex-col gap-5">
             {/* ─── 계정 정보 카드 ─── */}
-            <div className="bg-white rounded-2xl border border-[#E8E8E8] px-5 py-5">
+            <div className="bg-white rounded-xl border border-[#E8E8E8] px-5 py-5">
                 {/* 카드 헤더 */}
                 <div className="flex items-center gap-2 mb-3">
                     <h2 className="text-base font-bold text-[#1A1A1A]">계정 정보</h2>
@@ -103,7 +103,7 @@ export function ProfileEditForm() {
             <button
                 type="button"
                 onClick={handleSave}
-                className="w-full py-3.5 bg-[var(--foundation-primary-500)] hover:bg-[var(--foundation-primary-600)] active:scale-[0.99] text-white text-sm font-semibold rounded-2xl transition-all"
+                className="w-full py-3.5 bg-[var(--foundation-primary-500)] hover:bg-[var(--foundation-primary-600)] active:scale-[0.99] text-white text-sm font-semibold rounded-[12px] transition-all"
             >
                 저장하기
             </button>
