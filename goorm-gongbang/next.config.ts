@@ -2,6 +2,11 @@
 const isProd = process.env.NEXT_PUBLIC_ENV === "production";
 // 운영 환경일 때만 CDN 주소를 할당합니다.
 const CDN_URL = "https://cdn.your-domain.com/";
+const AI_RUNTIME_API_BASE = (
+  process.env.NEXT_PUBLIC_API_BASE ||
+  process.env.NEXT_PUBLIC_API_URL ||
+  ""
+).replace(/\/$/, "");
 
 const nextConfig = {
   // 1. EKS 배포를 위한 독립 실행형 빌드 설정
@@ -49,6 +54,7 @@ const nextConfig = {
   env: {
     NEXT_PUBLIC_API_URL:
       process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api",
+    NEXT_PUBLIC_API_BASE: AI_RUNTIME_API_BASE,
     NEXT_PUBLIC_ENV: process.env.NEXT_PUBLIC_ENV || "development",
     OTEL_EXPORTER_OTLP_ENDPOINT:
       process.env.OTEL_EXPORTER_OTLP_ENDPOINT ||
@@ -60,12 +66,15 @@ const nextConfig = {
 
   // API 프록시 설정 (로컬 개발 환경)
   async rewrites() {
-    const apiBase = process.env.NEXT_PUBLIC_API_BASE || "https://api.dev.goormgb.space";
+    if (!AI_RUNTIME_API_BASE) {
+      return [];
+    }
+
     return [
       // AI Runtime API (/ai/*)
       {
         source: "/ai/:path*",
-        destination: `${apiBase}/ai/:path*`,
+        destination: `${AI_RUNTIME_API_BASE}/ai/:path*`,
       },
     ];
   },
