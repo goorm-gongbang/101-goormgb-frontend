@@ -176,7 +176,7 @@ export default function BankAccountPage() {
                                 </div>
                             </div>
 
-                            <div className="flex items-center gap-6">
+                            <div className="flex flex-col gap-2 md:flex-row md:gap-6">
                                 <div className="w-20 text-base font-medium leading-6 text-[var(--foundation-neutral-600)]">
                                     경기 시간
                                 </div>
@@ -245,7 +245,7 @@ export default function BankAccountPage() {
                             </div>
 
                             <div className="flex flex-col gap-2">
-                                <div className="flex items-center gap-6">
+                                <div className="flex flex-col gap-2 md:flex-row md:gap-6">
                                     <div className="w-20 text-sm font-medium text-[var(--foundation-neutral-600)]">취소 기한</div>
                                     <div className="flex-1 text-sm font-medium text-[var(--foundation-neutral-240)]">
                                         {formatCancelDeadline(matchAt)}

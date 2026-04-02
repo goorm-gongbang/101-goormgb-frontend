@@ -155,7 +155,6 @@ export function useTelemetry(options: UseTelemetryOptions): TelemetryInstance {
     try {
       await api.sendTelemetry(matchId, stage, events);
       if (debug) {
-        console.log(`[Telemetry] Sent ${events.length} events for stage ${stage}`);
       }
       return events.length;
     } catch (error) {

@@ -187,9 +187,7 @@ export default function Page() {
                 ordererBirthDate: birthDigits,
             };
 
-            console.log("CreateOrderRequest:", body);
             const createdOrder = await createOrder(body);
-            console.log("CreateOrderResponse:", createdOrder);
 
             setCreatedOrderId(createdOrder.orderId);
             setStep("payment");
@@ -240,6 +238,7 @@ export default function Page() {
 
     const formatBirth6 = (value: string) => value.replace(/\D/g, "").slice(0, 6);
     const onlyDigits = (v: string) => v.replace(/\D/g, "");
+    const [receiptPurpose, setReceiptPurpose] = useState<"personal" | "business">("personal");
     const isNameValid = name.trim().length > 0;
     const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
     const phoneDigits = onlyDigits(number);
@@ -248,12 +247,29 @@ export default function Page() {
     const isBirthValid = /^\d{6}$/.test(birthDigits);
     const hasAssignedAllTickets = !isLoadingOrderSheet && maxSelectableTicketCount > 0 && selectedTicketCount === maxSelectableTicketCount;
     const canProceed = isNameValid && isEmailValid && isPhoneValid && isBirthValid && hasAssignedAllTickets;
+    const formatBusinessNumber = (value: string) => {
+        const digits = value.replace(/\D/g, "").slice(0, 10);
+        if (digits.length < 4) return digits;
+        if (digits.length < 6) return `${digits.slice(0, 3)}-${digits.slice(3)}`;
+        return `${digits.slice(0, 3)}-${digits.slice(3, 5)}-${digits.slice(5)}`;
+    };
+    const formatCashReceiptNumber = (value: string) => {
+        return receiptPurpose === "business"
+            ? formatBusinessNumber(value)
+            : formatPhone(value);
+    };
+
 
     const [paymentMethod, setPaymentMethod] = useState<"toss" | "kakao" | "bank">("toss");
     const [cashReceipt, setCashReceipt] = useState<"apply" | "none">("none");
     const [isCashReceiptEditing, setIsCashReceiptEditing] = useState(false);
     const [cashReceiptPhone, setCashReceiptPhone] = useState("");
     const [saveCashReceiptInfo, setSaveCashReceiptInfo] = useState(true);
+    const cashReceiptDigits = onlyDigits(cashReceiptPhone);
+    const isCashReceiptNumberValid =
+        receiptPurpose === "business"
+            ? /^\d{10}$/.test(cashReceiptDigits)
+            : /^01[0-9]\d{7,8}$/.test(cashReceiptDigits) && cashReceiptDigits.length === 11;
 
     const formatCountdown = (seconds: number) => {
         const minutes = String(Math.floor(seconds / 60)).padStart(2, "0");
@@ -265,9 +281,7 @@ export default function Page() {
     const [agreeCancelFee, setAgreeCancelFee] = useState(false);
     const [showTermsDetail, setShowTermsDetail] = useState(false);
     const [showCancelFeeDetail, setShowCancelFeeDetail] = useState(false);
-    const canSubmitPayment = agreeTerms && agreeCancelFee;
-
-    const [receiptPurpose, setReceiptPurpose] = useState<"personal" | "business">("personal");
+    const canSubmitPayment = agreeTerms && agreeCancelFee && (cashReceipt === "none" || isCashReceiptNumberValid);
 
     const toPaymentMethod = (method: "toss" | "kakao" | "bank"): "TOSS_PAY" | "KAKAO_PAY" | "BANK_TRANSFER" => {
         if (method === "bank") return "BANK_TRANSFER";
@@ -294,20 +308,14 @@ export default function Page() {
 
             let cashReceiptResult = null;
 
-            console.log("processPaymentReq:", paymentBody);
             const paymentResult = await processPayment(createdOrderId, paymentBody);
-            console.log("processPaymentRes:", paymentResult);
 
             // 현금 영수증
             if (cashReceipt === "apply") {
-                console.log("cashReceiptResultcreatedOrderIdREQ:", createdOrderId);
-                console.log("cashReceiptResultreceiptPurposeREQ:", toCashReceiptPurpose(receiptPurpose));
-                console.log("cashReceiptResultcashReceiptPhoneREQ:", cashReceiptPhone.replace(/\D/g, ""));
                 cashReceiptResult = await createCashReceipt(createdOrderId, {
                     purpose: toCashReceiptPurpose(receiptPurpose),
                     number: cashReceiptPhone.replace(/\D/g, ""),
                 });
-                console.log("cashReceiptResult:", cashReceiptResult);
             }
 
             const params = new URLSearchParams({
@@ -412,12 +420,9 @@ export default function Page() {
         const fetchOrderSheet = async () => {
             try {
                 setIsLoadingOrderSheet(true);
-                console.log("getOrderSheetREQ matchId:", matchId);
-                console.log("getOrderSheetREQ seatIds:", seatIds);
 
                 const response = await getOrderSheet(matchId, seatIds);
 
-                console.log("getOrderSheet:", response);
                 setOrderSheet(response);
             } catch (e) {
                 const error = e as { status?: number };
@@ -817,10 +822,10 @@ export default function Page() {
                                                 {cashReceipt === "apply" && !isCashReceiptEditing && (
                                                     <div className="self-stretch h-14 p-4 rounded-[10px] outline outline-1 outline-offset-[-1px] outline-[var(--stroke-interactive-neutral-default)] inline-flex justify-start items-center gap-2">
                                                         <div className="flex-1 text-[var(--foundation-neutral-240)] text-base font-medium font-['Pretendard'] leading-6">
-                                                            개인소득공제용
+                                                            {receiptPurpose === "business" ? "사업자지출증빙" : "개인소득공제용"}
                                                         </div>
                                                         <div className="text-[var(--foundation-neutral-240)] text-xs font-normal font-['Pretendard'] leading-4">
-                                                            ({cashReceiptPhone ? formatPhone(cashReceiptPhone) : "010-0000-0000"})
+                                                            ({cashReceiptPhone ? formatCashReceiptNumber(cashReceiptPhone) : receiptPurpose === "business" ? "000-00-00000" : "010-0000-0000"})
                                                         </div>
 
                                                         <SecondaryButton
@@ -890,15 +895,17 @@ export default function Page() {
                                                         </div>
 
                                                         <div className="self-stretch flex flex-col justify-start items-start gap-1">
-                                                            <div className="self-stretch justify-center text-black text-xs font-normal font-['Pretendard'] leading-4">전화번호</div>
+                                                            <div className="self-stretch justify-center text-black text-xs font-normal font-['Pretendard'] leading-4">
+                                                                {receiptPurpose === "business" ? "사업자등록번호" : "전화번호"}
+                                                            </div>
 
                                                             <div className="self-stretch relative">
                                                                 <input
                                                                     type="text"
                                                                     inputMode="numeric"
-                                                                    value={formatPhone(cashReceiptPhone)}
-                                                                    onChange={(e) => setCashReceiptPhone(formatPhone(e.target.value))}
-                                                                    placeholder="010-0000-0000"
+                                                                    value={formatCashReceiptNumber(cashReceiptPhone)}
+                                                                    onChange={(e) => setCashReceiptPhone(formatCashReceiptNumber(e.target.value))}
+                                                                    placeholder={receiptPurpose === "business" ? "000-00-00000" : "010-0000-0000"}
                                                                     className="self-stretch w-full h-10 p-2 bg-[var(--foundation-neutral-white)] rounded-md outline outline-1 outline-offset-[-1px] outline-[var(--foundation-neutral-900)] text-[var(--foundation-neutral-680)] text-sm font-medium font-['Pretendard'] leading-5"
                                                                 />
 
@@ -973,14 +980,16 @@ export default function Page() {
                                                                 size="lg"
                                                                 tone="base"
                                                                 onClick={() => {
-                                                                    const cashReceiptPhoneDigits = onlyDigits(cashReceiptPhone);
+                                                                    if (receiptPurpose === "business") {
+                                                                        if (!/^\d{10}$/.test(cashReceiptDigits)) return;
+                                                                    } else {
+                                                                        if (
+                                                                            !/^01[0-9]\d{7,8}$/.test(cashReceiptDigits) ||
+                                                                            cashReceiptDigits.length !== 11
+                                                                        ) { return; }
+                                                                    }
 
-                                                                    if (
-                                                                        !/^01[0-9]\d{7,8}$/.test(cashReceiptPhoneDigits) ||
-                                                                        cashReceiptPhoneDigits.length !== 11
-                                                                    ) { return; }
-
-                                                                    setCashReceiptPhone(cashReceiptPhoneDigits);
+                                                                    setCashReceiptPhone(cashReceiptDigits);
                                                                     setIsCashReceiptEditing(false);
                                                                 }}
                                                                 className="flex-1 min-w-20"

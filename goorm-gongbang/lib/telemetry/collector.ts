@@ -167,7 +167,6 @@ export class TelemetryCollector {
 
   private log(message: string): void {
     if (this.config.debug) {
-      console.log(`[TelemetryCollector] ${message}`);
     }
   }
 }

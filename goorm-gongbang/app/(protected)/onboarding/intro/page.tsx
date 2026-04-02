@@ -56,7 +56,6 @@ export default function OnboardingIntroPage() {
     (async () => {
       try {
         const data = await getOnboardingStatus();
-        console.log("[onboarding/status] data", data);
 
         const onboardingStatus = Boolean(data?.onboardingStatus);
         if (onboardingStatus) {

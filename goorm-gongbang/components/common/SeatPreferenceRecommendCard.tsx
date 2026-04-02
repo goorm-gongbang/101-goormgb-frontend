@@ -28,7 +28,7 @@ export function SeatPreferenceRecommendCard({
   onPreferredZonesClick,
   className,
 }: Props) {
-  
+
   const [isNearbySeatInfoOpen, setIsNearbySeatInfoOpen] = useState(false);
 
   return (
@@ -73,7 +73,7 @@ export function SeatPreferenceRecommendCard({
                 {isNearbySeatInfoOpen && (
                   <div
                     id="nearby-seat-info"
-                    className="absolute left-1/2 top-full z-20 mt-2 inline-flex w-[520px] -translate-x-1/2 flex-col items-start gap-2 rounded-lg bg-white p-3 shadow-[2px_3px_10px_0px_rgba(0,0,0,0.10)] outline outline-1 outline-offset-[-1px] outline-[var(--stroke-interactive-neutral-default)]"
+                    className="absolute left-0 top-full z-20 mt-2 inline-flex w-[520px] flex-col items-start gap-2 rounded-lg bg-white p-3 shadow-[2px_3px_10px_0px_rgba(0,0,0,0.10)] outline outline-1 outline-offset-[-1px] outline-[var(--stroke-interactive-neutral-default)]"
                   >
                     <div className="text-sm font-semibold leading-5 text-[var(--foundation-neutral-240)] font-['Pretendard_Variable']">
                       인근 좌석 추천이란?

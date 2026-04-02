@@ -57,7 +57,6 @@ export function initFaro(): FaroInstance | null {
     ],
   });
 
-  console.info("[Faro] Initialized successfully");
   return faroInstance;
 }
 

@@ -15,9 +15,6 @@ export default function Exp() {
 
     const wasModalOpen = sessionStorage.getItem(MODAL_OPEN_KEY) === "true";
 
-    if (isReload && wasModalOpen) {
-      console.log("모달이 열린 상태에서 새로고침됨");
-    }
   }, []);
 
   useEffect(() => {

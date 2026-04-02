@@ -93,12 +93,10 @@ export default function ClubDetailPage() {
       setError(null);
       try {
         const data = await getClubById(clubId);
-        console.log("[clubs/${clubId}] data", data);
 
         if (!alive) return;
         setClub((data as ClubDetail) ?? null);
-
-        //console.log("detail data:", data);
+        
       } catch (e) {
         if (!alive) return;
         if (e instanceof ApiError) {

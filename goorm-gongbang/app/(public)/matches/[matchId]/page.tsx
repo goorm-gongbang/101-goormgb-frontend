@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { SeatPreferenceRecommendCard } from "@/components/common/SeatPreferenceRecommendCard";
 import { BookingButton, TabButton } from "@/components/common/Button";
 import { MatchInfoTab } from "@/components/common/match-detail/tabs/MatchInfoTab";
@@ -21,6 +21,7 @@ import { PreferredZoneModal } from "@/components/common/PreferredZoneModal";
 import Image from "next/image";
 import { toast } from "sonner";
 import { useTelemetry } from "@/lib/telemetry";
+import { Info, ChevronRight } from "lucide-react";
 
 /* ===========================
     UI TYPES
@@ -141,6 +142,9 @@ export default function MatchDetailSectionResponsive({
 
   const [isPreferredZoneModalOpen, setIsPreferredZoneModalOpen] = useState(false);
   const [isLoginRequiredModalOpen, setIsLoginRequiredModalOpen] = useState(false);
+  const [isSecurityInfoOpen, setIsSecurityInfoOpen] = useState(false);
+
+  const securityInfoRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (matchId === null) return;
@@ -158,6 +162,25 @@ export default function MatchDetailSectionResponsive({
           : [...prev, blockNum],
     );
   };
+
+  useEffect(() => {
+    if (!isSecurityInfoOpen) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        securityInfoRef.current &&
+        !securityInfoRef.current.contains(event.target as Node)
+      ) {
+        setIsSecurityInfoOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isSecurityInfoOpen]);
+
 
   /* 예매하기 버튼 클릭 */
   const handleRev = async () => {
@@ -264,7 +287,6 @@ export default function MatchDetailSectionResponsive({
 
       try {
         const data = await getMatchById(matchId);
-        console.log("[matches/matchId] data", data);
 
         if (!alive) return;
 
@@ -604,6 +626,46 @@ export default function MatchDetailSectionResponsive({
                     countdownFormatter={mmssTwoDigitsMinutes}
                     onClick={handleRev}
                   />
+                </div>
+                <div className="inline-flex w-full items-center justify-center">
+                  <div className="inline-flex items-center justify-center gap-2">
+                    <div className="w-4 h-4 relative ">
+                      <div ref={securityInfoRef} className="relative">
+                        <button
+                          type="button"
+                          onClick={() => setIsSecurityInfoOpen((prev) => !prev)}
+                          className="cursor-pointer flex h-4 w-4 items-center justify-center"
+                          aria-expanded={isSecurityInfoOpen}
+                          aria-controls="security-info-tooltip"
+                        >
+                          <Info className="h-4 w-4 text-emerald-500" />
+                        </button>
+
+                        {/* 예매 전 보안 인증 INFO 모달 */}
+                        {isSecurityInfoOpen && (
+                          <div
+                            id="security-info-tooltip"
+                            className="absolute left-0 top-full z-20 mt-2 inline-flex w-84 flex-col items-start justify-start gap-2 rounded-lg bg-white p-3 shadow-[2px_3px_10px_0px_rgba(0,0,0,0.10)] outline outline-1 outline-offset-[-1px] outline-[var(--stroke-interactive-neutral-default)]"
+                          >
+                            <div className="text-sm font-semibold font-['Pretendard_Variable'] leading-5 text-[var(--foundation-neutral-240)]">
+                              보안 인증이란?
+                            </div>
+                            <div className="self-stretch text-sm font-normal font-['Pretendard_Variable'] leading-5 text-neutral-700">
+                              예매 진행 시 이미지 보안 인증이 필요해요. 실제 예매와 동일한 방식으로 진행되며,
+                              최대 3번의 기회가 주어져요. 미리 경험해두면 예매 시 더 빠르게 통과할 수 있어요.
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                    </div>
+                    <div className="flex items-center justify-center gap-1">
+                      <div className="text-center text-emerald-500 text-sm font-semibold font-['Pretendard_Variable'] leading-5">예매 전 보안 인증을 미리 경험해보세요</div>
+                      <div className="w-4 h-4 relative overflow-hidden">
+                        <ChevronRight className="w-4 h-4 absolute text-emerald-500" />
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

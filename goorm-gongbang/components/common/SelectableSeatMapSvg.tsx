@@ -15,13 +15,6 @@ export default function SelectableSeatMapSvg() {
 
     clickedPath.classList.toggle("is-selected");
 
-    console.log("[seat-path-click]", {
-      index,
-      id: `seat-path-${index + 1}`,
-      d: clickedPath.getAttribute("d"),
-      fill: clickedPath.getAttribute("fill"),
-      selected: clickedPath.classList.contains("is-selected"),
-    });
   };
 
   return (

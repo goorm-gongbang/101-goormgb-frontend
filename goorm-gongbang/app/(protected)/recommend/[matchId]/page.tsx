@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, RotateCw } from "lucide-react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { ApiError } from "@/lib/api";
@@ -18,6 +18,7 @@ import { Toggle } from "@/components/common/Toggle";
 import { StadiumMap } from "@/components/my/StadiumMap";
 import {
   assignRecommendedSeats,
+  enterQueue,
   getQueueStatus,
   getRecommendationBlocks,
   getRecommendationSeatEntry,
@@ -167,8 +168,11 @@ function RecommendPageContent({ matchId }: { matchId: number | null }) {
   const initialQueueTotalWaitingCount = searchParams.get("queueTotalWaitingCount")
     ? Number(searchParams.get("queueTotalWaitingCount"))
     : null;
-
+  const queueRestoreKey = matchId ? `recommend-queue:${matchId}` : null;
+  const [restoreCheckDone, setRestoreCheckDone] = useState(false);
+  const [isRestoringQueue, setIsRestoringQueue] = useState(false);
   const pollingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const restoreStartedRef = useRef(false);
   const hasHandledQueueEndRef = useRef(false);
   const isVqaVerifiedRef = useRef(false);
   const vqaDeferredRef = useRef<{
@@ -271,6 +275,62 @@ function RecommendPageContent({ matchId }: { matchId: number | null }) {
     }
   }, []);
 
+  const applyQueueState = useCallback((
+    response: {
+      status?: QueueStatusType | null;
+      rank?: number | null;
+      totalWaitingCount?: number | null;
+      pollingMs?: number | null;
+    },
+    options?: {
+      onWaiting?: (nextPollingMs: number) => void;
+    },
+  ) => {
+    const status = response.status ?? null;
+    const rank = response.rank ?? null;
+    const total = response.totalWaitingCount ?? null;
+    const nextPollingMs = response.pollingMs ?? 3000;
+
+    setQueueStatus(status);
+    setQueueRank(rank);
+    setTotalWaitingCount(total);
+
+    if (status === "WAITING") {
+      setIsFindingSeat(true);
+      options?.onWaiting?.(nextPollingMs);
+      return;
+    }
+
+    if (status === "READY") {
+
+      if (queueRestoreKey && typeof window !== "undefined") {
+        sessionStorage.removeItem(queueRestoreKey);
+      }
+
+      setIsFindingSeat(false);
+      clearQueuePolling();
+      return;
+    }
+
+    if (status === "EXPIRED" || status === "ENTERED") {
+      if (!hasHandledQueueEndRef.current) {
+        hasHandledQueueEndRef.current = true;
+      }
+
+      if (queueRestoreKey && typeof window !== "undefined") {
+        sessionStorage.removeItem(queueRestoreKey);
+      }
+
+      setIsFindingSeat(false);
+      clearQueuePolling();
+
+      if (status === "EXPIRED" && matchId) {
+        toast.error("좌석 진입 가능 시간이 만료되었습니다. 다시 대기열에 진입해 주세요.");
+        router.push(`/matches/${matchId}`);
+      }
+    }
+  }, [clearQueuePolling, matchId, queueRestoreKey, router]);
+
   useEffect(() => {
     if (matchId === null) return;
     // AI telemetry 연동: 현재 화면을 좌석 탐색 구간으로만 라벨링한다.
@@ -301,6 +361,7 @@ function RecommendPageContent({ matchId }: { matchId: number | null }) {
       blockNumber: block.blockId,
       remainCount: block.remainingSeatCount,
       priceText: getPriceTextBySeatLabel(block.sectionName),
+      remainingSeatCount: block.remainingSeatCount,
       color: getSeatColor(block.sectionName),
     }));
 
@@ -357,13 +418,6 @@ function RecommendPageContent({ matchId }: { matchId: number | null }) {
       };
 
       setVqaPrompt({ reason, requestName });
-
-      if (reason === "proactive") {
-        console.log(`[Recommend][VQA] READY gate requested before ${requestName}`);
-      } else {
-        console.log(`[Recommend][VQA] 428 fallback requested for ${requestName}`);
-      }
-
       return promise;
     },
     [],
@@ -394,9 +448,6 @@ function RecommendPageContent({ matchId }: { matchId: number | null }) {
           }
 
           isVqaVerifiedRef.current = false;
-          console.log(
-            `[Recommend][VQA] 428 received from ${requestName}; retrying after challenge (retry ${attemptIndex + 1}/${MAX_VQA_FALLBACK_RETRIES})`,
-          );
 
           const retryVerified = await requestVqaGate("fallback", requestName, true);
           if (!retryVerified) {
@@ -425,7 +476,6 @@ function RecommendPageContent({ matchId }: { matchId: number | null }) {
         `GET /seat/matches/${matchId}/sections/${item.sectionId}/blocks`,
         () => getSectionBlocks(matchId, item.sectionId),
       );
-      console.log("getSectionBlocks:", response);
       setSectionBlocks(response.blocks);
       setActiveBlockId(response.blocks[0]?.blockId ?? null);
     } catch (e) {
@@ -492,6 +542,10 @@ function RecommendPageContent({ matchId }: { matchId: number | null }) {
 
     setIsFindingSeat(false);
     clearQueuePolling();
+    if (typeof window !== "undefined" && matchId) {
+      sessionStorage.removeItem(`recommend-queue:${matchId}`);
+    }
+
     toast.error(message);
 
     if (matchId) {
@@ -508,7 +562,6 @@ function RecommendPageContent({ matchId }: { matchId: number | null }) {
         `POST /seat/matches/${matchId}/recommendations/blocks/${selectedRecommendId}/assign`,
         () => assignRecommendedSeats(matchId, selectedRecommendId),
       );
-      console.log("SeatAssignmentResponse:", response);
 
       const params = new URLSearchParams({
         matchId: String(response.matchId),
@@ -573,7 +626,6 @@ function RecommendPageContent({ matchId }: { matchId: number | null }) {
     try {
       setAssigning(true);
 
-      console.log("createSeatHoldREQ: ", selectedSeatIds);
       const response = await executeProtectedRequest(
         `POST /seat/matches/${matchId}/seat-holds`,
         () =>
@@ -581,8 +633,6 @@ function RecommendPageContent({ matchId }: { matchId: number | null }) {
             seatIds: selectedSeatIds,
           }),
       );
-
-      console.log("createSeatHold:", response);
 
       const params = new URLSearchParams({
         matchId: String(response.matchId),
@@ -643,7 +693,93 @@ function RecommendPageContent({ matchId }: { matchId: number | null }) {
   };
 
   useEffect(() => {
+    setRestoreCheckDone(false);
+
+    if (!matchId || !queueRestoreKey) {
+      restoreStartedRef.current = false;
+      setRestoreCheckDone(true);
+      return;
+    }
+    if (typeof window === "undefined") {
+      restoreStartedRef.current = false;
+      setRestoreCheckDone(true);
+      return;
+    }
+
+    const navigationEntry = performance.getEntriesByType("navigation")[0] as
+      | PerformanceNavigationTiming
+      | undefined;
+
+    const wasReloaded = navigationEntry?.type === "reload";
+    const shouldRestoreQueue = sessionStorage.getItem(queueRestoreKey) === "waiting";
+
+    if (!wasReloaded || !shouldRestoreQueue) {
+      restoreStartedRef.current = false;
+      setRestoreCheckDone(true);
+      return;
+    }
+
+    if (restoreStartedRef.current) {
+      return;
+    }
+
+    restoreStartedRef.current = true;
+
+    const restoreQueue = async () => {
+      try {
+        setIsRestoringQueue(true);
+
+        const response = await enterQueue(matchId);
+        applyQueueState(response);
+
+        if ((response.status ?? "WAITING") === "WAITING") {
+          const queueStatusResponse = await getQueueStatus(matchId);
+          applyQueueState(queueStatusResponse);
+        }
+      } catch (e) {
+        sessionStorage.removeItem(queueRestoreKey);
+
+        if (e instanceof ApiError) {
+          if (e.status === 410) {
+            handleQueueEnd("좌석 진입 가능 시간이 만료되었습니다.");
+            router.push(`/matches/${matchId}`);
+            return;
+          }
+          if (e.status === 404) {
+            handleQueueEnd("대기열 정보를 찾을 수 없습니다.");
+            return;
+          }
+        }
+
+        console.error("[Recommend] restoreQueue failed", e);
+      } finally {
+        setIsRestoringQueue(false);
+        setRestoreCheckDone(true);
+        restoreStartedRef.current = false;
+      }
+    };
+
+    void restoreQueue();
+  }, [applyQueueState, handleQueueEnd, matchId, queueRestoreKey]);
+
+  useEffect(() => {
+    if (!queueRestoreKey) return;
+    if (typeof window === "undefined") return;
+
+    if (isFindingSeat && queueStatus === "WAITING") {
+      sessionStorage.setItem(queueRestoreKey, "waiting");
+      return;
+    }
+
+    sessionStorage.removeItem(queueRestoreKey);
+  }, [isFindingSeat, queueRestoreKey, queueStatus]);
+
+
+  useEffect(() => {
     if (!matchId) return;
+    if (!restoreCheckDone) return;
+    if (isRestoringQueue) return;
+
 
     hasHandledQueueEndRef.current = false;
     clearQueuePolling();
@@ -654,41 +790,11 @@ function RecommendPageContent({ matchId }: { matchId: number | null }) {
       try {
         const response = await getQueueStatus(matchId);
         if (cancelled) return;
-
-        const status = response.status ?? null;
-        const rank = response.rank ?? null;
-        const total = response.totalWaitingCount ?? null;
-        const nextPollingMs = response.pollingMs ?? 3000;
-
-        setQueueStatus(status);
-        setQueueRank(rank);
-        setTotalWaitingCount(total);
-
-        if (status === "WAITING") {
-          setIsFindingSeat(true);
-          scheduleNextPoll(nextPollingMs, poll);
-          return;
-        }
-
-        if (status === "READY") {
-          console.log("[Recommend][Queue] READY reached; proactive VQA gate will open.");
-          setIsFindingSeat(false);
-          clearQueuePolling();
-          return;
-        }
-
-        if (status === "EXPIRED" || status === "ENTERED") {
-          if (hasHandledQueueEndRef.current) return;
-          hasHandledQueueEndRef.current = true;
-
-          setIsFindingSeat(false);
-          clearQueuePolling();
-
-          if (status === "EXPIRED") {
-            toast.error("좌석 진입 가능 시간이 만료되었습니다. 다시 대기열에 진입해 주세요.");
-            router.push(`/matches/${matchId}`);
-          }
-        }
+        applyQueueState(response, {
+          onWaiting: (nextPollingMs) => {
+            scheduleNextPoll(nextPollingMs, poll);
+          },
+        });
       } catch (e) {
         if (cancelled || hasHandledQueueEndRef.current) return;
 
@@ -715,115 +821,110 @@ function RecommendPageContent({ matchId }: { matchId: number | null }) {
       cancelled = true;
       clearQueuePolling();
     };
-  }, [clearQueuePolling, handleQueueEnd, matchId, router, scheduleNextPoll]);
+  }, [applyQueueState, clearQueuePolling, handleQueueEnd, isRestoringQueue, matchId, restoreCheckDone, router, scheduleNextPoll]);
+
+  const loadRecommendedSeats = useCallback(async () => {
+    if (!matchId) return;
+
+    setSeatEntry(null);
+    setRecommendItems([]);
+    setPreferredRecommendBlocks([]);
+    setSelectedRecommendId(null);
+    setHoveredRecommendBlock(null);
+
+    const seatEntryResponse = await executeProtectedRequest(
+      `GET /seat/matches/${matchId}/recommendations/seat-entry`,
+      () => getRecommendationSeatEntry(matchId),
+    );
+
+    setSeatEntry(seatEntryResponse);
+
+    const preferredBlockIds = seatEntryResponse.seatSession.preferredBlockIds ?? [];
+    setSelectedSeatBlocks(preferredBlockIds);
+    setPreferredRecommendBlocks(preferredBlockIds);
+
+    const blockRecommendationResponse = await executeProtectedRequest(
+      `GET /seat/matches/${matchId}/recommendations/blocks`,
+      () => getRecommendationBlocks(matchId),
+    );
+
+    setRecommendItems(toRecommendItems(blockRecommendationResponse));
+  }, [executeProtectedRequest, matchId]);
+
+  const loadSeatAccess = useCallback(async () => {
+    if (!matchId || queueStatus !== "READY") return;
+
+    setLoading(true);
+
+    if (isPreferredRecommendOn) {
+      setSeatGroupsEntry(null);
+      setSeatSections([]);
+    } else {
+      setSeatGroupsEntry(null);
+      setSeatSections([]);
+    }
+
+    try {
+      if (isPreferredRecommendOn) {
+        await loadRecommendedSeats();
+      } else {
+        const seatGroupsResponse = await executeProtectedRequest(
+          `GET /seat/matches/${matchId}/seat-groups`,
+          () => getSeatGroupsEntry(matchId),
+        );
+
+        setSeatGroupsEntry(seatGroupsResponse);
+        setSeatSections(toSeatSections(seatGroupsResponse));
+      }
+    } catch (e) {
+      if (
+        e instanceof VqaChallengeCancelledError ||
+        e instanceof ProtectedRequestCancelledError
+      ) {
+        return;
+      }
+
+      const status = getErrorStatus(e);
+
+      if (status === 401) {
+        toast.error("유효하지 않은 입장 토큰입니다.");
+        router.push(`/matches/${matchId}`);
+        return;
+      }
+      if (status === 404) {
+        setIsSoldOutModalOpen(true);
+        return;
+      }
+      if (status === 410) {
+        toast.error("입장 가능 시간이 만료되었습니다.");
+        router.push(`/matches/${matchId}`);
+        return;
+      }
+
+      if (status === 428) {
+        toast.error("보안 인증이 필요합니다. 다시 시도해 주세요.");
+        return;
+      }
+
+      console.error("[Recommend] loadSeatAccess failed", e);
+      toast.error("좌석 정보를 불러오는 중 오류가 발생했습니다.");
+    } finally {
+      setLoading(false);
+    }
+  }, [
+    executeProtectedRequest,
+    isPreferredRecommendOn,
+    loadRecommendedSeats,
+    matchId,
+    queueStatus,
+    router,
+  ]);
 
   useEffect(() => {
     if (!matchId || queueStatus !== "READY") return;
 
-    let cancelled = false;
-
-    const getActiveRequest = <T,>(requestFactory: () => Promise<T>) => {
-      return async (): Promise<T> => {
-        if (cancelled) {
-          throw new ProtectedRequestCancelledError();
-        }
-
-        return requestFactory();
-      };
-    };
-
-    const loadSeatAccess = async () => {
-      setLoading(true);
-
-      if (isPreferredRecommendOn) {
-        setSeatEntry(null);
-        setRecommendItems([]);
-        setPreferredRecommendBlocks([]);
-      } else {
-        setSeatGroupsEntry(null);
-        setSeatSections([]);
-      }
-
-      try {
-        if (isPreferredRecommendOn) {
-          const seatEntryResponse = await executeProtectedRequest(
-            `GET /seat/matches/${matchId}/recommendations/seat-entry`,
-            getActiveRequest(() => getRecommendationSeatEntry(matchId)),
-          );
-          if (cancelled) return;
-
-          console.log("[Recommend][Entry] recommendation seat entry loaded after VQA");
-          setSeatEntry(seatEntryResponse);
-
-          const preferredBlockIds = seatEntryResponse.seatSession.preferredBlockIds ?? [];
-          setSelectedSeatBlocks(preferredBlockIds);
-          setPreferredRecommendBlocks(preferredBlockIds);
-
-          const blockRecommendationResponse = await executeProtectedRequest(
-            `GET /seat/matches/${matchId}/recommendations/blocks`,
-            getActiveRequest(() => getRecommendationBlocks(matchId)),
-          );
-          if (cancelled) return;
-
-          console.log("[Recommend][Entry] recommendation blocks loaded after VQA");
-          setRecommendItems(toRecommendItems(blockRecommendationResponse));
-        } else {
-          const seatGroupsResponse = await executeProtectedRequest(
-            `GET /seat/matches/${matchId}/seat-groups`,
-            getActiveRequest(() => getSeatGroupsEntry(matchId)),
-          );
-          if (cancelled) return;
-
-          console.log("[Recommend][Entry] seat groups loaded after VQA");
-          setSeatGroupsEntry(seatGroupsResponse);
-          setSeatSections(toSeatSections(seatGroupsResponse));
-        }
-      } catch (e) {
-        if (
-          cancelled ||
-          e instanceof VqaChallengeCancelledError ||
-          e instanceof ProtectedRequestCancelledError
-        ) {
-          return;
-        }
-
-        const status = getErrorStatus(e);
-
-        if (status === 401) {
-          toast.error("유효하지 않은 입장 토큰입니다.");
-          router.push(`/matches/${matchId}`);
-          return;
-        }
-        if (status === 404) {
-          setIsSoldOutModalOpen(true);
-          return;
-        }
-        if (status === 410) {
-          toast.error("입장 가능 시간이 만료되었습니다.");
-          router.push(`/matches/${matchId}`);
-          return;
-        }
-
-        if (status === 428) {
-          toast.error("보안 인증이 필요합니다. 다시 시도해 주세요.");
-          return;
-        }
-
-        console.error("[Recommend] loadSeatAccess failed", e);
-        toast.error("좌석 정보를 불러오는 중 오류가 발생했습니다.");
-      } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
-      }
-    };
-
     void loadSeatAccess();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [executeProtectedRequest, isPreferredRecommendOn, matchId, queueStatus, router]);
+  }, [loadSeatAccess, matchId, queueStatus]);
 
   return (
     <div className="flex min-h-screen w-full flex-col items-center bg-white">
@@ -923,13 +1024,32 @@ function RecommendPageContent({ matchId }: { matchId: number | null }) {
 
             {isPreferredRecommendOn ? (
               <div className="flex w-full flex-1 flex-col items-start gap-4">
-                <div className="flex w-full flex-col items-start gap-3">
-                  <div className="w-full text-base font-semibold leading-6 text-[var(--foundation-neutral-240)] sm:text-lg">
-                    좌석 추천 리스트
+                <div className="flex w-full flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex flex-1 flex-col items-start gap-3">
+                    <div className="w-full text-lg font-semibold leading-6 text-[var(--text-normal-n240)]">
+                      좌석 추천 리스트
+                    </div>
+                    <div className="w-full text-sm font-medium leading-5 text-[var(--text-info-n600)]">
+                      ※ 추천 구역 선택 시 해당 블럭 내 연석 좌석이 자동 배정됩니다.
+                    </div>
                   </div>
-                  <div className="w-full text-xs font-medium leading-5 text-[var(--foundation-neutral-600)] sm:text-sm">
-                    추천 구역을 선택하면 해당 블럭을 경기장 지도에서 바로 확인할 수 있습니다.
-                  </div>
+
+                    <button
+                      type="button"
+                      aria-label="좌석 추천 새로고침"
+                      onClick={() => void loadSeatAccess()}
+                      disabled={loading || assigning}
+                      className="cursor-pointer inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--background-interactive-neutral-default)] outline outline-1 outline-offset-[-1px] outline-[var(--foundation-neutral-800)] disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <RotateCw
+                        size={16}
+                        strokeWidth={1.75}
+                        className={[
+                          "text-[var(--text-normal-n240)]",
+                          loading ? "animate-spin" : "",
+                        ].join(" ")}
+                      />
+                    </button>
                 </div>
 
                 <div className="w-full overflow-hidden">
@@ -991,8 +1111,7 @@ function RecommendPageContent({ matchId }: { matchId: number | null }) {
                     </div>
                   </div>
                 </div>
-                <div className="flex w-full flex-col items-start gap-4 rounded-2xl bg-[var(--foundation-neutral-white)] px-6 py-4 outline outline-1 outline-offset-[-1px] outline-[var(--stroke-interactive-neutral-default)]">
-                  <div className="flex w-full items-center justify-between gap-3">
+                <div className="flex w-full items-center justify-between gap-3">
                     <div className="text-base font-semibold leading-6 text-black">
                       선택한 좌석
                     </div>
@@ -1000,8 +1119,10 @@ function RecommendPageContent({ matchId }: { matchId: number | null }) {
                       총 {selectedSeatRows.length}석 선택되었습니다
                     </div>
                   </div>
+                <div className="flex w-full flex-col items-start gap-4 bg-[var(--foundation-neutral-white)] px-2 py-2 outline outline-1 outline-offset-[-1px] outline-[var(--stroke-interactive-neutral-default)]">
+                  
 
-                  <div className="flex w-full flex-col overflow-hidden outline outline-1 outline-offset-[-1px] outline-[var(--stroke-interactive-neutral-default)]">
+                  <div className="flex w-full flex-col overflow-hidden">
                     <div className="inline-flex w-full items-start gap-2">
                       <div className="flex flex-1 items-center gap-3 bg-[var(--foundation-neutral-940)] p-2">
                         <div className="text-sm font-semibold leading-5 text-[var(--foundation-neutral-240)]">
@@ -1039,8 +1160,27 @@ function RecommendPageContent({ matchId }: { matchId: number | null }) {
               </div>
             ) : (
               <div className="inline-flex w-full flex-col items-start gap-4 self-stretch">
-                <div className="w-full text-lg font-semibold leading-6 text-[var(--foundation-neutral-240)]">
-                  좌석 리스트
+                <div className="flex w-full flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="w-full text-lg font-semibold leading-6 text-[var(--foundation-neutral-240)]">
+                    좌석 리스트
+                  </div>
+
+                  <button
+                    type="button"
+                    aria-label="좌석 리스트 새로고침"
+                    onClick={() => void loadSeatAccess()}
+                    disabled={loading || assigning}
+                    className="cursor-pointer inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--background-interactive-neutral-default)] outline outline-1 outline-offset-[-1px] outline-[var(--foundation-neutral-800)] disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <RotateCw
+                      size={16}
+                      strokeWidth={1.75}
+                      className={[
+                        "text-[var(--text-normal-n240)]",
+                        loading ? "animate-spin" : "",
+                      ].join(" ")}
+                    />
+                  </button>
                 </div>
 
                 <div className="flex w-full flex-col items-start gap-3 overflow-hidden rounded-2xl px-2 outline outline-1 outline-offset-[-1px] outline-[var(--stroke-interactive-neutral-default)]">
@@ -1101,7 +1241,7 @@ function RecommendPageContent({ matchId }: { matchId: number | null }) {
                 </PrimaryButton>
               </div>
               <div className="text-center text-sm font-medium leading-5 text-[var(--text-info-n600)]">
-                예매 진행 중에도 좌석 상황은 변경될 수 있습니다.
+                예매 진행 후에는 좌석 변경이 불가해요.
               </div>
             </div>
           </div>
@@ -1144,15 +1284,11 @@ function RecommendPageContent({ matchId }: { matchId: number | null }) {
       {vqaPrompt && (
         <VQAChallenge
           onSuccess={() => {
-            console.log(
-              `[Recommend][VQA] success (${vqaPrompt.reason}) for ${vqaPrompt.requestName}`,
-            );
+            
             settleVqaPrompt(true);
           }}
           onCancel={() => {
-            console.log(
-              `[Recommend][VQA] cancelled (${vqaPrompt.reason}) for ${vqaPrompt.requestName}`,
-            );
+            
             settleVqaPrompt(false);
           }}
         />

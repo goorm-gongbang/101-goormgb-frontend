@@ -10,6 +10,7 @@ export type SeatRecommendItem = {
     blockLabel: string;
     blockNumber: number;
     remainCount: number;
+    remainingSeatCount: number;
     priceText: string;
     color: SeatColor;
 };
@@ -38,7 +39,7 @@ const badgeClassMap: Record<SeatColor, string> = {
         "bg-[var(--foundation-purple-500)] outline-[var(--foundation-purple-400)",
     blue:
         "bg-[var(--foundation-blue-500)] outline-[var(--foundation-blue-400)",
-    
+
 };
 
 export function SeatRecommendSummaryCard({
@@ -90,19 +91,24 @@ export function SeatRecommendSummaryCard({
                                     {item.blockLabel}
                                 </div>
 
-                                <div className="flex-1 inline-flex flex-col justify-start items-end gap-1">
-                                    <div className="inline-flex h-6 w-44 justify-end items-end gap-0.5">
-                                        <div className="justify-center text-sm font-normal leading-6 text-[var(--foundation-neutral-240)] font-['Pretendard']">
-                                            잔여
+                                <div className="flex flex-1 justify-end">
+                                    <div className="inline-flex flex-col items-end gap-1 sm:flex-row sm:items-center sm:gap-4">
+                                        <div className="inline-flex items-center gap-0.5 whitespace-nowrap">
+                                            <span className="text-sm font-normal leading-6 text-[var(--foundation-neutral-600)] font-['Pretendard']">
+                                                이용 가능 연석
+                                            </span>
+                                            <span className="pl-0.5 text-base font-semibold leading-6 text-[var(--foundation-primary-600)] font-['Pretendard_Variable']">
+                                                {item.remainingSeatCount}개
+                                            </span>
                                         </div>
-                                        <div className="pl-0.5 justify-center text-base font-semibold leading-6 text-[var(--foundation-primary-600)] font-['Pretendard_Variable']">
-                                            {item.remainCount}석
-                                        </div>
-                                    </div>
 
-                                    <div className="self-stretch inline-flex justify-start items-center">
-                                        <div className="flex-1 text-right justify-center text-xs font-normal leading-4 text-[var(--foundation-neutral-240)] font-['Pretendard']">
-                                            {item.priceText}
+                                        <div className="inline-flex items-center gap-0.5 whitespace-nowrap">
+                                            <span className="text-sm font-normal leading-6 text-[var(--foundation-neutral-600)] font-['Pretendard']">
+                                                잔여 좌석
+                                            </span>
+                                            <span className="pl-0.5 text-base font-semibold leading-6 text-[var(--foundation-primary-600)] font-['Pretendard_Variable']">
+                                                {item.remainCount}석
+                                            </span>
                                         </div>
                                     </div>
                                 </div>

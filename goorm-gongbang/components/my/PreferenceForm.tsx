@@ -5,7 +5,7 @@
    - 온보딩 질문과 동일한 UI/동일한 옵션
    - Step1: 시야/좌석높이/구역 (최대 3개 순위 선택)
    - Step2: 좌석타입/환경/분위기/시야방해/가격 (단일 선택)
-   - 저장 시 console.log + toast
+   - 저장 시 toast
    - API 연동 없음 (mock 초기값)
 
    [TODO: 온보딩과 통합 시 작업 목록]
@@ -319,7 +319,6 @@ export function PreferenceForm() {
             },
             step2: { viewType, env, mood, dist, price },
         };
-        console.log("[PreferenceForm] save:", payload);
         toast.success("내블럭 및 선호 데이터가 업데이트되었습니다.");
     };
 

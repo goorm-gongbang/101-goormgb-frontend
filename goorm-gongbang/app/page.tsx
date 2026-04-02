@@ -112,17 +112,18 @@ function MatchCardSkeleton({ elevated }: { elevated?: boolean }) {
 
 function TeamCardSkeleton() {
   return (
-    <div className="w-full rounded-2xl bg-[var(--foundation-neutral-white)] outline outline-1 outline-offset-[-1px] outline-[var(--foundation-neutral-120)] px-4 py-4">
-      <div className="flex items-center gap-3">
-        <Skeleton className="h-10 w-10 rounded-xl" /> {/* 로고 */}
-        <div className="flex flex-col gap-2">
-          <Skeleton className="h-4 w-24 rounded-md" /> {/* 팀명 */}
-          <Skeleton className="h-4 w-16 rounded-md" /> {/* 서브텍스트 자리 */}
+    <div className="w-full rounded-2xl px-6 py-5 outline outline-1 outline-offset-[-1px] outline-[var(--foundation-neutral-880)]">
+      <div className="flex items-center gap-4">
+        <Skeleton className="h-24 w-14 rounded-xl" />
+        <div className="flex flex-col gap-3">
+          <Skeleton className="h-5 w-32 rounded-md" />
+          <Skeleton className="h-4 w-24 rounded-md" />
         </div>
       </div>
     </div>
   );
 }
+
 
 export default function Home() {
   const router = useRouter();
@@ -151,7 +152,6 @@ export default function Home() {
     (async () => {
       try {
         const data = await getMatches(selectedDate);
-        console.log("[matches${params}] data", data);
 
         if (cancelled) return;
 
@@ -180,7 +180,6 @@ export default function Home() {
     (async () => {
       try {
         const data = await getClubs();
-        console.log("[clubs] data", data);
 
         if (cancelled) return;
         setTeamsPayload(data ?? null);
@@ -302,7 +301,6 @@ export default function Home() {
                       >
                         <MatchCard
                           elevated={idx === 0}
-                          withOutline={idx === 0}
                           variant={variant} // comming soon, soild out, ended
                           dateText={dateText} // 3월 28일
                           timeText={timeText} // 토 · 14 : 00
@@ -320,8 +318,6 @@ export default function Home() {
                             dataLogo: m.homeClub.koName, // 기아
                             logo: <TeamLogo club={m.homeClub} />, // logoImg
                           }}
-                          overlayTopText={overlay.top}
-                          overlayMainText={overlay.main}
                         />
                       </button>
                     );
