@@ -40,7 +40,7 @@ const MOCK_TICKETS: Ticket[] = [
   {
     id: "3",
     dDay: "D-4",
-    status: "RESERVED",
+    status: "UNDER_REVIEW",
     count: 4,
     matchTitle: "LG 트윈스 vs SSG 랜더스",
     dateStr: "2026. 04. 01 (수) 14:00",
@@ -106,13 +106,14 @@ export default function TicketsPage() {
       <div className="max-w-[1200px] mx-auto px-4 py-8 flex flex-col min-h-[calc(100vh-48px)]">
         {/* 이전으로 돌아가기 & 타이틀 */}
         <div className="mb-6 flex flex-col gap-4">
-          <button
-            type="button"
-            onClick={() => router.back()}
-            className="text-[13px] text-[#9E9E9E] hover:text-[#1A1A1A] transition-colors self-start"
-          >
-            &lt; 이전으로 돌아가기
-          </button>
+                <button
+                    type="button"
+                    onClick={() => router.back()}
+                    className="mb-8 text-[13px] font-medium text-[#7A7A7A] hover:text-[#1A1A1A] transition-colors flex items-center gap-1"
+                >
+                    <ChevronLeft className="w-4 h-4" />
+                    이전으로 돌아가기
+                </button>
           <h1 className="text-[22px] font-bold text-[#1A1A1A]">경기 예정 티켓</h1>
         </div>
 
