@@ -11,6 +11,7 @@ import {
   MOVEMENT_ZONE,
   PITCHER_POSITION,
   STRIKE_ZONE,
+  VERTICAL_INDICATOR_TRACK,
 } from './vqa/catchBallConfig';
 import type {
   CatchAttemptResult,
@@ -31,6 +32,7 @@ export interface VQAChallengeProps {
   onSuccess: () => void;
   onCancel: () => void;
   maxRetries?: number;
+  mode?: 'default' | 'practice';
 }
 
 type ReadyChallengeState = {
@@ -52,7 +54,17 @@ type ChallengeState =
   | { status: 'error'; message: string; reason?: 'max_attempts' | 'blocked' | 'generic' };
 
 const DEFAULT_INSTRUCTION_MESSAGE = 'Start 버튼을 눌러 보안 확인을 진행하세요.';
-const AUTO_RETRY_DELAY_MS = 900;
+const PRACTICE_INSTRUCTION_MESSAGE = '연습 모드입니다. 원하는 만큼 시도해 보세요.';
+const TARGET_GUIDE_MAX_SIZE = 76;
+const TARGET_GUIDE_MIN_SIZE = 32;
+
+function createPracticeChallenge(maxRetries: number): ChallengeStartResponse {
+  return {
+    challengeId: 'practice-mode',
+    remainingAttempts: maxRetries,
+    expiresAtMs: Date.now() + 60 * 60 * 1000,
+  };
+}
 
 function isLoadedChallengeState(
   state: ChallengeState,
@@ -82,51 +94,19 @@ function getFailMessage(failReason: FailReason | null): string {
   return '보안 확인에 실패했습니다.';
 }
 
-function BaseballIndicatorIcon(): React.ReactElement {
+function BaseballIndicatorIcon({ sizes }: { sizes: string }): React.ReactElement {
   return (
-    <svg viewBox="0 0 100 100" className="h-full w-full drop-shadow-[0_2px_4px_rgba(0,0,0,0.45)]">
-      <defs>
-        <radialGradient id="vqaIndicatorBaseball" cx="32%" cy="28%" r="70%">
-          <stop offset="0%" stopColor="#ffffff" />
-          <stop offset="65%" stopColor="#f8fafc" />
-          <stop offset="100%" stopColor="#dbe3ef" />
-        </radialGradient>
-      </defs>
-      <circle
-        cx="50"
-        cy="50"
-        r="46"
-        fill="url(#vqaIndicatorBaseball)"
-        stroke="#d7dee9"
-        strokeWidth="3"
+    <div className="relative h-full w-full">
+      <Image
+        src="/baseball_ball_contour.png"
+        alt=""
+        fill
+        sizes={sizes}
+        draggable={false}
+        aria-hidden="true"
+        className="object-contain drop-shadow-[0_2px_4px_rgba(0,0,0,0.45)]"
       />
-      <path
-        d="M24 18 C40 36, 40 64, 24 82"
-        stroke="#ef4444"
-        strokeWidth="4"
-        fill="none"
-        strokeLinecap="round"
-      />
-      <path
-        d="M76 18 C60 36, 60 64, 76 82"
-        stroke="#ef4444"
-        strokeWidth="4"
-        fill="none"
-        strokeLinecap="round"
-      />
-      <path
-        d="M28 30 L33 35 M26 42 L31 47 M26 54 L31 59 M28 66 L33 71"
-        stroke="#ef4444"
-        strokeWidth="2.2"
-        strokeLinecap="round"
-      />
-      <path
-        d="M72 30 L67 35 M74 42 L69 47 M74 54 L69 59 M72 66 L67 71"
-        stroke="#ef4444"
-        strokeWidth="2.2"
-        strokeLinecap="round"
-      />
-    </svg>
+    </div>
   );
 }
 
@@ -134,13 +114,24 @@ export function VQAChallenge({
   onSuccess,
   onCancel,
   maxRetries = 3,
+  mode = 'default',
 }: VQAChallengeProps): React.ReactElement {
   const { startChallenge, verifyChallenge } = useTelemetryContext();
+  const isPracticeMode = mode === 'practice';
+  const instructionMessage = isPracticeMode ? PRACTICE_INSTRUCTION_MESSAGE : DEFAULT_INSTRUCTION_MESSAGE;
 
-  const [state, setState] = useState<ChallengeState>({ status: 'loading' });
+  const [state, setState] = useState<ChallengeState>(() =>
+    isPracticeMode
+      ? {
+          status: 'ready',
+          challenge: createPracticeChallenge(maxRetries),
+          message: PRACTICE_INSTRUCTION_MESSAGE,
+        }
+      : { status: 'loading' },
+  );
   const [remainingTime, setRemainingTime] = useState(0);
   const [phase, setPhase] = useState<Phase>('INSTRUCTION');
-  const [statusMessage, setStatusMessage] = useState(DEFAULT_INSTRUCTION_MESSAGE);
+  const [statusMessage, setStatusMessage] = useState(instructionMessage);
   const [nowMs, setNowMs] = useState<number>(() => Date.now());
   const [countdownStartMs, setCountdownStartMs] = useState<number | null>(null);
   const [flowStartedAtMs, setFlowStartedAtMs] = useState<number | null>(null);
@@ -156,6 +147,7 @@ export function VQAChallenge({
 
   const mountedRef = useRef(true);
   const retryTimerRef = useRef<number | null>(null);
+  const deferredTransitionTimerRef = useRef<number | null>(null);
   const draggingRef = useRef(false);
   const gloveRef = useRef<PointPosition>({ x: 0, y: 0 });
   const playRef = useRef<HTMLDivElement | null>(null);
@@ -167,9 +159,17 @@ export function VQAChallenge({
     }
   }, []);
 
+  const clearDeferredTransitionTimer = useCallback(() => {
+    if (deferredTransitionTimerRef.current !== null) {
+      window.clearTimeout(deferredTransitionTimerRef.current);
+      deferredTransitionTimerRef.current = null;
+    }
+  }, []);
+
   const resetRound = useCallback(
-    (message = DEFAULT_INSTRUCTION_MESSAGE) => {
+    (message = instructionMessage) => {
       clearRetryTimer();
+      clearDeferredTransitionTimer();
       draggingRef.current = false;
       gloveRef.current = { x: 0, y: 0 };
       setPhase('INSTRUCTION');
@@ -187,12 +187,24 @@ export function VQAChallenge({
       setDistanceToTarget(null);
       setDropOffsetMs(null);
     },
-    [clearRetryTimer],
+    [clearDeferredTransitionTimer, clearRetryTimer, instructionMessage],
   );
 
   const loadChallenge = useCallback(
-    async (message = DEFAULT_INSTRUCTION_MESSAGE) => {
+    async (message = instructionMessage) => {
+      if (isPracticeMode) {
+        setState({
+          status: 'ready',
+          challenge: createPracticeChallenge(maxRetries),
+          message: PRACTICE_INSTRUCTION_MESSAGE,
+        });
+        setRemainingTime(0);
+        resetRound(message);
+        return;
+      }
+
       clearRetryTimer();
+      clearDeferredTransitionTimer();
       setState({ status: 'loading' });
 
       try {
@@ -212,7 +224,7 @@ export function VQAChallenge({
         });
       }
     },
-    [clearRetryTimer, resetRound, startChallenge],
+    [clearDeferredTransitionTimer, clearRetryTimer, instructionMessage, isPracticeMode, maxRetries, resetRound, startChallenge],
   );
 
   const beginRound = useCallback(() => {
@@ -220,6 +232,7 @@ export function VQAChallenge({
     const startedAt = Date.now();
 
     clearRetryTimer();
+    clearDeferredTransitionTimer();
     draggingRef.current = false;
     gloveRef.current = nextRoundSetup.gloveStart;
     setRoundSetup(nextRoundSetup);
@@ -234,9 +247,9 @@ export function VQAChallenge({
     setAnimationFreezeMs(null);
     setPositionOk(false);
     setTimingOk(false);
-    setDistanceToTarget(null);
-    setDropOffsetMs(null);
-  }, [clearRetryTimer]);
+      setDistanceToTarget(null);
+      setDropOffsetMs(null);
+  }, [clearDeferredTransitionTimer, clearRetryTimer]);
 
   const buildAttemptResult = useCallback(
     (dropTimestamp: number, caught: boolean, failReason: FailReason | null): CatchAttemptResult => {
@@ -262,6 +275,37 @@ export function VQAChallenge({
       if (!isLoadedChallengeState(state)) return;
 
       const challenge = state.challenge;
+
+      if (isPracticeMode) {
+        setState({
+          status: 'ready',
+          challenge: createPracticeChallenge(maxRetries),
+          message: attempt.caught
+            ? '연습에 성공했습니다. 다시 시도하기를 눌러 다시 연습해 보세요.'
+            : '연습을 다시 시도해 보세요.',
+        });
+        return;
+      }
+
+      const attemptIndex = Math.max(1, Math.max(maxRetries, challenge.remainingAttempts) - challenge.remainingAttempts + 1);
+      const roundFloorDelayMs =
+        attemptIndex === 1 && flowStartedAtMs !== null
+          ? Math.max(0, flowStartedAtMs + CATCH_BALL_CONFIG.solveDeadlineMs - Date.now())
+          : 0;
+      const runAfterRoundFloor = (callback: () => void) => {
+        if (roundFloorDelayMs <= 0) {
+          callback();
+          return;
+        }
+
+        clearDeferredTransitionTimer();
+        deferredTransitionTimerRef.current = window.setTimeout(() => {
+          deferredTransitionTimerRef.current = null;
+          if (!mountedRef.current) return;
+          callback();
+        }, roundFloorDelayMs);
+      };
+
       setState({ status: 'submitting', challenge, message: state.message });
 
       try {
@@ -276,7 +320,7 @@ export function VQAChallenge({
         if (!mountedRef.current) return;
 
         if (result.success) {
-          onSuccess();
+          runAfterRoundFloor(onSuccess);
           return;
         }
 
@@ -293,28 +337,33 @@ export function VQAChallenge({
           });
 
           retryTimerRef.current = window.setTimeout(() => {
+            retryTimerRef.current = null;
             if (!mountedRef.current) return;
-            beginRound();
-          }, AUTO_RETRY_DELAY_MS);
+            runAfterRoundFloor(beginRound);
+          }, 0);
           return;
         }
 
-        setState({
-          status: 'error',
-          message: '최대 시도 횟수를 초과했습니다.',
-          reason: 'max_attempts',
+        runAfterRoundFloor(() => {
+          setState({
+            status: 'error',
+            message: '최대 시도 횟수를 초과했습니다.',
+            reason: 'max_attempts',
+          });
         });
       } catch (error) {
         if (!mountedRef.current) return;
 
-        setState({
-          status: 'error',
-          message: error instanceof Error ? error.message : '검증 실패',
-          reason: error instanceof AIApiError && error.isBlocked() ? 'blocked' : 'generic',
+        runAfterRoundFloor(() => {
+          setState({
+            status: 'error',
+            message: error instanceof Error ? error.message : '검증 실패',
+            reason: error instanceof AIApiError && error.isBlocked() ? 'blocked' : 'generic',
+          });
         });
       }
     },
-    [beginRound, onSuccess, state, verifyChallenge],
+    [beginRound, clearDeferredTransitionTimer, flowStartedAtMs, isPracticeMode, maxRetries, onSuccess, state, verifyChallenge],
   );
 
   const evaluateDrop = useCallback(
@@ -363,12 +412,16 @@ export function VQAChallenge({
   );
 
   useEffect(() => {
+    if (isPracticeMode) {
+      return undefined;
+    }
+
     const bootstrapTimer = window.setTimeout(() => {
       void loadChallenge();
     }, 0);
 
     return () => window.clearTimeout(bootstrapTimer);
-  }, [loadChallenge]);
+  }, [isPracticeMode, loadChallenge]);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -376,10 +429,15 @@ export function VQAChallenge({
     return () => {
       mountedRef.current = false;
       clearRetryTimer();
+      clearDeferredTransitionTimer();
     };
-  }, [clearRetryTimer]);
+  }, [clearDeferredTransitionTimer, clearRetryTimer]);
 
   useEffect(() => {
+    if (isPracticeMode) {
+      return undefined;
+    }
+
     if (!isLoadedChallengeState(state)) return;
 
     const syncRemaining = () =>
@@ -396,7 +454,7 @@ export function VQAChallenge({
     }, 1000);
 
     return () => window.clearInterval(timer);
-  }, [loadChallenge, state]);
+  }, [isPracticeMode, loadChallenge, state]);
 
   useEffect(() => {
     if (
@@ -500,10 +558,12 @@ export function VQAChallenge({
   }, [countdownStartMs, nowMs, phase]);
 
   const activeChallenge = isLoadedChallengeState(state) ? state.challenge : null;
-  const totalAttempts = activeChallenge
-    ? Math.max(maxRetries, activeChallenge.remainingAttempts)
-    : maxRetries;
-  const displayRemainingAttempts = activeChallenge?.remainingAttempts ?? maxRetries;
+  const totalAttempts = isPracticeMode
+    ? maxRetries
+    : activeChallenge
+      ? Math.max(maxRetries, activeChallenge.remainingAttempts)
+      : maxRetries;
+  const displayRemainingAttempts = isPracticeMode ? maxRetries : activeChallenge?.remainingAttempts ?? maxRetries;
   const motionReferenceMs = animationFreezeMs ?? nowMs;
   const resolvedLandingPoint = roundSetup?.landingPoint ?? {
     x: STRIKE_ZONE.x + STRIKE_ZONE.width / 2,
@@ -549,7 +609,18 @@ export function VQAChallenge({
   const ballShadowW = ballDiameter * (0.9 + ballProgress * 0.65);
   const ballShadowH = ballDiameter * (0.32 + ballProgress * 0.2);
   const ballShadowOpacity = 0.12 + ballProgress * 0.25;
-  const gaugeThumbTop = clamp(128 - indicatorProgress * 112, 4, 149);
+  const targetGuideSize =
+    TARGET_GUIDE_MIN_SIZE + (TARGET_GUIDE_MAX_SIZE - TARGET_GUIDE_MIN_SIZE) * (1 - ballProgress);
+  const gaugeThumbSize = 14;
+  const indicatorTopInset = 3;
+  const indicatorBottomInset = 7;
+  const gaugeThumbTop = clamp(
+    indicatorTopInset +
+      (1 - indicatorProgress) *
+        (VERTICAL_INDICATOR_TRACK.height - gaugeThumbSize - indicatorTopInset - indicatorBottomInset),
+    indicatorTopInset,
+    VERTICAL_INDICATOR_TRACK.height - gaugeThumbSize - indicatorBottomInset,
+  );
   const countdownOverlayLabel =
     countdownLabel === 'READY' ? 'Ready' : countdownLabel === 'GO' ? 'Start!' : null;
   const playfieldTimeLabel = formatCountdown(remainingTime);
@@ -696,7 +767,7 @@ export function VQAChallenge({
               className="absolute inset-0"
               style={{
                 backgroundImage:
-                  "linear-gradient(180deg, rgba(2,6,23,0.08) 0%, rgba(2,6,23,0.16) 40%, rgba(2,6,23,0.24) 100%), url('/new-vqa-ballpark-photo.png')",
+                  "linear-gradient(180deg, rgba(2,6,23,0.08) 0%, rgba(2,6,23,0.16) 40%, rgba(2,6,23,0.24) 100%), url('/edited-ballpark.jpeg')",
                 backgroundPosition: '47% bottom',
                 backgroundRepeat: 'no-repeat',
                 backgroundSize: 'cover',
@@ -744,7 +815,7 @@ export function VQAChallenge({
                   width: CATCH_BALL_CONFIG.playWidth,
                   height: CATCH_BALL_CONFIG.playHeight,
                   backgroundImage:
-                    "linear-gradient(180deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 22%, rgba(2,6,23,0.06) 72%, rgba(2,6,23,0.14) 100%), url('/new-vqa-ballpark-photo.png')",
+                    "linear-gradient(180deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 22%, rgba(2,6,23,0.06) 72%, rgba(2,6,23,0.14) 100%), url('/edited-ballpark.jpeg')",
                   backgroundPosition: '47% bottom',
                   backgroundRepeat: 'no-repeat',
                   backgroundSize: 'cover',
@@ -758,7 +829,7 @@ export function VQAChallenge({
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_24%,rgba(255,255,255,0.34)_0%,rgba(255,255,255,0)_48%)]" />
 
                 <div
-                  className="absolute rounded-[6px] border-[3px] border-white/80"
+                  className="absolute overflow-hidden rounded-[6px] border-[3px] border-[#ffffff99]"
                   style={{
                     left: STRIKE_ZONE.x,
                     top: STRIKE_ZONE.y,
@@ -767,24 +838,48 @@ export function VQAChallenge({
                   }}
                 />
 
-                <div
-                  className="absolute overflow-hidden rounded-[4px] border border-[var(--foundation-neutral-880)] bg-white/60"
-                  style={{
-                    left: 252,
-                    top: 150,
-                    width: 20,
-                    height: 170,
-                  }}
-                >
-                  <div className="absolute left-1/2 top-[3px] h-[38px] w-[16px] -translate-x-1/2 rounded-[4px] border border-[var(--foundation-primary-100)] bg-[linear-gradient(180deg,var(--foundation-primary-700)_0%,var(--foundation-primary-500)_100%)]" />
+                {phase !== 'INSTRUCTION' && (
                   <div
-                    className="absolute left-1/2 h-[14px] w-[14px] -translate-x-1/2 rounded-full border border-[var(--foundation-primary-600)] bg-white"
-                    style={{ top: gaugeThumbTop }}
-                  />
-                </div>
+                    className="absolute overflow-hidden rounded-[4px] border border-[var(--foundation-neutral-880)] bg-white/60"
+                    style={{
+                      left: VERTICAL_INDICATOR_TRACK.x,
+                      top: VERTICAL_INDICATOR_TRACK.y,
+                      width: VERTICAL_INDICATOR_TRACK.width,
+                      height: VERTICAL_INDICATOR_TRACK.height,
+                    }}
+                  >
+                    <div className="absolute left-1/2 top-[3px] h-[44px] w-[20px] -translate-x-1/2 rounded-[4px] border border-[var(--foundation-primary-100)] bg-[linear-gradient(180deg,var(--foundation-primary-700)_0%,var(--foundation-primary-500)_100%)]" />
+                    <div
+                      className="absolute left-1/2 h-[14px] w-[14px] -translate-x-1/2 rounded-full border border-[var(--foundation-primary-600)] bg-white"
+                      style={{ top: gaugeThumbTop }}
+                    />
+                  </div>
+                )}
 
                 {roundSetup && (phase === 'ACTIVE_PLAY' || phase === 'SUCCESS' || phase === 'FAIL') && (
                   <>
+                    {phase === 'ACTIVE_PLAY' && (
+                      <>
+                        <div
+                          className="absolute rounded-full bg-[rgba(255,106,102,0.34)]"
+                          style={{
+                            left: resolvedLandingPoint.x - targetGuideSize / 2,
+                            top: resolvedLandingPoint.y - targetGuideSize / 2,
+                            width: targetGuideSize,
+                            height: targetGuideSize,
+                          }}
+                        />
+                        <div
+                          className="absolute rounded-full bg-white"
+                          style={{
+                            left: resolvedLandingPoint.x - TARGET_GUIDE_MIN_SIZE / 2,
+                            top: resolvedLandingPoint.y - TARGET_GUIDE_MIN_SIZE / 2,
+                            width: TARGET_GUIDE_MIN_SIZE,
+                            height: TARGET_GUIDE_MIN_SIZE,
+                          }}
+                        />
+                      </>
+                    )}
                     <div
                       className="absolute rounded-full bg-black/40 blur-[2px]"
                       style={{
@@ -805,7 +900,7 @@ export function VQAChallenge({
                         filter: 'drop-shadow(0 6px 8px rgba(15,23,42,0.35))',
                       }}
                     >
-                      <BaseballIndicatorIcon />
+                      <BaseballIndicatorIcon sizes={`${Math.ceil(ballDiameter)}px`} />
                     </div>
                   </>
                 )}
@@ -831,7 +926,7 @@ export function VQAChallenge({
                       alt=""
                       fill
                       sizes={`${CATCH_BALL_CONFIG.gloveWidth}px`}
-                      className="h-full w-full object-contain drop-shadow-[0_7px_10px_rgba(0,0,0,0.45)]"
+                      className="h-full w-full object-contain opacity-[0.62] drop-shadow-[0_7px_10px_rgba(0,0,0,0.45)]"
                       draggable={false}
                       aria-hidden="true"
                     />
@@ -839,7 +934,7 @@ export function VQAChallenge({
                 )}
 
                 {phase === 'INSTRUCTION' && (
-                  <div className="absolute inset-0 bg-black/55 backdrop-blur-[3px]">
+                  <div className="absolute inset-0">
                     <VqaInstructionPanel />
                   </div>
                 )}
@@ -858,10 +953,12 @@ export function VQAChallenge({
                   <div className="absolute inset-0 flex items-center justify-center bg-[rgba(15,23,42,0.54)] backdrop-blur-[2px]">
                     <div className="w-full max-w-[509px] rounded-2xl border-2 border-[var(--foundation-primary-400)] bg-[linear-gradient(180deg,#EFFFF9_0%,#F8FFFC_36%,#FFFFFF_100%)] px-9 py-8 text-center shadow-[0_0_28px_rgba(0,214,161,0.24)]">
                       <h3 className="text-[32px] font-semibold leading-[1.5] text-[var(--foundation-primary-500)] font-['Pretendard']">
-                        인증 통과
+                        {isPracticeMode ? '연습 성공' : '인증 통과'}
                       </h3>
                       <p className="mt-3 text-[24px] font-medium leading-[1.5] text-[var(--foundation-neutral-240)] font-['Pretendard']">
-                        잠시만 기다려주세요. 대기열로 이동합니다.
+                        {isPracticeMode
+                          ? '다시 시작하기를 눌러 같은 방식으로 계속 연습할 수 있어요.'
+                          : '잠시만 기다려주세요. 대기열로 이동합니다.'}
                       </p>
                       <span className="sr-only">
                         {statusMessage} Position {positionOk ? 'OK' : 'MISS'} / Timing{' '}
@@ -869,7 +966,7 @@ export function VQAChallenge({
                         {distanceToTarget !== null ? ` / 거리 ${distanceToTarget}px` : ''}
                         {dropOffsetMs !== null ? ` / 타이밍 ${dropOffsetMs}ms` : ''}
                       </span>
-                      {state.status === 'submitting' && (
+                      {state.status === 'submitting' && !isPracticeMode && (
                         <div className="mt-5 flex items-center justify-center gap-3 text-sm font-medium leading-5 text-[var(--foundation-primary-600)] font-['Pretendard']">
                           <div className="h-5 w-5 animate-spin rounded-full border-2 border-[var(--foundation-primary-100)] border-b-[var(--foundation-primary-600)]" />
                           <span>서버 검증 중...</span>
