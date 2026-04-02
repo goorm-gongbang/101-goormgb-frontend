@@ -543,10 +543,7 @@ export default function Components() {
       <Section title="Header">
         <ToneRow title="Header">
           <Header />
-          <Header
-            onMyInfoClick={() => console.log("내 정보")}
-            onMyTicketClick={() => console.log("내 티켓")}
-          />
+
         </ToneRow>
       </Section>
 
@@ -635,172 +632,15 @@ export default function Components() {
           />
 
           {/* 기본 + shadow + outline */}
-          <MatchCard
-            elevated
-            withOutline
-            dateText="3월 28일"
-            timeText="토 · 14 : 00"
-            stadiumKo="대구 삼성 라이온즈 파크"
-            stadiumEn="DaeguSamsung Lions Park"
-            away={{
-              ko: "SSG 랜더스",
-              en: "SSG LANDERS",
-              dataLogo: "SSG",
-              logo: (
-                <IconPreview
-                  logoImg="https://i.postimg.cc/nhNmb3Nn/logo1.png"
-                  size="md"
-                />
-              ),
-            }}
-            home={{
-              ko: "기아 타이거즈",
-              en: "KIA TIGERS",
-              dataLogo: "기아",
-              logo: (
-                <IconPreview
-                  logoImg="https://i.postimg.cc/nhNmb3Nn/logo1.png"
-                  size="md"
-                />
-              ),
-            }}
-          />
+          
 
           {/* Coming Soon */}
-          <MatchCard
-            variant="comingSoon"
-            dateText="3월 28일"
-            timeText="토 · 14 : 00"
-            stadiumKo="대구 삼성 라이온즈 파크"
-            stadiumEn="DaeguSamsung Lions Park"
-            away={{
-              ko: "SSG 랜더스",
-              en: "SSG LANDERS",
-              dataLogo: "SSG",
-              logo: (
-                <IconPreview
-                  logoImg="https://i.postimg.cc/nhNmb3Nn/logo1.png"
-                  size="md"
-                />
-              ),
-            }}
-            home={{
-              ko: "기아 타이거즈",
-              en: "KIA TIGERS",
-              dataLogo: "기아",
-              logo: (
-                <IconPreview
-                  logoImg="https://i.postimg.cc/nhNmb3Nn/logo1.png"
-                  size="md"
-                />
-              ),
-            }}
-            overlayTopText="Coming Soon"
-            overlayMainText="3월 21일 16:00 오픈"
-          />
-
+          
           {/* Coming Soon + shadow + outline */}
-          <MatchCard
-            variant="comingSoon"
-            elevated
-            withOutline
-            dateText="3월 28일"
-            timeText="토 · 14 : 00"
-            stadiumKo="대구 삼성 라이온즈 파크"
-            stadiumEn="DaeguSamsung Lions Park"
-            away={{
-              ko: "SSG 랜더스",
-              en: "SSG LANDERS",
-              dataLogo: "SSG",
-              logo: (
-                <IconPreview
-                  logoImg="https://i.postimg.cc/nhNmb3Nn/logo1.png"
-                  size="md"
-                />
-              ),
-            }}
-            home={{
-              ko: "기아 타이거즈",
-              en: "KIA TIGERS",
-              dataLogo: "기아",
-              logo: (
-                <IconPreview
-                  logoImg="https://i.postimg.cc/nhNmb3Nn/logo1.png"
-                  size="md"
-                />
-              ),
-            }}
-            overlayTopText="Coming Soon"
-            overlayMainText="3월 21일 16:00 오픈"
-          />
+          
 
           {/* Sold Out */}
-          <MatchCard
-            variant="soldOut"
-            dateText="3월 28일"
-            timeText="토 · 14 : 00"
-            stadiumKo="대구 삼성 라이온즈 파크"
-            stadiumEn="DaeguSamsung Lions Park"
-            away={{
-              ko: "SSG 랜더스",
-              en: "SSG LANDERS",
-              dataLogo: "SSG",
-              logo: (
-                <IconPreview
-                  logoImg="https://i.postimg.cc/nhNmb3Nn/logo1.png"
-                  size="md"
-                />
-              ),
-            }}
-            home={{
-              ko: "기아 타이거즈",
-              en: "KIA TIGERS",
-              dataLogo: "기아",
-              logo: (
-                <IconPreview
-                  logoImg="https://i.postimg.cc/nhNmb3Nn/logo1.png"
-                  size="md"
-                />
-              ),
-            }}
-            overlayTopText="Sold Out"
-            overlayMainText="예매 마감"
-          />
-
-          {/* Sold Out + shadow + outline */}
-          <MatchCard
-            variant="soldOut"
-            elevated
-            withOutline
-            dateText="3월 28일"
-            timeText="토 · 14 : 00"
-            stadiumKo="대구 삼성 라이온즈 파크"
-            stadiumEn="DaeguSamsung Lions Park"
-            away={{
-              ko: "SSG 랜더스",
-              en: "SSG LANDERS",
-              dataLogo: "SSG",
-              logo: (
-                <IconPreview
-                  logoImg="https://i.postimg.cc/nhNmb3Nn/logo1.png"
-                  size="md"
-                />
-              ),
-            }}
-            home={{
-              ko: "기아 타이거즈",
-              en: "KIA TIGERS",
-              dataLogo: "기아",
-              logo: (
-                <IconPreview
-                  logoImg="https://i.postimg.cc/nhNmb3Nn/logo1.png"
-                  size="md"
-                />
-              ),
-            }}
-            overlayTopText="Sold Out"
-            overlayMainText="예매 마감"
-          />
+          
         </ToneRow>
       </Section>
 
@@ -860,7 +700,6 @@ export default function Components() {
         <ToneRow title="DateStripHeader">
           <TodayInitSelectableDateStrip
             onChange={(date) => {
-              console.log("선택된 날짜:", date);
             }}
           />
         </ToneRow>
@@ -877,7 +716,6 @@ export default function Components() {
                 size="md"
               />
             }
-            onButtonClick={() => console.log("상세 보기")}
           />
         </ToneRow>
       </Section>

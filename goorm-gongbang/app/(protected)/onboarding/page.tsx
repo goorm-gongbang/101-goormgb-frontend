@@ -182,7 +182,6 @@ export default function SeatStyleOnboardingPage() {
     (async () => {
       try {
         const data = await getOnboardingStatus();
-        console.log("[onboarding/status] data", data);
 
         if (Boolean(data?.onboardingStatus)) {
           const next = new URLSearchParams(sp.toString()).get("next");

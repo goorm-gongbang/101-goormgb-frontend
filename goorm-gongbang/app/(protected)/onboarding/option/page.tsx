@@ -218,7 +218,6 @@ export default function SeatStyleOnboardingOptionPage() {
       setMarketingAgreed(Boolean(consentMarketing));
 
       await saveOnboardingPreferences(body);
-      console.log("[onboarding/preferences] data", body);
 
       router.replace("/");
       setTimeout(() => reset(), 0);

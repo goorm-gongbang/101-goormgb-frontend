@@ -8,7 +8,7 @@ import { SquarePen, Check } from "lucide-react";
    개인정보 수정 폼
    - 계정 정보: 이메일(조회), 닉네임(수정), 본인 인증(조회)
    - 닉네임: 클릭 → input 전환, Enter/체크 아이콘으로 저장, ESC로 취소
-   - 저장 시 console.log + toast (API 미연동)
+   - 저장 시: toast (API 미연동)
 
    [TODO] API 연동 시
    - mock 데이터("트윈스심장", "twins@email.com") → 실제 유저 정보로 교체
@@ -25,7 +25,6 @@ export function ProfileEditForm() {
     const handleSave = () => {
         setNickname(tempNickname);
         setIsEditing(false);
-        console.log("Profile update saved:", tempNickname);
         toast.success("개인정보가 업데이트되었습니다");
     };
 
