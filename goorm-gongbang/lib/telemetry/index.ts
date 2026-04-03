@@ -151,6 +151,10 @@ export function useTelemetry(options: UseTelemetryOptions): TelemetryInstance {
     const stage = collector.getStage();
     const events = collector.flush();
 
+    if (events.length === 0) {
+      return 0;
+    }
+
     try {
       await api.sendTelemetry(matchId, stage, events);
       return events.length;
@@ -219,6 +223,7 @@ export function useTelemetry(options: UseTelemetryOptions): TelemetryInstance {
         throw new AIApiError('Not initialized', 0);
       }
 
+      setStage('VQA_CHALLENGE');
       await flushCurrentStageAndSend();
       const response = await api.verifyChallenge({
         matchId,

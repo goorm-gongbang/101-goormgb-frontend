@@ -347,6 +347,27 @@ export function VQAChallenge({
         }
 
         runAfterRoundFloor(() => {
+          if (result.reason === 'abnormal_pattern') {
+            setState({
+              status: 'error',
+              message: '비정상적인 입력 패턴이 감지되었습니다.',
+              reason: 'blocked',
+            });
+            return;
+          }
+
+          if (result.reason === 'expired_challenge') {
+            setStatusMessage('인증 상태를 갱신했습니다. 다시 시도해 주세요.');
+            void loadChallenge('인증 상태를 갱신했습니다. 다시 시도해 주세요.');
+            return;
+          }
+
+          if (result.reason === 'invalid_challenge') {
+            setStatusMessage('인증 상태를 갱신했습니다. 다시 시도해 주세요.');
+            void loadChallenge('인증 상태를 갱신했습니다. 다시 시도해 주세요.');
+            return;
+          }
+
           setState({
             status: 'error',
             message: '최대 시도 횟수를 초과했습니다.',
@@ -365,7 +386,7 @@ export function VQAChallenge({
         });
       }
     },
-    [beginRound, clearDeferredTransitionTimer, flowStartedAtMs, isPracticeMode, maxRetries, onSuccess, state, verifyChallenge],
+    [beginRound, clearDeferredTransitionTimer, flowStartedAtMs, isPracticeMode, loadChallenge, maxRetries, onSuccess, state, verifyChallenge],
   );
 
   const evaluateDrop = useCallback(
@@ -644,24 +665,22 @@ export function VQAChallenge({
   const isErrorState = state.status === 'error';
   const errorAccent =
     !isErrorState ? null : state.reason === 'max_attempts' || state.reason === 'blocked' ? 'red' : 'neutral';
-  const errorTitle =
-    !isErrorState
-      ? ''
-      : state.reason === 'max_attempts' || state.reason === 'blocked'
-        ? '인증 실패'
-        : '보안 확인을 진행할 수 없습니다.';
-  const errorDescription =
-    !isErrorState
-      ? []
-      : state.reason === 'max_attempts'
-        ? ['인증 가능 횟수를 초과했습니다.', '경기 상세 페이지에서 다시 예매를 진행해 주세요.']
-        : state.reason === 'blocked'
-          ? [
-              '비정상적인 입력 패턴이 감지되었습니다.',
-              '자동화 시도로 분류될 수 있는 패턴이 감지되어 현재 세션이 종료되었습니다.',
-            ]
-          : [state.message];
-  const errorConfirmLabel = errorAccent === 'red' ? '확인' : '다시 불러오기';
+  const errorTitle = !isErrorState
+    ? ''
+    : state.reason === 'max_attempts' || state.reason === 'blocked'
+      ? '인증 실패'
+      : '보안 확인을 진행할 수 없습니다.';
+  const errorDescription = !isErrorState
+    ? []
+    : state.reason === 'max_attempts'
+      ? ['인증 가능 횟수를 초과했습니다.', '경기 상세 페이지에서 다시 예매를 진행해 주세요.']
+      : state.reason === 'blocked'
+        ? [
+            '비정상적인 입력 패턴이 감지되었습니다.',
+            '자동화 시도로 분류될 수 있는 패턴이 감지되어 현재 세션이 종료되었습니다.',
+          ]
+        : [state.message];
+  const errorConfirmLabel = '확인';
   const terminalErrorCardClass =
     state.status === 'error' && state.reason === 'blocked' ? 'max-w-[703px] px-11 py-8' : 'max-w-[463px] px-9 py-8';
   const terminalErrorCopyClass =
