@@ -118,6 +118,7 @@ export function VQAChallenge({
 }: VQAChallengeProps): React.ReactElement {
   const { startChallenge, verifyChallenge } = useTelemetryContext();
   const isPracticeMode = mode === 'practice';
+  const showCloseControls = isPracticeMode;
   const instructionMessage = isPracticeMode ? PRACTICE_INSTRUCTION_MESSAGE : DEFAULT_INSTRUCTION_MESSAGE;
 
   const [state, setState] = useState<ChallengeState>(() =>
@@ -716,13 +717,15 @@ export function VQAChallenge({
               매크로/봇 방지를 위한 인증을 진행해주세요.
             </p>
           </div>
-          <button
-            type="button"
-            onClick={onCancel}
-            className="shrink-0 text-sm font-medium leading-5 text-[var(--foundation-neutral-520)] transition hover:text-[var(--foundation-neutral-240)]"
-          >
-            닫기
-          </button>
+          {showCloseControls && (
+            <button
+              type="button"
+              onClick={onCancel}
+              className="shrink-0 text-sm font-medium leading-5 text-[var(--foundation-neutral-520)] transition hover:text-[var(--foundation-neutral-240)]"
+            >
+              닫기
+            </button>
+          )}
         </div>
 
         {state.status === 'loading' && (
@@ -746,13 +749,15 @@ export function VQAChallenge({
                 {errorDescription[0]}
               </p>
               <div className="mt-6 flex justify-center gap-2">
-                <button
-                  type="button"
-                  onClick={onCancel}
-                  className="rounded-md border border-[var(--foundation-neutral-880)] px-4 py-2 text-sm font-medium leading-5 text-[var(--foundation-neutral-240)]"
-                >
-                  닫기
-                </button>
+                {showCloseControls && (
+                  <button
+                    type="button"
+                    onClick={onCancel}
+                    className="rounded-md border border-[var(--foundation-neutral-880)] px-4 py-2 text-sm font-medium leading-5 text-[var(--foundation-neutral-240)]"
+                  >
+                    닫기
+                  </button>
+                )}
                 <PrimaryButton type="button" size="lg" tone="strong" onClick={handleErrorConfirm}>
                   {errorConfirmLabel}
                 </PrimaryButton>

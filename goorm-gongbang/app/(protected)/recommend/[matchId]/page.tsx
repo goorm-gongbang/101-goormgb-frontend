@@ -1290,6 +1290,9 @@ function RecommendPageContent({ matchId }: { matchId: number | null }) {
           onCancel={() => {
             
             settleVqaPrompt(false);
+            if (matchId) {
+              router.push(`/matches/${matchId}`);
+            }
           }}
         />
       )}
