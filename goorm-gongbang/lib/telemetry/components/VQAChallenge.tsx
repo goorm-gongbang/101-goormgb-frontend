@@ -206,6 +206,7 @@ export function VQAChallenge({
 
       clearRetryTimer();
       clearDeferredTransitionTimer();
+      setFlowStartedAtMs(null);
       setState({ status: 'loading' });
 
       try {
