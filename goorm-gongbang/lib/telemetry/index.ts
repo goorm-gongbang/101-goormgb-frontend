@@ -36,7 +36,6 @@ import type {
   TelemetryEvent,
   ChallengeStartResponse,
   ChallengeVerifyInput,
-  ChallengeVerifyRequest,
   ChallengeVerifyResponse,
 } from './types';
 
@@ -154,15 +153,12 @@ export function useTelemetry(options: UseTelemetryOptions): TelemetryInstance {
 
     try {
       await api.sendTelemetry(matchId, stage, events);
-      if (debug) {
-        console.log(`[Telemetry] Sent ${events.length} events for stage ${stage}`);
-      }
       return events.length;
     } catch (error) {
       console.error('[Telemetry] Failed to send telemetry:', error);
       return 0;
     }
-  }, [matchId, debug]);
+  }, [matchId]);
 
   useEffect(() => {
     const runtime = {
