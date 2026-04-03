@@ -30,6 +30,7 @@ import { useEffect, useRef, useCallback, useState } from 'react';
 import { TelemetryCollector } from './collector';
 import { AITelemetryApi, AIApiError } from './api';
 import { registerTelemetryRuntime, unregisterTelemetryRuntime } from './runtime';
+import { resolveAiBaseUrl } from './baseUrl';
 import type {
   TelemetryConfig,
   TicketingStage,
@@ -39,6 +40,8 @@ import type {
   ChallengeVerifyResponse,
 } from './types';
 
+const DEFAULT_AI_BASE_URL = resolveAiBaseUrl();
+
 // ============================================================================
 // React Hook
 // ============================================================================
@@ -47,7 +50,7 @@ export interface UseTelemetryOptions {
   /** 경기 ID */
   matchId: number;
 
-  /** AI API base URL (기본: /ai) */
+  /** AI API base URL (기본: NEXT_PUBLIC_API_BASE/NEXT_PUBLIC_API_URL 기반) */
   aiBaseUrl?: string;
 
   /** 디버그 모드 */
@@ -92,7 +95,7 @@ export interface TelemetryInstance {
  * 사용자 행동을 수집하고, 필요한 시점에 현재 Stage 기준으로 AI Runtime에 전송
  */
 export function useTelemetry(options: UseTelemetryOptions): TelemetryInstance {
-  const { matchId, aiBaseUrl = '/ai', debug = false, autoStart = true } = options;
+  const { matchId, aiBaseUrl = DEFAULT_AI_BASE_URL, debug = false, autoStart = true } = options;
   const [stage, setStageState] = useState<TicketingStage>('QUEUE_ENTER_PRECLICK');
   const previousStageRef = useRef<TicketingStage>('QUEUE_ENTER_PRECLICK');
 
