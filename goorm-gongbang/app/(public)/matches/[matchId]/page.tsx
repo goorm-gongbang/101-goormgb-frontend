@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { SeatPreferenceRecommendCard } from "@/components/common/SeatPreferenceRecommendCard";
 import { BookingButton, TabButton } from "@/components/common/Button";
 import { MatchInfoTab } from "@/components/common/match-detail/tabs/MatchInfoTab";
@@ -21,7 +21,9 @@ import { PreferredZoneModal } from "@/components/common/PreferredZoneModal";
 import Image from "next/image";
 import { toast } from "sonner";
 import { useTelemetry } from "@/lib/telemetry";
-import { Info, ChevronRight } from "lucide-react";
+import { TelemetryProvider } from "@/lib/telemetry/context";
+import { VQAChallenge } from "@/lib/telemetry/components";
+import { CircleHelp } from "lucide-react";
 
 /* ===========================
     UI TYPES
@@ -142,9 +144,7 @@ export default function MatchDetailSectionResponsive({
 
   const [isPreferredZoneModalOpen, setIsPreferredZoneModalOpen] = useState(false);
   const [isLoginRequiredModalOpen, setIsLoginRequiredModalOpen] = useState(false);
-  const [isSecurityInfoOpen, setIsSecurityInfoOpen] = useState(false);
-
-  const securityInfoRef = useRef<HTMLDivElement | null>(null);
+  const [isPracticeVqaOpen, setIsPracticeVqaOpen] = useState(false);
 
   useEffect(() => {
     if (matchId === null) return;
@@ -162,25 +162,6 @@ export default function MatchDetailSectionResponsive({
           : [...prev, blockNum],
     );
   };
-
-  useEffect(() => {
-    if (!isSecurityInfoOpen) return;
-
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        securityInfoRef.current &&
-        !securityInfoRef.current.contains(event.target as Node)
-      ) {
-        setIsSecurityInfoOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [isSecurityInfoOpen]);
-
 
   /* 예매하기 버튼 클릭 */
   const handleRev = async () => {
@@ -626,43 +607,24 @@ export default function MatchDetailSectionResponsive({
                     countdownFormatter={mmssTwoDigitsMinutes}
                     onClick={handleRev}
                   />
-                </div>
-                <div className="inline-flex w-full items-center justify-center">
-                  <div className="inline-flex items-center justify-center gap-2">
-                    <div className="w-4 h-4 relative ">
-                      <div ref={securityInfoRef} className="relative">
-                        <button
-                          type="button"
-                          onClick={() => setIsSecurityInfoOpen((prev) => !prev)}
-                          className="cursor-pointer flex h-4 w-4 items-center justify-center"
-                          aria-expanded={isSecurityInfoOpen}
-                          aria-controls="security-info-tooltip"
-                        >
-                          <Info className="h-4 w-4 text-emerald-500" />
-                        </button>
-
-                        {/* 예매 전 보안 인증 INFO 모달 */}
-                        {isSecurityInfoOpen && (
-                          <div
-                            id="security-info-tooltip"
-                            className="absolute left-0 top-full z-20 mt-2 inline-flex w-84 flex-col items-start justify-start gap-2 rounded-lg bg-white p-3 shadow-[2px_3px_10px_0px_rgba(0,0,0,0.10)] outline outline-1 outline-offset-[-1px] outline-[var(--stroke-interactive-neutral-default)]"
-                          >
-                            <div className="text-sm font-semibold font-['Pretendard_Variable'] leading-5 text-[var(--foundation-neutral-240)]">
-                              보안 인증이란?
-                            </div>
-                            <div className="self-stretch text-sm font-normal font-['Pretendard_Variable'] leading-5 text-neutral-700">
-                              예매 진행 시 이미지 보안 인증이 필요해요. 실제 예매와 동일한 방식으로 진행되며,
-                              최대 3번의 기회가 주어져요. 미리 경험해두면 예매 시 더 빠르게 통과할 수 있어요.
-                            </div>
-                          </div>
-                        )}
-                      </div>
-
-                    </div>
-                    <div className="flex items-center justify-center gap-1">
-                      <div className="text-center text-emerald-500 text-sm font-semibold font-['Pretendard_Variable'] leading-5">예매 전 보안 인증을 미리 경험해보세요</div>
-                      <div className="w-4 h-4 relative overflow-hidden">
-                        <ChevronRight className="w-4 h-4 absolute text-emerald-500" />
+                  <div className="relative mt-3 flex justify-center">
+                    <div className="group relative inline-flex">
+                      <button
+                        type="button"
+                        onClick={() => setIsPracticeVqaOpen(true)}
+                        className="inline-flex items-center gap-1 text-sm font-medium leading-5 text-[var(--foundation-primary-500)] transition hover:text-[var(--foundation-primary-600)]"
+                      >
+                        <CircleHelp className="h-4 w-4 shrink-0" />
+                        <span>예매 전 보안 인증을 미리 경험해보세요</span>
+                        <span aria-hidden="true">{'>'}</span>
+                      </button>
+                      <div className="pointer-events-none absolute left-1/2 top-full z-20 mt-2 w-[320px] -translate-x-1/2 rounded-2xl border border-[var(--foundation-neutral-880)] bg-white px-4 py-3 text-left opacity-0 shadow-[0_8px_20px_rgba(0,0,0,0.08)] transition duration-150 group-hover:opacity-100">
+                        <p className="text-sm font-semibold leading-5 text-[var(--foundation-neutral-240)]">
+                          보안 인증이란?
+                        </p>
+                        <p className="mt-2 text-xs font-medium leading-5 text-[var(--foundation-neutral-400)]">
+                          예매 진행 시 사이버 보안 인증이 필요해요. 실제 예매와 동일한 방식으로 진행되며, 최대 3번의 기회가 주어져요. 미리 경험해두면 예매 시 더 쉽게 통과할 수 있어요.
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -691,6 +653,16 @@ export default function MatchDetailSectionResponsive({
           open={isLoginRequiredModalOpen}
           onClose={() => setIsLoginRequiredModalOpen(false)}
         />
+      )}
+
+      {isPracticeVqaOpen && matchId !== null && (
+        <TelemetryProvider matchId={matchId} autoStart={false}>
+          <VQAChallenge
+            mode="practice"
+            onSuccess={() => {}}
+            onCancel={() => setIsPracticeVqaOpen(false)}
+          />
+        </TelemetryProvider>
       )}
     </div>
   );

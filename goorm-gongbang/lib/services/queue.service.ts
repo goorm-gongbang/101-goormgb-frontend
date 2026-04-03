@@ -6,7 +6,10 @@
 
 import { API_BASE_URL } from "@/lib/api/config";
 import { auth } from "@/lib/api/fetch";
-import { flushTelemetryBeforeProtectedRequest } from "@/lib/telemetry/runtime";
+import {
+  flushTelemetryBeforeProtectedRequest,
+  setTelemetryStage,
+} from "@/lib/telemetry/runtime";
 import type {
   QueueEnterResponse,
   QueueStatusResponse,
@@ -24,6 +27,7 @@ export type {
 export const enterQueue = async (matchId: string | number) => {
   // AI telemetry 연동: ext_authz가 queue enter를 평가하기 전에
   // 현재 stage raw batch를 먼저 AI 서버에 반영한다.
+  setTelemetryStage("QUEUE_ENTER_PRECLICK");
   await flushTelemetryBeforeProtectedRequest();
 
   return auth.post<QueueEnterResponse>(
