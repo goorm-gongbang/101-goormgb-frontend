@@ -40,6 +40,8 @@ import type {
   ChallengeVerifyResponse,
 } from './types';
 
+const DEFAULT_AI_BASE_URL = resolveAiBaseUrl();
+
 // ============================================================================
 // React Hook
 // ============================================================================
@@ -93,7 +95,7 @@ export interface TelemetryInstance {
  * 사용자 행동을 수집하고, 필요한 시점에 현재 Stage 기준으로 AI Runtime에 전송
  */
 export function useTelemetry(options: UseTelemetryOptions): TelemetryInstance {
-  const { matchId, aiBaseUrl = resolveAiBaseUrl(), debug = false, autoStart = true } = options;
+  const { matchId, aiBaseUrl = DEFAULT_AI_BASE_URL, debug = false, autoStart = true } = options;
   const [stage, setStageState] = useState<TicketingStage>('QUEUE_ENTER_PRECLICK');
   const previousStageRef = useRef<TicketingStage>('QUEUE_ENTER_PRECLICK');
 
@@ -152,16 +154,18 @@ export function useTelemetry(options: UseTelemetryOptions): TelemetryInstance {
     const stage = collector.getStage();
     const events = collector.flush();
 
+    if (events.length === 0) {
+      return 0;
+    }
+
     try {
       await api.sendTelemetry(matchId, stage, events);
-      if (debug) {
-      }
       return events.length;
     } catch (error) {
       console.error('[Telemetry] Failed to send telemetry:', error);
       return 0;
     }
-  }, [matchId, debug]);
+  }, [matchId]);
 
   useEffect(() => {
     const runtime = {
@@ -222,6 +226,7 @@ export function useTelemetry(options: UseTelemetryOptions): TelemetryInstance {
         throw new AIApiError('Not initialized', 0);
       }
 
+      setStage('VQA_CHALLENGE');
       await flushCurrentStageAndSend();
       const response = await api.verifyChallenge({
         matchId,

@@ -150,7 +150,7 @@ export default function Page() {
   }, [params]);
 
   return (
-    <TelemetryProvider matchId={matchId ?? 0} autoStart={matchId !== null}>
+    <TelemetryProvider matchId={matchId ?? 0} autoStart={false}>
       <RecommendPageContent key={matchId ?? "unknown-match"} matchId={matchId} />
     </TelemetryProvider>
   );
@@ -159,7 +159,7 @@ export default function Page() {
 function RecommendPageContent({ matchId }: { matchId: number | null }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { setStage } = useTelemetryContext();
+  const { setStage, start, stop } = useTelemetryContext();
 
   const recommendationEnabled = searchParams.get("recommendationEnabled") === "true";
   const initialQueueRank = searchParams.get("queueRank")
@@ -332,11 +332,16 @@ function RecommendPageContent({ matchId }: { matchId: number | null }) {
   }, [clearQueuePolling, matchId, queueRestoreKey, router]);
 
   useEffect(() => {
-    if (matchId === null) return;
-    // AI telemetry 연동: 현재 화면을 좌석 탐색 구간으로만 라벨링한다.
-    // 기존 좌석 추천/선점 비즈니스 로직에는 관여하지 않는다.
+    if (matchId === null || queueStatus !== "READY") {
+      stop();
+      return;
+    }
+
+    // 대기열 WAITING 구간에서는 수집하지 않고,
+    // 실제 좌석 탐색에 진입하는 시점부터 seat telemetry를 켠다.
+    start();
     setStage("SEAT_STAGE");
-  }, [matchId, setStage]);
+  }, [matchId, queueStatus, setStage, start, stop]);
 
   useEffect(() => {
     return () => {
@@ -1290,6 +1295,9 @@ function RecommendPageContent({ matchId }: { matchId: number | null }) {
           onCancel={() => {
             
             settleVqaPrompt(false);
+            if (matchId) {
+              router.push(`/matches/${matchId}`);
+            }
           }}
         />
       )}
