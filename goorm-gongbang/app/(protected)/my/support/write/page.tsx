@@ -101,7 +101,7 @@ export default function SupportWritePage() {
         await confirmInquiryFile(inquiryId, { fileKey });
     };
 
-    const isFormValid = !!type && title.trim().length > 0 && content.trim().length > 0 && isPhoneValid && imageFiles.length > 0;
+    const isFormValid = !!type && title.trim().length > 0 && content.trim().length > 0 && isPhoneValid;
 
     const handleSubmit = async () => {
         if (!type) return;
