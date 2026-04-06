@@ -267,7 +267,6 @@ export default function SupportWritePage() {
                                 ref={fileInputRef}
                                 type="file"
                                 accept="image/*"
-                                multiple
                                 onChange={handleImageChange}
                                 className="h-14 w-full rounded-[12px] border-[#E0E0E0] pr-12 px-4 text-[15px]"
                             />
