@@ -87,14 +87,18 @@ export default function SupportWritePage() {
             fileName: file.name,
         });
 
+        const contentType = file.type;
+        if (!contentType) {
+            throw new Error("파일 형식을 확인할 수 없습니다.");
+        }
+
         const uploadResponse = await fetch(presignedUrl, {
             method: "PUT",
-            headers: file.type ? { "Content-Type": file.type } : undefined,
+            headers: { "Content-Type": file.type },
             body: file,
         });
 
         if (!uploadResponse.ok) {
-            toast.error("첨부파일 업로드에 실패.");
             throw new Error("첨부파일 업로드에 실패했습니다.");
         }
 
