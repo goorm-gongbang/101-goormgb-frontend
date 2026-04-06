@@ -83,8 +83,13 @@ export default function SupportWritePage() {
     };
 
     const uploadInquiryImage = async (inquiryId: number, file: File) => {
+        console.log("[uploadInquiryImage] before issueInquiryPresignedUrl");
         const { presignedUrl, fileKey } = await issueInquiryPresignedUrl(inquiryId, {
             fileName: file.name,
+        });
+        console.log("[uploadInquiryImage] after issueInquiryPresignedUrl", {
+            presignedUrl,
+            fileKey,
         });
 
         const contentType = file.type;
@@ -102,7 +107,9 @@ export default function SupportWritePage() {
             throw new Error("첨부파일 업로드에 실패했습니다.");
         }
 
+        console.log("[uploadInquiryImage] before confirmInquiryFile");
         await confirmInquiryFile(inquiryId, { fileKey });
+        console.log("[uploadInquiryImage] after confirmInquiryFile");
     };
 
     const isFormValid = !!type && title.trim().length > 0 && content.trim().length > 0 && isPhoneValid;
@@ -120,12 +127,15 @@ export default function SupportWritePage() {
                 content: content.trim(),
                 phoneNumber: phoneNumber.trim(),
             };
-
+            console.log("[handleSubmit] before createInquiry");
             const result = await createInquiry(body);
+            console.log("[handleSubmit] after createInquiry", result);
 
             const image = imageFiles[0];
             if (image) {
+                console.log("[handleSubmit] before uploadInquiryImage");
                 await uploadInquiryImage(result.inquiryId, image);
+                console.log("[handleSubmit] after uploadInquiryImage");
             }
 
             toast.success("문의가 접수되었습니다.");
