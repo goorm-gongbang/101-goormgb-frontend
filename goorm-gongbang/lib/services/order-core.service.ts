@@ -157,7 +157,7 @@ export const confirmInquiryFile = (
   inquiryId: number,
   body: ConfirmInquiryFileRequest,
 ) =>
-  auth.patch<string, ConfirmInquiryFileRequest>(
+  auth.patch<void, ConfirmInquiryFileRequest>(
     `${API_BASE_URL}/order/mypage/inquiries/${inquiryId}/file`,
     body,
   );
