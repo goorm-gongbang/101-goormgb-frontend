@@ -29,7 +29,7 @@ export function InquiryItem({ item, isLast }: InquiryItemProps) {
                 type="button"
                 onClick={() => setIsExpanded(!isExpanded)}
                 className={cn(
-                    "w-full flex items-center justify-between px-10 py-7 text-left hover:bg-gray-50/50 transition-colors group",
+                    "w-full flex items-center justify-between px-3 py-5 text-left hover:bg-gray-50/50 transition-colors group",
                 )}
             >
                 <div className="flex items-center gap-5 overflow-hidden">

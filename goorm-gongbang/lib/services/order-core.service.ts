@@ -27,7 +27,12 @@ import type {
   ProcessPaymentRequest,
   ProcessPaymentResponse,
   CreateCashReceiptRequest,
-  CreateCashReceiptResponse
+  CreateCashReceiptResponse,
+  CreateInquiryRequest,
+  CreateInquiryResponse,
+  IssueInquiryPresignedUrlRequest,
+  IssueInquiryPresignedUrlResponse,
+  ConfirmInquiryFileRequest,
 } from "@/lib/types";
 
 // Re-export types for convenience
@@ -127,5 +132,32 @@ export const createCashReceipt = (
 ) =>
   auth.post<CreateCashReceiptResponse, CreateCashReceiptRequest>(
     `${API_BASE_URL}/order/mypage/orders/${orderId}/cash-receipt`,
+    body,
+  );
+
+/* 1대1 문의 작성 */
+export const createInquiry = (body: CreateInquiryRequest) =>
+  auth.post<CreateInquiryResponse, CreateInquiryRequest>(
+    `${API_BASE_URL}/order/mypage/inquiries`,
+    body,
+  );
+
+/* 1대1 문의 이미지 */
+export const issueInquiryPresignedUrl = (
+  inquiryId: number,
+  body: IssueInquiryPresignedUrlRequest,
+) =>
+  auth.post<IssueInquiryPresignedUrlResponse, IssueInquiryPresignedUrlRequest>(
+    `${API_BASE_URL}/order/mypage/inquiries/${inquiryId}/presigned-url`,
+    body,
+  );
+
+/* 문의 첨부파일 확정 */
+export const confirmInquiryFile = (
+  inquiryId: number,
+  body: ConfirmInquiryFileRequest,
+) =>
+  auth.patch<string, ConfirmInquiryFileRequest>(
+    `${API_BASE_URL}/order/mypage/inquiries/${inquiryId}/file`,
     body,
   );
