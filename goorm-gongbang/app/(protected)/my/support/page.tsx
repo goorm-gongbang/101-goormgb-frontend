@@ -111,11 +111,12 @@ export default function SupportPage() {
 
                 {/* 문의한 내용 섹션 */}
                 <div className="flex flex-col gap-6">
-                    <div 
+                    <button 
+                        type="button"
                         onClick={() => router.push("/my/support/write")}
-                        className="cursor-pointer self-stretch px-8 py-6 bg-[var(--background-white)] rounded-[20px] outline outline-1 outline-offset-[-1px] outline-[var(--stroke-interactive-neutral-default)] inline-flex flex-col justify-start items-start gap-4">
+                        className="cursor-pointer self-stretch px-8 py-6 bg-[var(--background-white)] rounded-[20px] outline outline-1 outline-offset-[-1px] outline-[var(--stroke-interactive-neutral-default)] inline-flex flex-col justify-start items-start gap-4 text-left">
                         <div className="justify-start text-black text-xl font-semibold font-['Pretendard_Variable'] leading-8">1:1 문의작성</div>
-                    </div>
+                    </button>
 
                     <div className="bg-white rounded-xl border border-[#E9ECEF] overflow-hidden px-8 py-6">
                         <div className="flex items-center justify-between mb-4">
