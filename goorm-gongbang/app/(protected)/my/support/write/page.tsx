@@ -96,13 +96,12 @@ export default function SupportWritePage() {
         if (!contentType) {
             throw new Error("파일 형식을 확인할 수 없습니다.");
         }
-        const contentDisposition = `inline; filename="${file.name}"`;
 
         const uploadResponse = await fetch(presignedUrl, {
             method: "PUT",
             headers: { 
                 "Content-Type": file.type,
-                "Content-Disposition": contentDisposition },
+                "Content-Disposition": "attachment" },
             body: file,
         });
 
