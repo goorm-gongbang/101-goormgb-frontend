@@ -100,7 +100,9 @@ export default function SupportWritePage() {
 
         const uploadResponse = await fetch(presignedUrl, {
             method: "PUT",
-            headers: { "Content-Type": file.type, contentDisposition },
+            headers: { 
+                "Content-Type": file.type,
+                "Content-Disposition": contentDisposition },
             body: file,
         });
 
