@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
 import { RotateCcw } from "lucide-react";
-import { QrCode } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
+import { getTicketQr } from "@/lib/services";
+import { ApiError } from "@/lib/api/error";
+import type { TicketQrData } from "@/lib/types";
 
 export interface TicketInfo {
     matchTitle: string;
@@ -22,35 +24,55 @@ interface TicketDetailModalProps {
     isOpen: boolean;
     onClose: () => void;
     ticketInfo: TicketInfo | null;
+    ticketId?: number;
 }
 
-export function TicketDetailModal({ isOpen, onClose, ticketInfo }: TicketDetailModalProps) {
+export function TicketDetailModal({ isOpen, onClose, ticketInfo, ticketId }: TicketDetailModalProps) {
     const [mounted, setMounted] = useState(false);
-    const [timeLeft, setTimeLeft] = useState(180); // 3분 = 180초
+    const [timeLeft, setTimeLeft] = useState(0);
     const [refreshKey, setRefreshKey] = useState(0);
+    const [qrData, setQrData] = useState<TicketQrData | null>(null);
+    const [qrLoading, setQrLoading] = useState(false);
+    const [qrUnavailableMessage, setQrUnavailableMessage] = useState<string | null>(null);
 
     useEffect(() => {
         setMounted(true);
     }, []);
 
+    // QR 데이터 fetch
     useEffect(() => {
-        let timer: NodeJS.Timeout;
-        if (isOpen) {
-            setTimeLeft(180); // 열릴 때마다 3분 초기화
-            timer = setInterval(() => {
-                setTimeLeft((prev) => {
-                    if (prev <= 1) {
-                        clearInterval(timer);
-                        return 0;
-                    }
-                    return prev - 1;
-                });
-            }, 1000);
-        }
-        return () => {
-            if (timer) clearInterval(timer);
-        };
-    }, [isOpen, refreshKey]);
+        if (!isOpen || !ticketId || ticketInfo?.status === "UNDER_REVIEW") return;
+        setQrData(null);
+        setQrUnavailableMessage(null);
+        setQrLoading(true);
+        getTicketQr(ticketId)
+            .then((data) => {
+                setQrData(data);
+                const remaining = Math.max(0, Math.floor((new Date(data.expiresAt).getTime() - Date.now()) / 1000));
+                setTimeLeft(remaining);
+            })
+            .catch((err) => {
+                if (err instanceof ApiError && err.status === 400) {
+                    setQrUnavailableMessage(err.message || "아직 입장 가능 시간이 아닙니다.");
+                }
+            })
+            .finally(() => setQrLoading(false));
+    }, [isOpen, ticketId, refreshKey]);
+
+    // 카운트다운
+    useEffect(() => {
+        if (!isOpen || !qrData || timeLeft <= 0) return;
+        const timer = setInterval(() => {
+            setTimeLeft((prev) => {
+                if (prev <= 1) {
+                    clearInterval(timer);
+                    return 0;
+                }
+                return prev - 1;
+            });
+        }, 1000);
+        return () => clearInterval(timer);
+    }, [isOpen, qrData]);
 
     if (!mounted || !isOpen || !ticketInfo) return null;
 
@@ -72,6 +94,12 @@ export function TicketDetailModal({ isOpen, onClose, ticketInfo }: TicketDetailM
         const m = Math.floor(seconds / 60);
         const s = seconds % 60;
         return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+    };
+
+    const formatExpiresAt = (iso: string) => {
+        const d = new Date(iso);
+        const pad = (n: number) => String(n).padStart(2, "0");
+        return `${d.getFullYear()}.${pad(d.getMonth() + 1)}.${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
     };
 
     const handleRefresh = () => {
@@ -133,7 +161,7 @@ export function TicketDetailModal({ isOpen, onClose, ticketInfo }: TicketDetailM
                                         본인이 직접 진행한 예매라면<br />
                                         고객센터로 문의해 주세요.
                                     </p>
-                                    <button 
+                                    <button
                                         onClick={() => window.location.href = "/my/support"}
                                         className="mt-4 px-6 py-2.5 rounded-[12px] border border-[#DEDEDE] text-[14px] font-bold text-[#666] hover:bg-gray-50 transition-colors"
                                     >
@@ -142,32 +170,47 @@ export function TicketDetailModal({ isOpen, onClose, ticketInfo }: TicketDetailM
                                 </div>
                             ) : (
                                 <>
-                                    {/* 실 QR 코드 이미지 */}
+                                    {/* QR 코드 영역 */}
                                     <div className="w-[190px] h-[190px] mb-4 flex items-center justify-center relative">
-                                        <Image
-                                            src="/qr-code.svg"
-                                            alt="QR Code"
-                                            fill
-                                            className={`object-contain transition-opacity duration-300 ${timeLeft === 0 ? "opacity-20" : ""}`}
-                                            unoptimized
-                                        />
-                                        {timeLeft === 0 && (
-                                            <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                                <button
-                                                    onClick={handleRefresh}
-                                                    className="flex flex-col items-center gap-2 group"
-                                                >
-                                                    <div className="w-12 h-12 rounded-full bg-black/5 flex items-center justify-center group-hover:bg-black/10 transition-colors">
-                                                        <RotateCcw className="text-[#333]" size={24} strokeWidth={2} />
-                                                    </div>
-                                                    <span className="text-[14px] font-bold text-[#333]">새로고침</span>
-                                                </button>
+                                        {qrLoading ? (
+                                            <div className="w-full h-full flex items-center justify-center">
+                                                <div className="w-10 h-10 border-4 border-[#E8E8E8] border-t-[var(--foundation-primary-500)] rounded-full animate-spin" />
                                             </div>
-                                        )}
+                                        ) : qrUnavailableMessage ? (
+                                            <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-center">
+                                                <p className="text-[13px] font-bold text-[#888]">{qrUnavailableMessage}</p>
+                                            </div>
+                                        ) : qrData ? (
+                                            <>
+                                                <div className={`transition-opacity duration-300 ${timeLeft === 0 ? "opacity-20" : ""}`}>
+                                                    <QRCodeSVG value={qrData.qrToken} size={190} />
+                                                </div>
+                                                {timeLeft === 0 && (
+                                                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                                        <button
+                                                            onClick={handleRefresh}
+                                                            className="flex flex-col items-center gap-2 group"
+                                                        >
+                                                            <div className="w-12 h-12 rounded-full bg-black/5 flex items-center justify-center group-hover:bg-black/10 transition-colors">
+                                                                <RotateCcw className="text-[#333]" size={24} strokeWidth={2} />
+                                                            </div>
+                                                            <span className="text-[14px] font-bold text-[#333]">새로고침</span>
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </>
+                                        ) : null}
                                     </div>
-                                    <p className="text-[#999] text-[15px] font-medium">
-                                        유효 시간 <span className="font-medium text-[#999] ml-1">{formatTimeLeft(timeLeft)}</span>
-                                    </p>
+                                    {qrData && timeLeft > 0 && (
+                                        <p className="text-[#999] text-[15px] font-medium">
+                                            유효 시간 <span className="font-medium text-[#999] ml-1">{formatTimeLeft(timeLeft)}</span>
+                                        </p>
+                                    )}
+                                    {qrData && (
+                                        <p className="text-[#bbb] text-[12px] mt-1">
+                                            만료: {formatExpiresAt(qrData.expiresAt)}
+                                        </p>
+                                    )}
                                 </>
                             )}
                         </div>

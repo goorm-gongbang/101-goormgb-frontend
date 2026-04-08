@@ -20,3 +20,6 @@ export * from "./recommendation.types";
 
 // Seat Service
 export * from "./seat.types";
+
+// Mypage Service
+export * from "./mypage.types";
