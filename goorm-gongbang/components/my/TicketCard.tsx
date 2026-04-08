@@ -3,11 +3,19 @@ import { TicketInfo } from "@/components/my/TicketDetailModal";
 
 export type TicketStatus = "PAYMENT_WAITING" | "RESERVED" | "UNDER_REVIEW";
 
+export interface TicketActions {
+    canDeposit: boolean;
+    canCancel: boolean;
+    canViewDetail: boolean;
+}
+
 export interface Ticket extends TicketInfo {
     id: string;
-    dDay: string; // Legacy/API string, will be dynamically calculated
+    dDay: string;
     status: TicketStatus;
     dateStr: string;
+    actions?: TicketActions;
+    statusLabel?: string;
 }
 
 interface TicketCardProps {
@@ -18,95 +26,85 @@ interface TicketCardProps {
 }
 
 export function TicketCard({ ticket, onClick, onDeposit, onCancel }: TicketCardProps) {
-    // 오늘 이전 날짜 판별 (과거 경기 체크)
-    const matchDateStr = ticket.dateStr.split(" (")[0].replace(/\./g, "-");
-    const matchDate = new Date(matchDateStr);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const timeDiff = matchDate.getTime() - today.getTime();
-    const diffDays = Math.ceil(timeDiff / (1000 * 3600 * 24));
-    const isPastMatch = diffDays < 0;
+    const isWaiting = ticket.actions ? ticket.actions.canDeposit : ticket.status === "PAYMENT_WAITING";
+    const isUnderReview = ticket.status === "UNDER_REVIEW";
 
-    let calculatedDDay = "";
-    if (diffDays === 0) {
-        calculatedDDay = "D-Day";
-    } else if (diffDays > 0) {
-        calculatedDDay = `D-${diffDays}`;
-    } else {
-        calculatedDDay = `D+${Math.abs(diffDays)}`;
-    }
-
-    // Badge Styles
-    const isDDay = calculatedDDay === "D-Day";
+    // D-Day 뱃지 표시
+    const dDayLabel = ticket.dDay;
+    const isDDay = dDayLabel === "D-Day";
     const dDayColor = isDDay ? "var(--foundation-pink-500)" : "var(--foundation-primary-500)";
 
-    // Card Styles
-    const isWaiting = ticket.status === "PAYMENT_WAITING";
-    const isUnderReview = ticket.status === "UNDER_REVIEW";
+    const canCancel = !isDDay && (ticket.actions ? ticket.actions.canCancel : ticket.status === "RESERVED");
+
+    // 클릭 가능 여부 (입금 대기 상태는 클릭 불가)
+    const isClickable = !isWaiting;
 
     return (
         <div
-            className={`bg-white rounded-xl p-6 border border-[#E8E8E8] flex flex-col transition-all ${!isWaiting ? "hover:border-[var(--foundation-primary-500)] hover:shadow-sm cursor-pointer" : ""}`}
-            onClick={!isWaiting ? () => onClick(ticket) : undefined}
+            className={`bg-white rounded-xl p-6 border border-[#E8E8E8] flex flex-col transition-all ${isClickable ? "hover:border-[var(--foundation-primary-500)] hover:shadow-sm cursor-pointer" : ""}`}
+            onClick={isClickable ? () => onClick(ticket) : undefined}
         >
             {/* 상단: 뱃지들 & 우측 버튼 */}
             <div className="flex justify-between items-center mb-5">
                 <div className="flex items-center gap-2">
                     {/* D-Day 뱃지 */}
                     <div
-                        className={`px-[10px] py-[3px] rounded-[100px] border text-[13px] font-bold`}
+                        className="px-[10px] py-[3px] rounded-[100px] border text-[13px] font-bold"
                         style={{ color: dDayColor, borderColor: dDayColor, backgroundColor: "#ffffff" }}
                     >
-                        {calculatedDDay}
+                        {dDayLabel}
                     </div>
                     {/* 입금 대기 뱃지 */}
                     {isWaiting && (
-                        <div
-                            className="px-[10px] py-[4px] rounded-[100px] text-white text-[13px] font-bold bg-[var(--foundation-primary-500)]"
-                        >
-                            입금 대기
+                        <div className="px-[10px] py-[4px] rounded-[100px] text-white text-[13px] font-bold bg-[var(--foundation-primary-500)]">
+                            {ticket.statusLabel ?? "입금 대기"}
                         </div>
                     )}
                     {/* 정밀 확인 중 뱃지 */}
                     {isUnderReview && (
-                        <div
-                            className="px-[10px] py-[4px] rounded-[100px] text-white text-[13px] font-bold bg-[var(--foundation-orange-500)]"
-                        >
-                            정밀 확인 중
+                        <div className="px-[10px] py-[4px] rounded-[100px] text-white text-[13px] font-bold bg-[var(--foundation-orange-500)]">
+                            {ticket.statusLabel ?? "정밀 확인 중"}
                         </div>
                     )}
                 </div>
 
                 {/* 우측 상단 액션 버튼 */}
                 <div>
-                    {!isPastMatch && (
-                        isWaiting ? (
-                            <button
-                                className="flex items-center text-[15px] font-bold text-[var(--foundation-primary-500)] hover:underline"
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    onDeposit(ticket);
-                                }}
-                            >
-                                입금하기 <ChevronRight size={18} className="ml-0.5" />
-                            </button>
-                        ) : (
-                            <button
-                                className="flex items-center text-[15px] font-bold text-[#333333] hover:underline"
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    if (isUnderReview) {
-                                        // 문의하기 (Reservations 페이지와 동일하게 처리하도록 유도하거나, Support 페이지로 이동)
-                                        window.location.href = "/my/support";
-                                    } else {
-                                        onCancel(ticket);
-                                    }
-                                }}
-                            >
-                                {isUnderReview ? "문의하기" : "취소하기"} <ChevronRight size={18} className="ml-0.5" />
-                            </button>
-                        )
-                    )}
+                    {isWaiting ? (
+                        <button
+                            className="flex items-center text-[15px] font-bold text-[var(--foundation-primary-500)] hover:underline"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onDeposit(ticket);
+                            }}
+                        >
+                            입금하기 <ChevronRight size={18} className="ml-0.5" />
+                        </button>
+                    ) : canCancel ? (
+                        <button
+                            className="flex items-center text-[15px] font-bold text-[#333333] hover:underline"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onCancel(ticket);
+                            }}
+                        >
+                            취소하기 <ChevronRight size={18} className="ml-0.5" />
+                        </button>
+                    ) : isUnderReview ? (
+                        <button
+                            className="flex items-center text-[15px] font-bold text-[#333333] hover:underline"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                window.location.href = "/my/support";
+                            }}
+                        >
+                            문의하기 <ChevronRight size={18} className="ml-0.5" />
+                        </button>
+                    ) : ticket.status === "RESERVED" ? (
+                        <span className="text-[13px] font-medium text-[#999999]">
+                            당일 경기는 취소가 불가능합니다.
+                        </span>
+                    ) : null}
                 </div>
             </div>
 
