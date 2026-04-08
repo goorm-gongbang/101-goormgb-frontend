@@ -1,16 +1,16 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { ChevronLeft, ChevronDown, X } from "lucide-react";
+import { ChevronLeft, ChevronDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { useState, useRef, type ChangeEvent } from "react";
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
-import { PrimaryButton } from "@/components/common/Button";
-import { createInquiry, issueInquiryPresignedUrl, confirmInquiryFile } from "@/lib/services";
+import { ActionButton } from "@/components/common/Button";
+import { createInquiry, getAccountInfo } from "@/lib/services";
 import type { CreateInquiryRequest, InquiryCategory } from "@/lib/types";
 
 /* ===========================
@@ -53,58 +53,30 @@ export default function SupportWritePage() {
 
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const [isEditingWriter, setIsEditingWriter] = useState(false);
-    const [writerName, setWriterName] = useState("윤정빈");
-    const [writerEmail, setWriterEmail] = useState("playball123@gmail.com");
-    const [phoneNumber, setPhoneNumber] = useState("010-0000-0000");
+    const [writerName, setWriterName] = useState("");
+    const [writerEmail, setWriterEmail] = useState("");
+    const [phoneNumber, setPhoneNumber] = useState("");
+
+    useEffect(() => {
+        const fetchUserData = async () => {
+            try {
+                const data = await getAccountInfo();
+                setWriterName(data.nickname);
+                setWriterEmail(data.email);
+            } catch (error) {
+                console.error("Failed to fetch account info:", error);
+            }
+        };
+        fetchUserData();
+    }, []);
     const onlyDigits = (v: string) => v.replace(/\D/g, "");
     const phoneDigits = onlyDigits(phoneNumber);
-    const isPhoneValid = /^01[0-9]\d{7,8}$/.test(phoneDigits) && phoneDigits.length === 11;
+    const isPhoneValid = phoneNumber.length === 0 || (/^01[0-9]\d{7,8}$/.test(phoneDigits) && (phoneDigits.length === 10 || phoneDigits.length === 11));
     const formatPhone = (value: string) => {
         const digits = value.replace(/\D/g, "").slice(0, 11); // 숫자만, 최대 11자리
         if (digits.length < 4) return digits;
         if (digits.length < 8) return `${digits.slice(0, 3)}-${digits.slice(3)}`;
         return `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7)}`;
-    };
-    const [imageFiles, setImageFiles] = useState<File[]>([]);
-    const fileInputRef = useRef<HTMLInputElement | null>(null);
-
-    const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
-        const files = Array.from(e.target.files ?? []);
-        setImageFiles(files);
-    };
-
-    const handleClearImages = () => {
-        setImageFiles([]);
-
-        if (fileInputRef.current) {
-            fileInputRef.current.value = "";
-        }
-    };
-
-    const uploadInquiryImage = async (inquiryId: number, file: File) => {
-        const { presignedUrl, fileKey } = await issueInquiryPresignedUrl(inquiryId, {
-            fileName: file.name,
-        });
-
-        const contentType = file.type;
-        if (!contentType) {
-            throw new Error("파일 형식을 확인할 수 없습니다.");
-        }
-
-        const uploadResponse = await fetch(presignedUrl, {
-            method: "PUT",
-            headers: { 
-                "Content-Type": file.type,
-                "Content-Disposition": "attachment" },
-            body: file,
-        });
-
-        if (!uploadResponse.ok) {
-            throw new Error("첨부파일 업로드에 실패했습니다.");
-        }
-
-        await confirmInquiryFile(inquiryId, { fileKey });
     };
 
     const isFormValid = !!type && title.trim().length > 0 && content.trim().length > 0 && isPhoneValid;
@@ -113,50 +85,52 @@ export default function SupportWritePage() {
         if (!type) return;
         if (!isFormValid) return;
 
+        setIsSubmitting(true);
         try {
-            setIsSubmitting(true);
-
             const body: CreateInquiryRequest = {
                 category: CATEGORY_MAP[type],
                 title: title.trim(),
                 content: content.trim(),
                 phoneNumber: phoneNumber.trim(),
             };
-            const result = await createInquiry(body);
 
-            const image = imageFiles[0];
-            if (image) {
-                await uploadInquiryImage(result.inquiryId, image);
+            // 1단계: 문의 등록
+            let result: Awaited<ReturnType<typeof createInquiry>>;
+            try {
+                result = await createInquiry(body);
+            } catch (e) {
+                const error = e as { status?: number; message?: string };
+                if (error.status === 400) toast.error("요청 값 오류");
+                else if (error.status === 401) { toast.error("인증 필요"); router.push("/login"); }
+                else if (error.status === 404) toast.error("사용자를 찾을 수 없습니다.");
+                else toast.error(error.message ?? "문의 등록 중 오류가 발생했습니다.");
+                return;
             }
+
+            const inquiryId = result?.inquiryId;
+            if (!inquiryId) {
+                toast.error("문의 등록에 실패했습니다. 다시 시도해주세요.");
+                return;
+            }
+
+            // 목록 페이지에서 즉시 반영되도록 localStorage에 저장
+            const saved = localStorage.getItem("my-inquiries");
+            const existing = saved ? JSON.parse(saved) : [];
+            const newInquiry = {
+                id: inquiryId,
+                status: "WAITING",
+                statusLabel: "답변 대기",
+                category: type,
+                title: body.title,
+                description: body.content,
+                date: new Date().toLocaleDateString("ko-KR", { year: "numeric", month: "2-digit", day: "2-digit" }).replace(/\. /g, ".").replace(/\.$/, ""),
+                answer: null,
+            };
+            localStorage.setItem("my-inquiries", JSON.stringify([newInquiry, ...existing]));
 
             toast.success("문의가 접수되었습니다.");
+            router.refresh();
             router.push("/my/support");
-        } catch (e) {
-            const error = e as { status?: number; message?: string };
-
-            if (error.status === 400) {
-                toast.error("요청 값 오류");
-                return;
-            }
-            if (error.status === 401) {
-                toast.error("인증 필요");
-                router.push("/login");
-                return;
-            }
-            if (error.status === 403) {
-                toast.error("본인 문의 아님");
-                return;
-            }
-            if (error.status === 404) {
-                toast.error("사용자 없음");
-                return;
-            }
-            if (error.status === 413) {
-                toast.error("파일 크기 제한 초과");
-                return;
-            }
-
-            toast.error(error.message ?? "문의 등록 중 오류가 발생했습니다.");
         } finally {
             setIsSubmitting(false);
         }
@@ -200,7 +174,7 @@ export default function SupportWritePage() {
                     이전으로 돌아가기
                 </button>
 
-                <div className="flex flex-col gap-8 shadow-sm">
+                <div className="flex flex-col gap-8">
                     <h1 className="text-2xl font-bold tracking-tight text-[var(--text-normal-n240)] font-['Pretendard']">1:1 문의 작성</h1>
                     {/* 문의 유형 */}
                     <div className="self-stretch px-8 py-6 bg-white rounded-[20px] border border-[var(--stroke-interactive-neutral-default)] flex flex-col items-start gap-2">
@@ -264,82 +238,44 @@ export default function SupportWritePage() {
                             className="min-h-[240px] rounded-[12px] border border-[#E0E0E0] p-5 text-[15px] hover:border-[var(--foundation-primary-500)] focus-visible:ring-0 focus-visible:border-[var(--foundation-primary-500)] focus-visible:outline-none transition-all resize-none leading-relaxed"
                         />
 
-                        {/* 이미지 */}
-                        <Label className="text-[16px] font-bold text-[#333333] ml-1">이미지</Label>
 
-                        <div className="relative w-full">
-                            <Input
-                                ref={fileInputRef}
-                                type="file"
-                                accept="image/*"
-                                onChange={handleImageChange}
-                                className="h-14 w-full rounded-[12px] border-[#E0E0E0] pr-12 px-4 text-[15px]"
-                            />
-
-                            {imageFiles.length > 0 && (
-                                <button
-                                    type="button"
-                                    onClick={handleClearImages}
-                                    className="cursor-pointer absolute right-4 top-1/2 -translate-y-1/2 inline-flex items-center justify-center text-[#999] hover:text-[#333] transition-colors"
-                                >
-                                    <X className="w-4 h-4" />
-                                </button>
-                            )}
-                        </div>
                     </div>
 
-                    <div className="self-stretch px-8 py-6 bg-white rounded-[20px] border border-[var(--stroke-interactive-neutral-default)] flex flex-col items-end gap-2">
+                    <div className="self-stretch px-8 py-6 bg-white rounded-[20px] border border-[var(--stroke-interactive-neutral-default)] flex flex-col items-start gap-4">
                         <div className="self-stretch text-black text-xl font-semibold leading-8">
                             작성자 정보
                         </div>
 
-                        <button
-                            type="button"
-                            onClick={() => setIsEditingWriter((prev) => !prev)}
-                            className="cursor-pointer text-sm font-normal underline leading-5 text-[#6C757D]"
-                        >
-                            {isEditingWriter ? "완료" : "변경하기"}
-                        </button>
-
-                        <div className="self-stretch p-5 bg-[var(--foundation-neutral-980)] rounded-[20px] flex items-center gap-2">
-                            {isEditingWriter ? (
-                                <>
-                                    <Input
-                                        value={writerName}
-                                        onChange={(e) => setWriterName(e.target.value)}
-                                        placeholder="이름을 입력해주세요"
-                                        className="h-12 rounded-[12px] border-[#E0E0E0] px-4 text-[15px]"
-                                    />
-                                    <Input
-                                        value={phoneNumber}
-                                        onChange={(e) => setPhoneNumber(formatPhone(e.target.value))}
-                                        placeholder="010-1234-5678"
-                                        className="h-12 rounded-[12px] border-[#E0E0E0] px-4 text-[15px]"
-                                    />
-                                    <Input
-                                        value={writerEmail}
-                                        onChange={(e) => setWriterEmail(e.target.value)}
-                                        placeholder="이메일을 입력해주세요"
-                                        className="h-12 rounded-[12px] border-[#E0E0E0] px-4 text-[15px]"
-                                    />
-                                </>
-                            ) : (
-                                <>
-                                    <div className="flex-1 text-[#1A1A1A] text-xl font-bold leading-7">
-                                        {writerName}
-                                    </div>
-
-                                    <div className="flex-1 flex flex-col items-end gap-2">
-                                        <div className="text-[#1A1A1A] text-lg font-bold leading-6">
-                                            {phoneNumber}
-                                        </div>
-                                        <div className="text-[#1A1A1A] text-base font-semibold leading-6">
-                                            {writerEmail}
-                                        </div>
-                                    </div>
-                                </>
-                            )}
-
+                        <div className="self-stretch grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="flex flex-col gap-2">
+                                <Label className="text-sm font-semibold text-[#666] ml-1">이름</Label>
+                                <Input
+                                    disabled
+                                    value={writerName}
+                                    onChange={(e) => setWriterName(e.target.value)}
+                                    placeholder="이름을 입력해주세요"
+                                    className="h-14 rounded-[12px] border-[#E0E0E0] px-4 text-[15px] focus-visible:border-[var(--foundation-primary-500)] focus-visible:ring-0 transition-all"
+                                />
+                            </div>
+                            <div className="flex flex-col gap-2">
+                                <Label className="text-sm font-semibold text-[#666] ml-1">이메일</Label>
+                                <Input
+                                    disabled
+                                    value={writerEmail}
+                                    onChange={(e) => setWriterEmail(e.target.value)}
+                                    placeholder="이메일을 입력해주세요"
+                                    className="h-14 rounded-[12px] border-[#E0E0E0] px-4 text-[15px] focus-visible:border-[var(--foundation-primary-500)] focus-visible:ring-0 transition-all"
+                                />
+                            </div>
+                            <div className="flex flex-col gap-2 md:col-span-2">
+                                <Label className="text-sm font-semibold text-[#666] ml-1">휴대폰 번호</Label>
+                                <Input
+                                    value={phoneNumber}
+                                    onChange={(e) => setPhoneNumber(formatPhone(e.target.value))}
+                                    placeholder="010-0000-0000"
+                                    className="h-14 rounded-[12px] border-[#E0E0E0] px-4 text-[15px] focus-visible:border-[var(--foundation-primary-500)] focus-visible:ring-0 transition-all"
+                                />
+                            </div>
                         </div>
                     </div>
 
@@ -353,12 +289,14 @@ export default function SupportWritePage() {
                     </div>
 
                     {/* 문의하기 버튼 */}
-                    <PrimaryButton
+                    <ActionButton
                         onClick={handleSubmit}
                         disabled={isSubmitting || !isFormValid}
+                        size="lg"
+                        className="w-full"
                     >
                         등록하기
-                    </PrimaryButton>
+                    </ActionButton>
                 </div>
             </div>
         </div>
