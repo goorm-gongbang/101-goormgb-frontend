@@ -7,9 +7,10 @@ interface ReservationItemProps {
     index: number;
     isLast: boolean;
     onActionClick: (e: React.MouseEvent, item: Reservation) => void;
+    isLoading?: boolean;
 }
 
-export function ReservationItem({ item, isLast, onActionClick }: ReservationItemProps) {
+export function ReservationItem({ item, isLast, onActionClick, isLoading }: ReservationItemProps) {
     const router = useRouter();
 
     // 오늘 이전/당일 날짜 판별
@@ -68,11 +69,12 @@ export function ReservationItem({ item, isLast, onActionClick }: ReservationItem
                 {/* 버튼 렌더링 */}
                 {showActionBtn && !(isDDay && (item.status === "PAID" || item.status === "RESERVED")) && (
                     <button
-                        className="flex items-center text-[13px] font-bold text-[#666] hover:text-[#1A1A1A] transition-colors"
+                        className="flex items-center text-[13px] font-bold text-[#666] hover:text-[#1A1A1A] transition-colors disabled:opacity-40 disabled:pointer-events-none"
                         onClick={(e) => onActionClick(e, item)}
+                        disabled={isLoading}
                     >
-                        {item.status === "PAYMENT_PENDING" ? "입금하기" : item.status === "UNDER_REVIEW" ? "문의하기" : "취소하기"}
-                        <ChevronRight size={14} className="ml-0.5" />
+                        {isLoading ? "처리 중..." : (item.status === "PAYMENT_PENDING" ? "입금하기" : item.status === "UNDER_REVIEW" ? "문의하기" : "취소하기")}
+                        {!isLoading && <ChevronRight size={14} className="ml-0.5" />}
                     </button>
                 )}
             </div>

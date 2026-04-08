@@ -3,11 +3,12 @@
 import { useRouter } from "next/navigation";
 import { Copy, ChevronLeft } from "lucide-react";
 import { toast } from "sonner";
-import { useState, useEffect, useRef, use } from "react";
+import { useState, useEffect, use } from "react";
 import { CancelTicketModal } from "@/components/my/CancelTicketModal";
 import { TicketInfo } from "@/components/my/TicketDetailModal";
 import { RESERVATION_STATUS_MAP } from "../page";
 import { getTicketDetail } from "@/lib/services";
+import { parseFeeRate } from "@/lib/utils";
 import type { TicketDetail } from "@/lib/types";
 
 function formatDate(iso: string): string {
@@ -31,11 +32,8 @@ export default function ReservationDetailPage({ params }: { params: Promise<{ id
 
     const [detail, setDetail] = useState<TicketDetail | null>(null);
     const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
-    const fetchedRef = useRef(false);
-
     useEffect(() => {
-        if (fetchedRef.current) return;
-        fetchedRef.current = true;
+        setDetail(null);
         getTicketDetail(Number(resolvedParams.id)).then(setDetail);
     }, [resolvedParams.id]);
 
@@ -371,7 +369,7 @@ export default function ReservationDetailPage({ params }: { params: Promise<{ id
                 ticketId={Number(resolvedParams.id)}
                 paymentAmount={detail.payment?.totalAmount ?? 0}
                 cancelFee={detail.cancellationPolicy
-                    ? Math.round((detail.payment?.totalAmount ?? 0) * parseFloat((detail.cancellationPolicy.feeRate ?? "0").replace("%", "")) / 100)
+                    ? Math.round((detail.payment?.totalAmount ?? 0) * parseFeeRate(detail.cancellationPolicy.feeRate))
                     : 0
                 }
                 onCancelSuccess={handleCancelSuccess}

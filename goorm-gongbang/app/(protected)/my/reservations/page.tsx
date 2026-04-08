@@ -17,6 +17,7 @@ import { CancelTicketModal } from "@/components/my/CancelTicketModal";
 import { TicketInfo } from "@/components/my/TicketDetailModal";
 import { ReservationItem } from "@/components/my/ReservationItem";
 import { getTicketList, getTicketDetail } from "@/lib/services";
+import { parseFeeRate } from "@/lib/utils";
 import type { TicketItem, TicketSummary } from "@/lib/types";
 
 /* ===========================
@@ -102,22 +103,7 @@ function toReservation(item: TicketItem): Reservation {
     };
 }
 
-// API 탭의 전체 페이지를 순차적으로 모두 불러옴
-async function fetchAllPages(tab: "BOOKED" | "CANCEL_REFUND"): Promise<{ items: TicketItem[]; summary: TicketSummary }> {
-    const first = await getTicketList({ tab, page: 0, size: 10 });
-    const items: TicketItem[] = [...first.tickets];
 
-    if (first.pagination.totalPages > 1) {
-        const rest = await Promise.all(
-            Array.from({ length: first.pagination.totalPages - 1 }, (_, i) =>
-                getTicketList({ tab, page: i + 1, size: 10 })
-            )
-        );
-        rest.forEach((d) => items.push(...d.tickets));
-    }
-
-    return { items, summary: first.summary };
-}
 
 const MOCK_DEPOSIT_INFO = {
     bankName: "국민",
@@ -133,71 +119,50 @@ export default function ReservationsPage() {
     const [activeTab, setActiveTab] = useState<"HISTORY" | "CANCEL">("HISTORY");
     const [currentPage, setCurrentPage] = useState(0);
     const [summary, setSummary] = useState<TicketSummary | null>(null);
-    const [allItems, setAllItems] = useState<Reservation[]>([]);
-
-    // 클라이언트 페이지네이션
-    const totalPages = Math.ceil(allItems.length / PAGE_SIZE);
-    const pagedItems = allItems.slice(currentPage * PAGE_SIZE, (currentPage + 1) * PAGE_SIZE);
+    const [items, setItems] = useState<Reservation[]>([]);
+    const [totalPages, setTotalPages] = useState(0);
 
     const [isDepositModalOpen, setIsDepositModalOpen] = useState(false);
     const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
     const [selectedTicketInfo, setSelectedTicketInfo] = useState<TicketInfo | null>(null);
     const [selectedReservationId, setSelectedReservationId] = useState<string | null>(null);
     const [cancelInfo, setCancelInfo] = useState<{ paymentAmount: number; cancelFee: number } | null>(null);
+    const [loadingId, setLoadingId] = useState<string | null>(null);
 
-    const loadHistoryItems = async () => {
-        const { items, summary } = await fetchAllPages("BOOKED");
-        setSummary(summary);
-        setAllItems(
-            items.map(toReservation).filter((r) => !CANCEL_REFUND_STATUSES.includes(r.status))
-        );
-    };
+    const loadData = async () => {
+        try {
+            const apiTab = activeTab === "HISTORY" ? "BOOKED" : "CANCEL_REFUND";
+            const result = await getTicketList({ 
+                tab: apiTab, 
+                page: currentPage, 
+                size: PAGE_SIZE 
+            });
 
-    const loadCancelItems = async () => {
-        const [cancelRefundResult, bookedResult] = await Promise.all([
-            fetchAllPages("CANCEL_REFUND"),
-            fetchAllPages("BOOKED"),
-        ]);
-        setSummary(cancelRefundResult.summary);
-        const cancelRequested = bookedResult.items
-            .filter((t) => t.status === "CANCEL_REQUESTED")
-            .map(toReservation);
-        const cancelRefund = cancelRefundResult.items.map(toReservation);
-        setAllItems([...cancelRequested, ...cancelRefund]);
-    };
-
-    const reload = () => {
-        if (activeTab === "HISTORY") {
-            loadHistoryItems();
-        } else {
-            loadCancelItems();
+            setSummary(result.summary);
+            setTotalPages(result.pagination.totalPages);
+            setItems(result.tickets.map(toReservation));
+        } catch (error: any) {
+            toast.error(error.message || "예매 내역을 불러오지 못했습니다.");
         }
     };
 
     useEffect(() => {
-        setCurrentPage(0);
-        reload();
-    }, [activeTab]);
-
-    // allItems 갱신 후 currentPage가 범위를 벗어나면 마지막 페이지로 이동
-    useEffect(() => {
-        if (allItems.length === 0) return;
-        const newTotal = Math.ceil(allItems.length / PAGE_SIZE);
-        if (currentPage >= newTotal) {
-            setCurrentPage(newTotal - 1);
-        }
-    }, [allItems]);
+        loadData();
+    }, [activeTab, currentPage]);
 
     const handleTabChange = (tab: "HISTORY" | "CANCEL") => {
         setActiveTab(tab);
+        setCurrentPage(0);
     };
 
     const handlePageChange = (page: number) => {
         setCurrentPage(page);
     };
 
-    const handleActionClick = (e: React.MouseEvent, item: Reservation) => {
+    const handleActionClick = async (e: React.MouseEvent, item: Reservation) => {
         e.stopPropagation();
+        if (loadingId) return;
+
         if (item.status === "PAYMENT_PENDING") {
             setIsDepositModalOpen(true);
         } else if (item.status === "UNDER_REVIEW") {
@@ -222,14 +187,19 @@ export default function ReservationsPage() {
                 dateStr: item.date,
             });
             setSelectedReservationId(item.id);
-            getTicketDetail(Number(item.id)).then((detail) => {
+            
+            setLoadingId(item.id);
+            try {
+                const detail = await getTicketDetail(Number(item.id));
                 const totalAmount = detail.payment?.totalAmount ?? 0;
-                const feeRate = detail.cancellationPolicy?.feeRate ?? "0";
-                const rate = parseFloat(feeRate.replace("%", "")) / 100;
-                const cancelFee = Math.round(totalAmount * rate);
+                const cancelFee = Math.round(totalAmount * parseFeeRate(detail.cancellationPolicy?.feeRate));
                 setCancelInfo({ paymentAmount: totalAmount, cancelFee });
                 setIsCancelModalOpen(true);
-            });
+            } catch (error: any) {
+                toast.error(error.message || "예매 상세 정보를 불러오지 못했습니다.");
+            } finally {
+                setLoadingId(null);
+            }
         }
     };
 
@@ -321,18 +291,19 @@ export default function ReservationsPage() {
                         <div className="pl-4">진행 상황</div>
                     </div>
                     <div className="flex flex-col">
-                        {pagedItems.length === 0 ? (
+                        {items.length === 0 ? (
                             <div className="py-16 text-center text-[#999] text-[14px]">
                                 {activeTab === "CANCEL" ? "취소/환불 내역이 없습니다." : "예매 내역이 없습니다."}
                             </div>
                         ) : (
-                            pagedItems.map((item, index) => (
+                            items.map((item, index) => (
                                 <ReservationItem
                                     key={item.id}
                                     item={item}
                                     index={index}
-                                    isLast={index === pagedItems.length - 1}
+                                    isLast={index === items.length - 1}
                                     onActionClick={handleActionClick}
+                                    isLoading={loadingId === item.id}
                                 />
                             ))
                         )}
@@ -399,7 +370,7 @@ export default function ReservationsPage() {
                     ticketId={selectedReservationId ? Number(selectedReservationId) : undefined}
                     paymentAmount={cancelInfo?.paymentAmount ?? 0}
                     cancelFee={cancelInfo?.cancelFee ?? 0}
-                    onCancelSuccess={reload}
+                    onCancelSuccess={loadData}
                 />
             </div>
         </div>
