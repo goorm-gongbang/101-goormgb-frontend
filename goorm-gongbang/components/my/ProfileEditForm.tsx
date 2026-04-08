@@ -25,19 +25,32 @@ export function ProfileEditForm() {
         if (fetchedRef.current) return;
         fetchedRef.current = true;
 
-        getAccountInfo().then((data) => {
-            setEmail(data.email);
-            setNickname(data.nickname);
-            setTempNickname(data.nickname);
-            setProfileImageUrl(data.profileImageUrl);
-        });
+        getAccountInfo()
+            .then((data) => {
+                setEmail(data.email);
+                setNickname(data.nickname);
+                setTempNickname(data.nickname);
+                setProfileImageUrl(data.profileImageUrl);
+            })
+            .catch((err) => {
+                toast.error(err.message || "계정 정보를 불러오지 못했습니다.");
+            });
     }, []);
 
     const handleSave = async () => {
-        await updateNickname({ nickname: tempNickname });
-        setNickname(tempNickname);
-        setIsEditing(false);
-        toast.success("개인정보가 업데이트되었습니다");
+        if (!tempNickname.trim()) {
+            toast.error("닉네임을 입력해주세요.");
+            return;
+        }
+
+        try {
+            await updateNickname({ nickname: tempNickname });
+            setNickname(tempNickname);
+            setIsEditing(false);
+            toast.success("개인정보가 업데이트되었습니다");
+        } catch (err: any) {
+            toast.error(err.message || "닉네임 수정에 실패했습니다.");
+        }
     };
 
     return (
