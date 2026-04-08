@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, useCallback } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { ActionButton } from "@/components/common/Button";
 import { InquiryItem, Inquiry } from "@/components/my/InquiryItem";
 
 /* ===========================
@@ -63,16 +63,18 @@ const MOCK_INQUIRIES: Inquiry[] = [
 
 export default function SupportPage() {
     const router = useRouter();
+    const pathname = usePathname();
     const [inquiries, setInquiries] = useState<Inquiry[]>([]);
 
-    useEffect(() => {
-        // 로컬스토리지에서 새로 작성된 문의 가져오기
+    const loadInquiries = useCallback(() => {
         const saved = localStorage.getItem("my-inquiries");
         const localInquiries = saved ? JSON.parse(saved) : [];
-        
-        // 기존 MOCK 데이터와 합치기
         setInquiries([...localInquiries, ...MOCK_INQUIRIES]);
     }, []);
+
+    useEffect(() => {
+        loadInquiries();
+    }, [loadInquiries, pathname]);
 
     return (
         <div className="min-h-screen bg-[#F8F9FA]">
@@ -107,16 +109,16 @@ export default function SupportPage() {
 
                 <div className="mb-10 flex items-center justify-between">
                     <h1 className="text-[32px] font-extrabold tracking-tight text-[#1A1A1A]">1:1 문의</h1>
+                    <ActionButton
+                        onClick={() => router.push("/my/support/write")}
+                        size="lg"
+                    >
+                        1:1 문의 작성
+                    </ActionButton>
                 </div>
 
                 {/* 문의한 내용 섹션 */}
                 <div className="flex flex-col gap-6">
-                    <button 
-                        type="button"
-                        onClick={() => router.push("/my/support/write")}
-                        className="cursor-pointer self-stretch px-8 py-6 bg-[var(--background-white)] rounded-[20px] outline outline-1 outline-offset-[-1px] outline-[var(--stroke-interactive-neutral-default)] inline-flex flex-col justify-start items-start gap-4 text-left">
-                        <div className="justify-start text-black text-xl font-semibold font-['Pretendard_Variable'] leading-8">1:1 문의작성</div>
-                    </button>
 
                     <div className="bg-white rounded-xl border border-[#E9ECEF] overflow-hidden px-8 py-6">
                         <div className="flex items-center justify-between mb-4">
