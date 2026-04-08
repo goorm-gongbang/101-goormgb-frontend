@@ -6,9 +6,9 @@ export const CATCH_BALL_CONFIG = {
   goDurationMs: 1000,
   gloveSpawnDurationMs: 300,
   gloveToPitchDelayMs: 200,
-  solveDeadlineMs: 4500,
-  minPitchDurationMs: 1120,
-  maxPitchDurationMs: 1480,
+  solveDeadlineMs: 5300,
+  minPitchDurationMs: 1450,
+  maxPitchDurationMs: 1900,
   indicatorTailMs: 280,
   timingWindowMs: 300,
   timingTargetJitterMs: 0,
@@ -21,7 +21,7 @@ export const CATCH_BALL_CONFIG = {
 } as const;
 
 export const STRIKE_ZONE = {
-  x: 260,
+  x: 280,
   y: 152,
   width: 150,
   height: 170,
@@ -34,11 +34,11 @@ export const MOVEMENT_ZONE = {
   height: STRIKE_ZONE.height + (CATCH_BALL_CONFIG.catchRadius + CATCH_BALL_CONFIG.safetyMargin) * 2,
 } as const;
 
-export const INDICATOR_TRACK = {
-  x: 42,
-  y: 18,
-  width: 620,
-  height: 22,
+export const VERTICAL_INDICATOR_TRACK = {
+  x: 216,
+  y: STRIKE_ZONE.y,
+  width: 28,
+  height: STRIKE_ZONE.height,
 } as const;
 
 export const PITCHER_POSITION = {

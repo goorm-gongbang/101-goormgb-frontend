@@ -21,6 +21,9 @@ import { PreferredZoneModal } from "@/components/common/PreferredZoneModal";
 import Image from "next/image";
 import { toast } from "sonner";
 import { useTelemetry } from "@/lib/telemetry";
+import { TelemetryProvider } from "@/lib/telemetry/context";
+import { VQAChallenge } from "@/lib/telemetry/components";
+import { CircleHelp } from "lucide-react";
 
 /* ===========================
     UI TYPES
@@ -141,6 +144,7 @@ export default function MatchDetailSectionResponsive({
 
   const [isPreferredZoneModalOpen, setIsPreferredZoneModalOpen] = useState(false);
   const [isLoginRequiredModalOpen, setIsLoginRequiredModalOpen] = useState(false);
+  const [isPracticeVqaOpen, setIsPracticeVqaOpen] = useState(false);
 
   useEffect(() => {
     if (matchId === null) return;
@@ -264,7 +268,6 @@ export default function MatchDetailSectionResponsive({
 
       try {
         const data = await getMatchById(matchId);
-        console.log("[matches/matchId] data", data);
 
         if (!alive) return;
 
@@ -604,6 +607,27 @@ export default function MatchDetailSectionResponsive({
                     countdownFormatter={mmssTwoDigitsMinutes}
                     onClick={handleRev}
                   />
+                  <div className="relative mt-3 flex justify-center">
+                    <div className="group relative inline-flex">
+                      <button
+                        type="button"
+                        onClick={() => setIsPracticeVqaOpen(true)}
+                        className="inline-flex items-center gap-1 text-sm font-medium leading-5 text-[var(--foundation-primary-500)] transition hover:text-[var(--foundation-primary-600)]"
+                      >
+                        <CircleHelp className="h-4 w-4 shrink-0" />
+                        <span>예매 전 보안 인증을 미리 경험해보세요</span>
+                        <span aria-hidden="true">{'>'}</span>
+                      </button>
+                      <div className="pointer-events-none absolute left-1/2 top-full z-20 mt-2 w-[320px] -translate-x-1/2 rounded-2xl border border-[var(--foundation-neutral-880)] bg-white px-4 py-3 text-left opacity-0 shadow-[0_8px_20px_rgba(0,0,0,0.08)] transition duration-150 group-hover:opacity-100">
+                        <p className="text-sm font-semibold leading-5 text-[var(--foundation-neutral-240)]">
+                          보안 인증이란?
+                        </p>
+                        <p className="mt-2 text-xs font-medium leading-5 text-[var(--foundation-neutral-400)]">
+                          예매 진행 시 사이버 보안 인증이 필요해요. 실제 예매와 동일한 방식으로 진행되며, 최대 3번의 기회가 주어져요. 미리 경험해두면 예매 시 더 쉽게 통과할 수 있어요.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -629,6 +653,16 @@ export default function MatchDetailSectionResponsive({
           open={isLoginRequiredModalOpen}
           onClose={() => setIsLoginRequiredModalOpen(false)}
         />
+      )}
+
+      {isPracticeVqaOpen && matchId !== null && (
+        <TelemetryProvider matchId={matchId} autoStart={false}>
+          <VQAChallenge
+            mode="practice"
+            onSuccess={() => {}}
+            onCancel={() => setIsPracticeVqaOpen(false)}
+          />
+        </TelemetryProvider>
       )}
     </div>
   );

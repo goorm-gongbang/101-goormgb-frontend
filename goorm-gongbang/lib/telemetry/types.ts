@@ -74,6 +74,14 @@ export type ChallengeVerifyInput = Omit<ChallengeVerifyRequest, 'matchId'>;
 export interface ChallengeVerifyResponse {
   success: boolean;
   remainingAttempts: number;
+  reason?:
+    | 'challenge_fail'
+    | 'max_attempts'
+    | 'abnormal_pattern'
+    | 'invalid_challenge'
+    | 'expired_challenge';
+  terminal?: boolean;
+  riskScore?: number;
 }
 
 // ============================================================================

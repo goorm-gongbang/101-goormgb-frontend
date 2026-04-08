@@ -335,3 +335,36 @@ export type CreateCashReceiptResponse = {
   purpose: CashReceiptPurposeType;
   number: string;
 };
+
+/* 1대1 문의 작성 */
+export type InquiryCategory =
+  | "BOOKING"
+  | "PAYMENT"
+  | "DELIVERY"
+  | "SYSTEM_ERROR"
+  | "ETC";
+
+export type CreateInquiryRequest = {
+  category: InquiryCategory;
+  title: string;
+  content: string;
+  phoneNumber: string;
+};
+
+export type CreateInquiryResponse = {
+  inquiryId: number;
+};
+
+/* 1대1 문의 이미지 */
+export type IssueInquiryPresignedUrlRequest = {
+  fileName: string;
+};
+
+export type IssueInquiryPresignedUrlResponse = {
+  presignedUrl: string;
+  fileKey: string;
+};
+
+export type ConfirmInquiryFileRequest = {
+  fileKey: string;
+};

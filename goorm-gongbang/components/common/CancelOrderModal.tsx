@@ -24,7 +24,7 @@ export function CancelOrderModal({
       <div
         data-button="on"
         data-icon="off"
-        className="w-full max-w-md bg-[var(--foundation-neutral-white)] rounded-2xl shadow-[0px_1px_3px_0px_rgba(0,0,0,0.05)] outline outline-1 outline-offset-[-1px] outline-[var(--stroke-interactive-neutral-default)] inline-flex flex-col justify-start items-start"
+        className="w-full max-w-[450px] bg-[var(--foundation-neutral-white)] rounded-2xl shadow-[0px_1px_3px_0px_rgba(0,0,0,0.05)] outline outline-1 outline-offset-[-1px] outline-[var(--stroke-interactive-neutral-default)] inline-flex flex-col justify-start items-start"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="self-stretch p-8 flex flex-col justify-start items-start gap-8">

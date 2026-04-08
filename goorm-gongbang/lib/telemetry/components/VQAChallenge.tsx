@@ -1,14 +1,17 @@
 'use client';
 
+import Image from 'next/image';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { PrimaryButton } from '@/components/common/Button';
+import { AIApiError } from '../api';
 import { useTelemetryContext } from '../context';
 import type { ChallengeStartResponse, ChallengeVerifyInput } from '../types';
 import {
   CATCH_BALL_CONFIG,
-  INDICATOR_TRACK,
   MOVEMENT_ZONE,
   PITCHER_POSITION,
   STRIKE_ZONE,
+  VERTICAL_INDICATOR_TRACK,
 } from './vqa/catchBallConfig';
 import type {
   CatchAttemptResult,
@@ -21,7 +24,6 @@ import type {
 import {
   clamp,
   createRoundSetup,
-  getRemainingAttemptTone,
   toOneDigit,
 } from './vqa/catchBallUtils';
 import { VqaInstructionPanel } from './vqa/VqaInstructionPanel';
@@ -30,6 +32,7 @@ export interface VQAChallengeProps {
   onSuccess: () => void;
   onCancel: () => void;
   maxRetries?: number;
+  mode?: 'default' | 'practice';
 }
 
 type ReadyChallengeState = {
@@ -48,10 +51,20 @@ type ChallengeState =
   | { status: 'loading' }
   | ReadyChallengeState
   | SubmittingChallengeState
-  | { status: 'error'; message: string };
+  | { status: 'error'; message: string; reason?: 'max_attempts' | 'blocked' | 'generic' };
 
 const DEFAULT_INSTRUCTION_MESSAGE = 'Start 버튼을 눌러 보안 확인을 진행하세요.';
-const AUTO_RETRY_DELAY_MS = 900;
+const PRACTICE_INSTRUCTION_MESSAGE = '연습 모드입니다. 원하는 만큼 시도해 보세요.';
+const TARGET_GUIDE_MAX_SIZE = 76;
+const TARGET_GUIDE_MIN_SIZE = 32;
+
+function createPracticeChallenge(maxRetries: number): ChallengeStartResponse {
+  return {
+    challengeId: 'practice-mode',
+    remainingAttempts: maxRetries,
+    expiresAtMs: Date.now() + 60 * 60 * 1000,
+  };
+}
 
 function isLoadedChallengeState(
   state: ChallengeState,
@@ -81,51 +94,19 @@ function getFailMessage(failReason: FailReason | null): string {
   return '보안 확인에 실패했습니다.';
 }
 
-function BaseballIndicatorIcon(): React.ReactElement {
+function BaseballIndicatorIcon({ sizes }: { sizes: string }): React.ReactElement {
   return (
-    <svg viewBox="0 0 100 100" className="h-full w-full drop-shadow-[0_2px_4px_rgba(0,0,0,0.45)]">
-      <defs>
-        <radialGradient id="vqaIndicatorBaseball" cx="32%" cy="28%" r="70%">
-          <stop offset="0%" stopColor="#ffffff" />
-          <stop offset="65%" stopColor="#f8fafc" />
-          <stop offset="100%" stopColor="#dbe3ef" />
-        </radialGradient>
-      </defs>
-      <circle
-        cx="50"
-        cy="50"
-        r="46"
-        fill="url(#vqaIndicatorBaseball)"
-        stroke="#d7dee9"
-        strokeWidth="3"
+    <div className="relative h-full w-full">
+      <Image
+        src="/baseball_ball_contour.png"
+        alt=""
+        fill
+        sizes={sizes}
+        draggable={false}
+        aria-hidden="true"
+        className="object-contain drop-shadow-[0_2px_4px_rgba(0,0,0,0.45)]"
       />
-      <path
-        d="M24 18 C40 36, 40 64, 24 82"
-        stroke="#ef4444"
-        strokeWidth="4"
-        fill="none"
-        strokeLinecap="round"
-      />
-      <path
-        d="M76 18 C60 36, 60 64, 76 82"
-        stroke="#ef4444"
-        strokeWidth="4"
-        fill="none"
-        strokeLinecap="round"
-      />
-      <path
-        d="M28 30 L33 35 M26 42 L31 47 M26 54 L31 59 M28 66 L33 71"
-        stroke="#ef4444"
-        strokeWidth="2.2"
-        strokeLinecap="round"
-      />
-      <path
-        d="M72 30 L67 35 M74 42 L69 47 M74 54 L69 59 M72 66 L67 71"
-        stroke="#ef4444"
-        strokeWidth="2.2"
-        strokeLinecap="round"
-      />
-    </svg>
+    </div>
   );
 }
 
@@ -133,13 +114,25 @@ export function VQAChallenge({
   onSuccess,
   onCancel,
   maxRetries = 3,
+  mode = 'default',
 }: VQAChallengeProps): React.ReactElement {
   const { startChallenge, verifyChallenge } = useTelemetryContext();
+  const isPracticeMode = mode === 'practice';
+  const showCloseControls = isPracticeMode;
+  const instructionMessage = isPracticeMode ? PRACTICE_INSTRUCTION_MESSAGE : DEFAULT_INSTRUCTION_MESSAGE;
 
-  const [state, setState] = useState<ChallengeState>({ status: 'loading' });
+  const [state, setState] = useState<ChallengeState>(() =>
+    isPracticeMode
+      ? {
+          status: 'ready',
+          challenge: createPracticeChallenge(maxRetries),
+          message: PRACTICE_INSTRUCTION_MESSAGE,
+        }
+      : { status: 'loading' },
+  );
   const [remainingTime, setRemainingTime] = useState(0);
   const [phase, setPhase] = useState<Phase>('INSTRUCTION');
-  const [statusMessage, setStatusMessage] = useState(DEFAULT_INSTRUCTION_MESSAGE);
+  const [statusMessage, setStatusMessage] = useState(instructionMessage);
   const [nowMs, setNowMs] = useState<number>(() => Date.now());
   const [countdownStartMs, setCountdownStartMs] = useState<number | null>(null);
   const [flowStartedAtMs, setFlowStartedAtMs] = useState<number | null>(null);
@@ -155,6 +148,7 @@ export function VQAChallenge({
 
   const mountedRef = useRef(true);
   const retryTimerRef = useRef<number | null>(null);
+  const deferredTransitionTimerRef = useRef<number | null>(null);
   const draggingRef = useRef(false);
   const gloveRef = useRef<PointPosition>({ x: 0, y: 0 });
   const playRef = useRef<HTMLDivElement | null>(null);
@@ -166,9 +160,17 @@ export function VQAChallenge({
     }
   }, []);
 
+  const clearDeferredTransitionTimer = useCallback(() => {
+    if (deferredTransitionTimerRef.current !== null) {
+      window.clearTimeout(deferredTransitionTimerRef.current);
+      deferredTransitionTimerRef.current = null;
+    }
+  }, []);
+
   const resetRound = useCallback(
-    (message = DEFAULT_INSTRUCTION_MESSAGE) => {
+    (message = instructionMessage) => {
       clearRetryTimer();
+      clearDeferredTransitionTimer();
       draggingRef.current = false;
       gloveRef.current = { x: 0, y: 0 };
       setPhase('INSTRUCTION');
@@ -186,12 +188,25 @@ export function VQAChallenge({
       setDistanceToTarget(null);
       setDropOffsetMs(null);
     },
-    [clearRetryTimer],
+    [clearDeferredTransitionTimer, clearRetryTimer, instructionMessage],
   );
 
   const loadChallenge = useCallback(
-    async (message = DEFAULT_INSTRUCTION_MESSAGE) => {
+    async (message = instructionMessage) => {
+      if (isPracticeMode) {
+        setState({
+          status: 'ready',
+          challenge: createPracticeChallenge(maxRetries),
+          message: PRACTICE_INSTRUCTION_MESSAGE,
+        });
+        setRemainingTime(0);
+        resetRound(message);
+        return;
+      }
+
       clearRetryTimer();
+      clearDeferredTransitionTimer();
+      setFlowStartedAtMs(null);
       setState({ status: 'loading' });
 
       try {
@@ -207,10 +222,11 @@ export function VQAChallenge({
         setState({
           status: 'error',
           message: error instanceof Error ? error.message : '챌린지 로드 실패',
+          reason: error instanceof AIApiError && error.isBlocked() ? 'blocked' : 'generic',
         });
       }
     },
-    [clearRetryTimer, resetRound, startChallenge],
+    [clearDeferredTransitionTimer, clearRetryTimer, instructionMessage, isPracticeMode, maxRetries, resetRound, startChallenge],
   );
 
   const beginRound = useCallback(() => {
@@ -218,6 +234,7 @@ export function VQAChallenge({
     const startedAt = Date.now();
 
     clearRetryTimer();
+    clearDeferredTransitionTimer();
     draggingRef.current = false;
     gloveRef.current = nextRoundSetup.gloveStart;
     setRoundSetup(nextRoundSetup);
@@ -232,9 +249,9 @@ export function VQAChallenge({
     setAnimationFreezeMs(null);
     setPositionOk(false);
     setTimingOk(false);
-    setDistanceToTarget(null);
-    setDropOffsetMs(null);
-  }, [clearRetryTimer]);
+      setDistanceToTarget(null);
+      setDropOffsetMs(null);
+  }, [clearDeferredTransitionTimer, clearRetryTimer]);
 
   const buildAttemptResult = useCallback(
     (dropTimestamp: number, caught: boolean, failReason: FailReason | null): CatchAttemptResult => {
@@ -260,6 +277,37 @@ export function VQAChallenge({
       if (!isLoadedChallengeState(state)) return;
 
       const challenge = state.challenge;
+
+      if (isPracticeMode) {
+        setState({
+          status: 'ready',
+          challenge: createPracticeChallenge(maxRetries),
+          message: attempt.caught
+            ? '연습에 성공했습니다. 다시 시도하기를 눌러 다시 연습해 보세요.'
+            : '연습을 다시 시도해 보세요.',
+        });
+        return;
+      }
+
+      const attemptIndex = Math.max(1, Math.max(maxRetries, challenge.remainingAttempts) - challenge.remainingAttempts + 1);
+      const roundFloorDelayMs =
+        attemptIndex === 1 && flowStartedAtMs !== null
+          ? Math.max(0, flowStartedAtMs + CATCH_BALL_CONFIG.solveDeadlineMs - Date.now())
+          : 0;
+      const runAfterRoundFloor = (callback: () => void) => {
+        if (roundFloorDelayMs <= 0) {
+          callback();
+          return;
+        }
+
+        clearDeferredTransitionTimer();
+        deferredTransitionTimerRef.current = window.setTimeout(() => {
+          deferredTransitionTimerRef.current = null;
+          if (!mountedRef.current) return;
+          callback();
+        }, roundFloorDelayMs);
+      };
+
       setState({ status: 'submitting', challenge, message: state.message });
 
       try {
@@ -274,7 +322,7 @@ export function VQAChallenge({
         if (!mountedRef.current) return;
 
         if (result.success) {
-          onSuccess();
+          runAfterRoundFloor(onSuccess);
           return;
         }
 
@@ -291,26 +339,54 @@ export function VQAChallenge({
           });
 
           retryTimerRef.current = window.setTimeout(() => {
+            retryTimerRef.current = null;
             if (!mountedRef.current) return;
-            beginRound();
-          }, AUTO_RETRY_DELAY_MS);
+            runAfterRoundFloor(beginRound);
+          }, 0);
           return;
         }
 
-        setState({
-          status: 'error',
-          message: '최대 시도 횟수를 초과했습니다.',
+        runAfterRoundFloor(() => {
+          if (result.reason === 'abnormal_pattern') {
+            setState({
+              status: 'error',
+              message: '비정상적인 입력 패턴이 감지되었습니다.',
+              reason: 'blocked',
+            });
+            return;
+          }
+
+          if (result.reason === 'expired_challenge') {
+            setStatusMessage('인증 상태를 갱신했습니다. 다시 시도해 주세요.');
+            void loadChallenge('인증 상태를 갱신했습니다. 다시 시도해 주세요.');
+            return;
+          }
+
+          if (result.reason === 'invalid_challenge') {
+            setStatusMessage('인증 상태를 갱신했습니다. 다시 시도해 주세요.');
+            void loadChallenge('인증 상태를 갱신했습니다. 다시 시도해 주세요.');
+            return;
+          }
+
+          setState({
+            status: 'error',
+            message: '최대 시도 횟수를 초과했습니다.',
+            reason: 'max_attempts',
+          });
         });
       } catch (error) {
         if (!mountedRef.current) return;
 
-        setState({
-          status: 'error',
-          message: error instanceof Error ? error.message : '검증 실패',
+        runAfterRoundFloor(() => {
+          setState({
+            status: 'error',
+            message: error instanceof Error ? error.message : '검증 실패',
+            reason: error instanceof AIApiError && error.isBlocked() ? 'blocked' : 'generic',
+          });
         });
       }
     },
-    [beginRound, onSuccess, state, verifyChallenge],
+    [beginRound, clearDeferredTransitionTimer, flowStartedAtMs, isPracticeMode, loadChallenge, maxRetries, onSuccess, state, verifyChallenge],
   );
 
   const evaluateDrop = useCallback(
@@ -359,12 +435,16 @@ export function VQAChallenge({
   );
 
   useEffect(() => {
+    if (isPracticeMode) {
+      return undefined;
+    }
+
     const bootstrapTimer = window.setTimeout(() => {
       void loadChallenge();
     }, 0);
 
     return () => window.clearTimeout(bootstrapTimer);
-  }, [loadChallenge]);
+  }, [isPracticeMode, loadChallenge]);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -372,10 +452,15 @@ export function VQAChallenge({
     return () => {
       mountedRef.current = false;
       clearRetryTimer();
+      clearDeferredTransitionTimer();
     };
-  }, [clearRetryTimer]);
+  }, [clearDeferredTransitionTimer, clearRetryTimer]);
 
   useEffect(() => {
+    if (isPracticeMode) {
+      return undefined;
+    }
+
     if (!isLoadedChallengeState(state)) return;
 
     const syncRemaining = () =>
@@ -392,7 +477,7 @@ export function VQAChallenge({
     }, 1000);
 
     return () => window.clearInterval(timer);
-  }, [loadChallenge, state]);
+  }, [isPracticeMode, loadChallenge, state]);
 
   useEffect(() => {
     if (
@@ -496,13 +581,12 @@ export function VQAChallenge({
   }, [countdownStartMs, nowMs, phase]);
 
   const activeChallenge = isLoadedChallengeState(state) ? state.challenge : null;
-  const totalAttempts = activeChallenge
-    ? Math.max(maxRetries, activeChallenge.remainingAttempts)
-    : maxRetries;
-  const currentAttempt = activeChallenge
-    ? Math.min(totalAttempts, totalAttempts - activeChallenge.remainingAttempts + 1)
-    : 1;
-  const displayRemainingAttempts = activeChallenge?.remainingAttempts ?? maxRetries;
+  const totalAttempts = isPracticeMode
+    ? maxRetries
+    : activeChallenge
+      ? Math.max(maxRetries, activeChallenge.remainingAttempts)
+      : maxRetries;
+  const displayRemainingAttempts = isPracticeMode ? maxRetries : activeChallenge?.remainingAttempts ?? maxRetries;
   const motionReferenceMs = animationFreezeMs ?? nowMs;
   const resolvedLandingPoint = roundSetup?.landingPoint ?? {
     x: STRIKE_ZONE.x + STRIKE_ZONE.width / 2,
@@ -512,9 +596,6 @@ export function VQAChallenge({
   const resolvedIndicatorDurationMs =
     roundSetup?.indicatorDurationMs ??
     CATCH_BALL_CONFIG.maxPitchDurationMs + CATCH_BALL_CONFIG.indicatorTailMs;
-  const resolvedTimingWindowStartMs =
-    roundSetup?.timingWindowStartMs ?? resolvedIndicatorDurationMs / 2;
-
   const indicatorProgress = useMemo(() => {
     if (!pitchStartMs) {
       return 0;
@@ -541,12 +622,6 @@ export function VQAChallenge({
     return clamp(elapsed / resolvedPitchDurationMs, 0, 1);
   }, [motionReferenceMs, pitchStartMs, resolvedPitchDurationMs]);
 
-  const indicatorX = INDICATOR_TRACK.x + indicatorProgress * INDICATOR_TRACK.width;
-  const timingWindowStartX =
-    INDICATOR_TRACK.x +
-    (resolvedTimingWindowStartMs / resolvedIndicatorDurationMs) * INDICATOR_TRACK.width;
-  const timingWindowWidth =
-    (CATCH_BALL_CONFIG.timingWindowMs / resolvedIndicatorDurationMs) * INDICATOR_TRACK.width;
   const ballArc = Math.sin(ballProgress * Math.PI) * 92;
   const ballPos = {
     x: PITCHER_POSITION.x + (resolvedLandingPoint.x - PITCHER_POSITION.x) * ballProgress,
@@ -557,6 +632,25 @@ export function VQAChallenge({
   const ballShadowW = ballDiameter * (0.9 + ballProgress * 0.65);
   const ballShadowH = ballDiameter * (0.32 + ballProgress * 0.2);
   const ballShadowOpacity = 0.12 + ballProgress * 0.25;
+  const targetGuideSize =
+    TARGET_GUIDE_MIN_SIZE + (TARGET_GUIDE_MAX_SIZE - TARGET_GUIDE_MIN_SIZE) * (1 - ballProgress);
+  const gaugeThumbSize = 14;
+  const indicatorTopInset = 3;
+  const indicatorBottomInset = 7;
+  const gaugeThumbTop = clamp(
+    indicatorTopInset +
+      (1 - indicatorProgress) *
+        (VERTICAL_INDICATOR_TRACK.height - gaugeThumbSize - indicatorTopInset - indicatorBottomInset),
+    indicatorTopInset,
+    VERTICAL_INDICATOR_TRACK.height - gaugeThumbSize - indicatorBottomInset,
+  );
+  const countdownOverlayLabel =
+    countdownLabel === 'READY' ? 'Ready' : countdownLabel === 'GO' ? 'Start!' : null;
+  const playfieldTimeLabel = formatCountdown(remainingTime);
+  const countdownOverlayTextClass =
+    countdownOverlayLabel === 'Start!'
+      ? 'text-[var(--foundation-primary-100)] [text-shadow:0_0_20px_rgba(202,254,241,0.4)]'
+      : 'text-white [text-shadow:0_0_20px_rgba(202,254,241,0.4)]';
   const shouldRenderGlove =
     Boolean(roundSetup) &&
     (phase === 'ACTIVE_PLAY' ||
@@ -568,6 +662,37 @@ export function VQAChallenge({
           CATCH_BALL_CONFIG.preReadyDelayMs +
             CATCH_BALL_CONFIG.readyDurationMs +
             CATCH_BALL_CONFIG.goDurationMs));
+  const isErrorState = state.status === 'error';
+  const errorAccent =
+    !isErrorState ? null : state.reason === 'max_attempts' || state.reason === 'blocked' ? 'red' : 'neutral';
+  const errorTitle = !isErrorState
+    ? ''
+    : state.reason === 'max_attempts' || state.reason === 'blocked'
+      ? '인증 실패'
+      : '보안 확인을 진행할 수 없습니다.';
+  const errorDescription = !isErrorState
+    ? []
+    : state.reason === 'max_attempts'
+      ? ['인증 가능 횟수를 초과했습니다.', '경기 상세 페이지에서 다시 예매를 진행해 주세요.']
+      : state.reason === 'blocked'
+        ? [
+            '비정상적인 입력 패턴이 감지되었습니다.',
+            '자동화 시도로 분류될 수 있는 패턴이 감지되어 현재 세션이 종료되었습니다.',
+          ]
+        : [state.message];
+  const errorConfirmLabel = '확인';
+  const terminalErrorCardClass =
+    state.status === 'error' && state.reason === 'blocked' ? 'max-w-[703px] px-11 py-8' : 'max-w-[463px] px-9 py-8';
+  const terminalErrorCopyClass =
+    state.status === 'error' && state.reason === 'blocked' ? 'max-w-[615px]' : 'max-w-[360px]';
+  const handleErrorConfirm = () => {
+    if (errorAccent === 'red') {
+      onCancel();
+      return;
+    }
+
+    void loadChallenge();
+  };
 
   const handlePointerDown = () => {
     if (phase !== 'ACTIVE_PLAY' || !roundSetup || state.status !== 'ready') {
@@ -601,135 +726,135 @@ export function VQAChallenge({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
-      <div className="w-full max-w-[860px] rounded-[28px] border border-slate-700 bg-[linear-gradient(180deg,#0f172a_0%,#020617_100%)] text-slate-100 shadow-[0_30px_90px_rgba(2,6,23,0.78)]">
-        <div className="flex items-start justify-between gap-4 border-b border-slate-800/80 px-6 py-5">
-          <div>
-            <p className="text-xs uppercase tracking-[0.28em] text-cyan-200/70">Security Check</p>
-            <h2 className="mt-2 text-2xl font-black tracking-[0.04em] text-white">보안 확인</h2>
-            <p className="mt-2 text-sm text-slate-300">
-              경기장 안에서 공을 정확한 위치와 타이밍에 맞춰 잡아 인증을 완료하세요.
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[linear-gradient(180deg,rgba(0,0,0,0.9)_0%,rgba(3,41,53,0.5)_100%)] p-4 backdrop-blur-[5px]">
+      <div className="w-full max-w-[996px] rounded-2xl border-2 border-[var(--foundation-primary-400)] bg-[var(--foundation-neutral-white)] px-10 pb-10 pt-5 shadow-[0_0_20px_rgba(0,214,161,0.1)]">
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex min-w-0 items-center gap-6">
+            <p className="shrink-0 text-[20px] font-semibold leading-[1.5] text-[var(--foundation-neutral-240)] font-['Pretendard']">
+              플레이볼 보안 인증
             </p>
-            {isLoadedChallengeState(state) && state.message && (
-              <p className="mt-2 text-sm text-amber-300">{state.message}</p>
-            )}
+            <p className="min-w-0 text-sm font-normal leading-[1.5] text-[var(--foundation-neutral-400)] font-['Pretendard']">
+              매크로/봇 방지를 위한 인증을 진행해주세요.
+            </p>
           </div>
-          <button
-            type="button"
-            onClick={onCancel}
-            className="rounded-full border border-slate-700 bg-slate-900/80 px-4 py-2 text-sm font-medium text-slate-200 transition hover:border-slate-500 hover:bg-slate-800"
-          >
-            닫기
-          </button>
+          {showCloseControls && (
+            <button
+              type="button"
+              onClick={onCancel}
+              className="shrink-0 text-sm font-medium leading-5 text-[var(--foundation-neutral-520)] transition hover:text-[var(--foundation-neutral-240)]"
+            >
+              닫기
+            </button>
+          )}
         </div>
 
         {state.status === 'loading' && (
-          <div className="flex items-center justify-center gap-3 px-6 py-16">
-            <div className="h-9 w-9 animate-spin rounded-full border-2 border-cyan-300/30 border-b-cyan-300" />
-            <span className="text-slate-300">챌린지를 불러오는 중입니다.</span>
+          <div className="mt-4 flex h-[458px] items-center justify-center">
+            <div className="flex items-center gap-3 rounded-2xl border border-[var(--foundation-neutral-880)] bg-white px-6 py-5 shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
+              <div className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--foundation-primary-100)] border-b-[var(--foundation-primary-600)]" />
+              <span className="text-base font-medium leading-6 text-[var(--foundation-neutral-240)] font-['Pretendard']">
+                챌린지를 불러오는 중입니다.
+              </span>
+            </div>
           </div>
         )}
 
-        {state.status === 'error' && (
-          <div className="px-6 py-10">
-            <div className="rounded-3xl border border-rose-400/20 bg-rose-950/30 p-8 text-center">
-              <h3 className="text-xl font-bold text-rose-200">보안 확인을 진행할 수 없습니다.</h3>
-              <p className="mt-3 text-sm text-rose-100/80">{state.message}</p>
-              <div className="mt-6 flex justify-center gap-3">
-                <button
+        {isErrorState && errorAccent === 'neutral' && (
+          <div className="mt-4 flex h-[458px] items-center justify-center">
+            <div className="w-full max-w-[420px] rounded-2xl border border-[var(--foundation-neutral-880)] bg-white p-8 text-center shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
+              <h3 className="text-xl font-bold leading-7 text-[var(--foundation-neutral-240)] font-['Pretendard']">
+                {errorTitle}
+              </h3>
+              <p className="mt-3 text-sm font-medium leading-6 text-[var(--foundation-neutral-400)] font-['Pretendard']">
+                {errorDescription[0]}
+              </p>
+              <div className="mt-6 flex justify-center gap-2">
+                {showCloseControls && (
+                  <button
+                    type="button"
+                    onClick={onCancel}
+                    className="rounded-md border border-[var(--foundation-neutral-880)] px-4 py-2 text-sm font-medium leading-5 text-[var(--foundation-neutral-240)]"
+                  >
+                    닫기
+                  </button>
+                )}
+                <PrimaryButton type="button" size="lg" tone="strong" onClick={handleErrorConfirm}>
+                  {errorConfirmLabel}
+                </PrimaryButton>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {isErrorState && errorAccent === 'red' && (
+          <div className="mt-4 relative h-[458px] overflow-hidden rounded-2xl border border-[var(--foundation-neutral-880)]">
+            <div
+              className="absolute inset-0"
+              style={{
+                backgroundImage:
+                  "linear-gradient(180deg, rgba(2,6,23,0.08) 0%, rgba(2,6,23,0.16) 40%, rgba(2,6,23,0.24) 100%), url('/edited-ballpark.jpeg')",
+                backgroundPosition: '47% bottom',
+                backgroundRepeat: 'no-repeat',
+                backgroundSize: 'cover',
+              }}
+            />
+            <div className="absolute inset-0 bg-[rgba(15,23,42,0.62)] backdrop-blur-[2px]" />
+            <div className="relative z-10 flex h-full items-center justify-center p-6">
+              <div
+                className={`w-full rounded-2xl border-2 border-[#FF7A7A] bg-[linear-gradient(180deg,#FFF0F0_0%,#FFF7F7_36%,#FFFFFF_100%)] text-center shadow-[0_0_28px_rgba(255,122,122,0.24)] ${terminalErrorCardClass}`}
+              >
+                <h3 className="text-[32px] font-semibold leading-[1.5] text-[#FF4D4F] font-['Pretendard']">
+                  {errorTitle}
+                </h3>
+                <div className={`mx-auto mt-3 space-y-1 ${terminalErrorCopyClass}`}>
+                  <p className="text-[24px] font-semibold leading-[1.5] text-[var(--foundation-neutral-240)] font-['Pretendard']">
+                    {errorDescription[0]}
+                  </p>
+                  {errorDescription[1] && (
+                    <p className="text-[24px] font-medium leading-[1.5] text-[var(--foundation-neutral-240)] font-['Pretendard']">
+                      {errorDescription[1]}
+                    </p>
+                  )}
+                </div>
+                <PrimaryButton
                   type="button"
-                  onClick={onCancel}
-                  className="rounded-full border border-slate-700 bg-slate-900/80 px-5 py-2.5 text-sm font-medium text-slate-200 transition hover:bg-slate-800"
+                  size="lg"
+                  tone="strong"
+                  onClick={handleErrorConfirm}
+                  className="mt-8 w-full text-base font-semibold leading-6"
                 >
-                  닫기
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void loadChallenge()}
-                  className="rounded-full bg-cyan-400 px-5 py-2.5 text-sm font-bold text-slate-950 transition hover:bg-cyan-300"
-                >
-                  다시 불러오기
-                </button>
+                  {errorConfirmLabel}
+                </PrimaryButton>
               </div>
             </div>
           </div>
         )}
 
         {isLoadedChallengeState(state) && (
-          <div className="space-y-5 px-6 py-6">
-            <div className="flex flex-wrap gap-3">
-              <div className="rounded-full border border-white/10 bg-white/5 px-4 py-2">
-                <p className="text-[11px] uppercase tracking-[0.22em] text-cyan-200/75">Current Attempt</p>
-                <p className="mt-1 text-xl font-black text-white">{currentAttempt}</p>
-              </div>
-              <div className="rounded-full border border-white/10 bg-white/5 px-4 py-2">
-                <p className="text-[11px] uppercase tracking-[0.22em] text-cyan-200/75">Remaining</p>
-                <p className={`mt-1 text-xl font-black ${getRemainingAttemptTone(displayRemainingAttempts)}`}>
-                  {displayRemainingAttempts} / {totalAttempts}
-                </p>
-              </div>
-              <div className="rounded-full border border-white/10 bg-white/5 px-4 py-2">
-                <p className="text-[11px] uppercase tracking-[0.22em] text-cyan-200/75">Challenge Timer</p>
-                <p className="mt-1 font-mono text-xl font-black text-white">
-                  {formatCountdown(remainingTime)}
-                </p>
-              </div>
-              {(distanceToTarget !== null || dropOffsetMs !== null) && (
-                <div className="rounded-full border border-white/10 bg-white/5 px-4 py-2">
-                  <p className="text-[11px] uppercase tracking-[0.22em] text-cyan-200/75">Last Judge</p>
-                  <p className="mt-1 text-sm font-medium text-slate-200">
-                    {distanceToTarget !== null ? `거리 ${distanceToTarget}px` : '거리 -'} /{' '}
-                    {dropOffsetMs !== null ? `타이밍 ${dropOffsetMs}ms` : '타이밍 -'}
-                  </p>
-                </div>
-              )}
-            </div>
-
-            <div className="overflow-x-auto rounded-[24px] border border-slate-800 bg-slate-950/80 p-3">
+          <div className="mt-4 flex items-start gap-4">
+            <div className="relative h-[458px] w-[708px] overflow-hidden rounded-2xl bg-white">
               <div
                 ref={playRef}
-                className="relative mx-auto overflow-hidden rounded-[20px] border border-slate-700 bg-slate-950 touch-none"
+                className="relative h-full w-full touch-none overflow-hidden rounded-2xl"
                 style={{
                   width: CATCH_BALL_CONFIG.playWidth,
                   height: CATCH_BALL_CONFIG.playHeight,
                   backgroundImage:
-                    "linear-gradient(180deg, rgba(2,6,23,0.02) 0%, rgba(2,6,23,0.08) 40%, rgba(2,6,23,0.16) 100%), url('/vqa-ballpark-photo.svg')",
+                    "linear-gradient(180deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 22%, rgba(2,6,23,0.06) 72%, rgba(2,6,23,0.14) 100%), url('/edited-ballpark.jpeg')",
                   backgroundPosition: '47% bottom',
                   backgroundRepeat: 'no-repeat',
                   backgroundSize: 'cover',
                 }}
                 data-testid="catchball-playfield"
+                aria-label={`VQA playfield, remaining time ${playfieldTimeLabel}`}
                 onPointerMove={handlePointerMove}
                 onPointerUp={handlePointerUp}
                 onPointerLeave={handlePointerUp}
               >
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_38%,rgba(255,255,255,0.16)_0%,rgba(255,255,255,0)_46%)]" />
-                <div className="absolute inset-x-0 top-0 h-[38%] bg-[linear-gradient(180deg,rgba(255,255,255,0.09)_0%,rgba(255,255,255,0)_100%)]" />
-
-                <div className="absolute bottom-[18px] left-[22px] right-[22px] h-[70px] rounded-[22px] border-[5px] border-[#f8b84a] bg-[linear-gradient(180deg,#ffdd86_0%,#d98a19_100%)] shadow-[0_10px_20px_rgba(15,23,42,0.45)]">
-                  <div className="absolute inset-[8px] rounded-[16px] border-[3px] border-[#0b215f] bg-[linear-gradient(180deg,#14214d_0%,#090f27_100%)]">
-                    <div
-                      className="absolute rounded-[10px] bg-[linear-gradient(180deg,rgba(255,165,0,0.78)_0%,rgba(255,98,0,0.82)_100%)] shadow-[0_0_24px_rgba(251,191,36,0.38)]"
-                      style={{
-                        left: timingWindowStartX,
-                        top: 9,
-                        width: timingWindowWidth,
-                        height: 24,
-                      }}
-                      data-testid="catchball-window"
-                    />
-                    <div
-                      className="absolute"
-                      style={{ left: indicatorX - 16, top: 4, width: 32, height: 32 }}
-                      data-testid="catchball-indicator"
-                    >
-                      <BaseballIndicatorIcon />
-                    </div>
-                  </div>
-                </div>
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_24%,rgba(255,255,255,0.34)_0%,rgba(255,255,255,0)_48%)]" />
 
                 <div
-                  className="absolute rounded border-2 border-white/75"
+                  className="absolute overflow-hidden rounded-[6px] border-[3px] border-[#ffffff99]"
                   style={{
                     left: STRIKE_ZONE.x,
                     top: STRIKE_ZONE.y,
@@ -738,34 +863,50 @@ export function VQAChallenge({
                   }}
                 />
 
-                {roundSetup && (
-                  <>
+                {phase !== 'INSTRUCTION' && (
+                  <div
+                    className="absolute overflow-hidden rounded-[4px] border border-[var(--foundation-neutral-880)] bg-white/60"
+                    style={{
+                      left: VERTICAL_INDICATOR_TRACK.x,
+                      top: VERTICAL_INDICATOR_TRACK.y,
+                      width: VERTICAL_INDICATOR_TRACK.width,
+                      height: VERTICAL_INDICATOR_TRACK.height,
+                    }}
+                  >
+                    <div className="absolute left-1/2 top-[3px] h-[44px] w-[20px] -translate-x-1/2 rounded-[4px] border border-[var(--foundation-primary-100)] bg-[linear-gradient(180deg,var(--foundation-primary-700)_0%,var(--foundation-primary-500)_100%)]" />
                     <div
-                      className="absolute rounded-full border border-cyan-200/60"
-                      style={{
-                        left: roundSetup.landingPoint.x - CATCH_BALL_CONFIG.catchRadius,
-                        top: roundSetup.landingPoint.y - CATCH_BALL_CONFIG.catchRadius,
-                        width: CATCH_BALL_CONFIG.catchRadius * 2,
-                        height: CATCH_BALL_CONFIG.catchRadius * 2,
-                      }}
+                      className="absolute left-1/2 h-[14px] w-[14px] -translate-x-1/2 rounded-full border border-[var(--foundation-primary-600)] bg-white"
+                      style={{ top: gaugeThumbTop }}
                     />
-                    <div
-                      className="absolute rounded-full border border-cyan-100 bg-cyan-300/70"
-                      style={{
-                        left: roundSetup.landingPoint.x - 10,
-                        top: roundSetup.landingPoint.y - 10,
-                        width: 20,
-                        height: 20,
-                      }}
-                      data-testid="catchball-landing-marker"
-                    />
-                  </>
+                  </div>
                 )}
 
                 {roundSetup && (phase === 'ACTIVE_PLAY' || phase === 'SUCCESS' || phase === 'FAIL') && (
                   <>
+                    {phase === 'ACTIVE_PLAY' && (
+                      <>
+                        <div
+                          className="absolute rounded-full bg-[rgba(255,106,102,0.34)]"
+                          style={{
+                            left: resolvedLandingPoint.x - targetGuideSize / 2,
+                            top: resolvedLandingPoint.y - targetGuideSize / 2,
+                            width: targetGuideSize,
+                            height: targetGuideSize,
+                          }}
+                        />
+                        <div
+                          className="absolute rounded-full bg-white"
+                          style={{
+                            left: resolvedLandingPoint.x - TARGET_GUIDE_MIN_SIZE / 2,
+                            top: resolvedLandingPoint.y - TARGET_GUIDE_MIN_SIZE / 2,
+                            width: TARGET_GUIDE_MIN_SIZE,
+                            height: TARGET_GUIDE_MIN_SIZE,
+                          }}
+                        />
+                      </>
+                    )}
                     <div
-                      className="absolute rounded-full bg-black/50 blur-[2px]"
+                      className="absolute rounded-full bg-black/40 blur-[2px]"
                       style={{
                         left: ballPos.x - ballShadowW / 2,
                         top: ballGroundY - ballShadowH / 2,
@@ -781,10 +922,10 @@ export function VQAChallenge({
                         top: ballPos.y - ballDiameter / 2,
                         width: ballDiameter,
                         height: ballDiameter,
-                        filter: 'drop-shadow(0 6px 8px rgba(15,23,42,0.45))',
+                        filter: 'drop-shadow(0 6px 8px rgba(15,23,42,0.35))',
                       }}
                     >
-                      <BaseballIndicatorIcon />
+                      <BaseballIndicatorIcon sizes={`${Math.ceil(ballDiameter)}px`} />
                     </div>
                   </>
                 )}
@@ -805,112 +946,127 @@ export function VQAChallenge({
                     data-testid="catchball-glove"
                     disabled={state.status !== 'ready' || phase !== 'ACTIVE_PLAY'}
                   >
-                    <svg viewBox="0 0 92 68" className="h-full w-full drop-shadow-[0_7px_10px_rgba(0,0,0,0.45)]">
-                      <path
-                        d="M10 58 C8 40, 13 22, 26 13 C34 8, 43 8, 50 11 C57 8, 67 9, 74 15 C84 24, 86 40, 83 57 C76 60, 67 61, 58 60 C53 58, 47 58, 42 60 C31 61, 20 61, 10 58 Z"
-                        fill="url(#vqaGloveFill)"
-                        stroke="#7c4a23"
-                        strokeWidth="2.2"
-                      />
-                      <path
-                        d="M36 18 L27 48 M45 16 L42 50 M55 16 L58 49 M66 19 L72 46"
-                        stroke="#8b5a2b"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                      />
-                      <path
-                        d="M15 43 C25 47, 33 47, 40 44"
-                        stroke="#5b3718"
-                        strokeWidth="2.2"
-                        strokeLinecap="round"
-                      />
-                      <defs>
-                        <linearGradient id="vqaGloveFill" x1="0%" y1="0%" x2="100%" y2="100%">
-                          <stop offset="0%" stopColor="#f7d59a" stopOpacity="0.82" />
-                          <stop offset="52%" stopColor="#d7924a" stopOpacity="0.76" />
-                          <stop offset="100%" stopColor="#a96329" stopOpacity="0.72" />
-                        </linearGradient>
-                      </defs>
-                    </svg>
+                    <Image
+                      src="/baseballglove.svg"
+                      alt=""
+                      fill
+                      sizes={`${CATCH_BALL_CONFIG.gloveWidth}px`}
+                      className="h-full w-full object-contain opacity-[0.62] drop-shadow-[0_7px_10px_rgba(0,0,0,0.45)]"
+                      draggable={false}
+                      aria-hidden="true"
+                    />
                   </button>
                 )}
 
                 {phase === 'INSTRUCTION' && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/55 p-6 backdrop-blur-[3px]">
-                    <VqaInstructionPanel
-                      onStart={beginRound}
-                      disabled={state.status !== 'ready'}
-                    />
+                  <div className="absolute inset-0">
+                    <VqaInstructionPanel />
                   </div>
                 )}
 
-                {phase === 'COUNTDOWN' && countdownLabel === 'READY' && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-[2px]">
-                    <p className="text-7xl font-black tracking-[0.16em] text-cyan-100 drop-shadow-[0_0_18px_rgba(103,232,249,0.65)]">
-                      READY
+                {phase === 'COUNTDOWN' && countdownOverlayLabel && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-[rgba(0,0,0,0.7)]">
+                    <p
+                      className={`text-[72px] font-bold leading-[1.4] tracking-[7.2px] font-['Pretendard'] ${countdownOverlayTextClass}`}
+                    >
+                      {countdownOverlayLabel}
                     </p>
                   </div>
                 )}
 
-                {phase === 'COUNTDOWN' && countdownLabel === 'GO' && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-[2px]">
-                    <p className="text-7xl font-black tracking-[0.16em] text-cyan-100 drop-shadow-[0_0_18px_rgba(103,232,249,0.65)]">
-                      GO!
-                    </p>
-                  </div>
-                )}
-
-                {(phase === 'SUCCESS' || phase === 'FAIL') && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/45 backdrop-blur-[2px]">
-                    <div className="w-[min(92%,420px)] rounded-2xl border border-slate-500 bg-slate-900/95 p-6 text-center shadow-[0_20px_40px_rgba(2,6,23,0.4)]">
-                      <h3
-                        className={`text-2xl font-black ${
-                          phase === 'SUCCESS' ? 'text-emerald-300' : 'text-amber-300'
-                        }`}
-                      >
-                        {phase === 'SUCCESS' ? '판정 완료' : '다시 시도'}
+                {phase === 'SUCCESS' && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-[rgba(15,23,42,0.54)] backdrop-blur-[2px]">
+                    <div className="w-full max-w-[509px] rounded-2xl border-2 border-[var(--foundation-primary-400)] bg-[linear-gradient(180deg,#EFFFF9_0%,#F8FFFC_36%,#FFFFFF_100%)] px-9 py-8 text-center shadow-[0_0_28px_rgba(0,214,161,0.24)]">
+                      <h3 className="text-[32px] font-semibold leading-[1.5] text-[var(--foundation-primary-500)] font-['Pretendard']">
+                        {isPracticeMode ? '연습 성공' : '인증 통과'}
                       </h3>
-                      <p className="mt-3 text-sm text-slate-300">{statusMessage}</p>
-                      <p className="mt-4 text-xs uppercase tracking-[0.24em] text-slate-500">
-                        Position {positionOk ? 'OK' : 'MISS'} / Timing {timingOk ? 'OK' : 'MISS'}
+                      <p className="mt-3 text-[24px] font-medium leading-[1.5] text-[var(--foundation-neutral-240)] font-['Pretendard']">
+                        {isPracticeMode
+                          ? '다시 시작하기를 눌러 같은 방식으로 계속 연습할 수 있어요.'
+                          : '잠시만 기다려주세요. 대기열로 이동합니다.'}
                       </p>
-                      {state.status === 'submitting' && (
-                        <div className="mt-5 flex items-center justify-center gap-3 text-sm text-cyan-200">
-                          <div className="h-5 w-5 animate-spin rounded-full border-2 border-cyan-300/30 border-b-cyan-300" />
+                      <span className="sr-only">
+                        {statusMessage} Position {positionOk ? 'OK' : 'MISS'} / Timing{' '}
+                        {timingOk ? 'OK' : 'MISS'}
+                        {distanceToTarget !== null ? ` / 거리 ${distanceToTarget}px` : ''}
+                        {dropOffsetMs !== null ? ` / 타이밍 ${dropOffsetMs}ms` : ''}
+                      </span>
+                      {state.status === 'submitting' && !isPracticeMode && (
+                        <div className="mt-5 flex items-center justify-center gap-3 text-sm font-medium leading-5 text-[var(--foundation-primary-600)] font-['Pretendard']">
+                          <div className="h-5 w-5 animate-spin rounded-full border-2 border-[var(--foundation-primary-100)] border-b-[var(--foundation-primary-600)]" />
                           <span>서버 검증 중...</span>
                         </div>
                       )}
                     </div>
                   </div>
                 )}
+
+                {phase === 'FAIL' && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-[rgba(15,23,42,0.48)]">
+                    <p className="text-[64px] font-semibold leading-none tracking-[-1.92px] text-[#FF5C5C] [text-shadow:0_0_20px_rgba(255,92,92,0.36)] font-['Pretendard']">
+                      Fail
+                    </p>
+                    <span className="sr-only">
+                      {statusMessage} Position {positionOk ? 'OK' : 'MISS'} / Timing{' '}
+                      {timingOk ? 'OK' : 'MISS'}
+                      {distanceToTarget !== null ? ` / 거리 ${distanceToTarget}px` : ''}
+                      {dropOffsetMs !== null ? ` / 타이밍 ${dropOffsetMs}ms` : ''}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
 
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="text-sm text-slate-200">{statusMessage}</p>
-                <p className="mt-1 text-xs text-slate-500">
-                  챌린지 시간이 만료되거나 검증에 실패하면 같은 모달에서 즉시 다시 시도할 수 있습니다.
-                </p>
+            <div className="flex h-[458px] w-[188px] flex-col gap-6">
+              <div className="flex flex-col gap-2">
+                <div className="rounded-[10px] bg-[var(--foundation-primary-10)] py-1 text-center text-sm font-medium leading-[1.5] text-[var(--foundation-primary-600)] font-['Pretendard']">
+                  남은 횟수
+                </div>
+                <div className="rounded-2xl border border-[var(--foundation-neutral-880)] bg-white px-4 py-4 shadow-[0_0_10px_rgba(143,252,225,0.1)]">
+                  <div className="flex items-end justify-center gap-[6px] whitespace-nowrap">
+                    <span className="text-[32px] font-semibold leading-[1.5] text-[var(--foundation-primary-500)] font-['Pretendard']">
+                      {displayRemainingAttempts}회
+                    </span>
+                    <span className="pb-[4px] text-base font-medium leading-[1.5] text-[var(--foundation-neutral-240)] font-['Pretendard']">
+                      / 총 {totalAttempts}회
+                    </span>
+                  </div>
+                </div>
               </div>
-              <div className="flex gap-3">
-                <button
-                  type="button"
-                  onClick={onCancel}
-                  disabled={state.status === 'submitting'}
-                  className="rounded-full border border-slate-700 bg-slate-900/80 px-5 py-2.5 text-sm font-medium text-slate-200 transition hover:border-slate-500 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  취소
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void loadChallenge('새 챌린지를 불러왔습니다.')}
-                  disabled={state.status === 'submitting'}
-                  className="rounded-full bg-cyan-400 px-5 py-2.5 text-sm font-black text-slate-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  새로고침
-                </button>
+
+              <div className="flex flex-1 flex-col gap-2">
+                <div className="rounded-[10px] bg-[var(--foundation-primary-10)] py-1 text-center text-sm font-medium leading-[1.5] text-[var(--foundation-primary-600)] font-['Pretendard']">
+                  설명
+                </div>
+                <div className="flex flex-1 flex-col gap-[10px] rounded-2xl border border-[var(--foundation-neutral-880)] bg-white px-5 pt-[22px] shadow-[0_0_10px_rgba(143,252,225,0.1)]">
+                  {[
+                    '공이 날아오면 시작',
+                    '글러브 이동',
+                    '공 위치에 맞춰 놓기',
+                  ].map((text, index) => (
+                    <div key={text} className="flex items-center gap-2">
+                      <div className="flex h-[14px] w-[14px] items-center justify-center rounded-full bg-[var(--foundation-primary-500)] text-[10px] font-semibold leading-[1.5] text-white font-['Pretendard']">
+                        {index + 1}
+                      </div>
+                      <p className="text-base font-medium leading-[1.5] text-[var(--foundation-neutral-240)] font-['Pretendard']">
+                        {text}
+                      </p>
+                    </div>
+                  ))}
+                </div>
               </div>
+
+              <PrimaryButton
+                type="button"
+                size="lg"
+                tone="strong"
+                disabled={state.status === 'submitting' || state.status !== 'ready'}
+                onClick={beginRound}
+                className="w-full text-base font-semibold leading-6"
+                data-testid={phase === 'INSTRUCTION' ? 'catchball-start' : undefined}
+              >
+                {phase === 'INSTRUCTION' ? '바로 시작하기' : '다시 시작하기'}
+              </PrimaryButton>
             </div>
           </div>
         )}

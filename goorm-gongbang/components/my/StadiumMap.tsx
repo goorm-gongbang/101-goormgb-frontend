@@ -71,7 +71,6 @@ export function StadiumMap({ selectedIndices, onToggle }: StadiumMapProps) {
                             onClick={
                                 active
                                     ? () => {
-                                        console.log("선택한 구역 번호:", path.num);
                                         if (path.num !== undefined) onToggle(path.num);
                                     }
                                     : undefined

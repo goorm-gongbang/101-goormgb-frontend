@@ -10,7 +10,6 @@ import type {
   TicketingStage,
   TelemetryConfig,
 } from './types';
-import { resolveAiBaseUrl } from './baseUrl';
 
 const DEFAULT_MOUSE_SAMPLE_INTERVAL = 50;
 const DEFAULT_MAX_BUFFER_SIZE = 1000;
@@ -28,7 +27,7 @@ export class TelemetryCollector {
       matchId: config.matchId,
       mouseSampleInterval: config.mouseSampleInterval ?? DEFAULT_MOUSE_SAMPLE_INTERVAL,
       maxBufferSize: config.maxBufferSize ?? DEFAULT_MAX_BUFFER_SIZE,
-      aiBaseUrl: config.aiBaseUrl ?? resolveAiBaseUrl(),
+      aiBaseUrl: config.aiBaseUrl ?? '/ai',
       debug: config.debug ?? false,
     };
   }
@@ -166,8 +165,9 @@ export class TelemetryCollector {
   }
 
   private log(message: string): void {
-    if (this.config.debug) {
-      console.log(`[TelemetryCollector] ${message}`);
+    void message;
+    if (!this.config.debug) {
+      return;
     }
   }
 }

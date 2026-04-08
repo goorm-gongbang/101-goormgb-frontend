@@ -9,7 +9,7 @@
 
    [TODO] API 연동 시
    - PreferenceForm 내 mock 초기값 → 유저 저장 데이터로 교체
-   - 저장 시 console.log → 실제 API 호출
+   - 저장 시 → 실제 API 호출
    - PreferenceForm.tsx 상단 주석의 통합 작업 목록 참고
 =========================== */
 

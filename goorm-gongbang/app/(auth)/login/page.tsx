@@ -16,9 +16,17 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const setAccessToken = useAuthStore((s) => s.setAccessToken);
   const { accessToken, user, bootstrapped } = useAuthStore();
+  const [hideLogin, setHideLogin] = useState(true);
 
   useEffect(() => {
-    console.log("[Zustand]", { accessToken, user, bootstrapped });
+    const NEXT_PUBLIC_ENV = process.env.NEXT_PUBLIC_ENV ?? "";
+    if (NEXT_PUBLIC_ENV === "staging/prod") {
+      setHideLogin(false);
+    } else if ( NEXT_PUBLIC_ENV === "dev" ) {
+      setHideLogin(true);
+    } else{
+      setHideLogin(false);
+    }
   }, [accessToken, user, bootstrapped]);
 
   /* ---------------------------
@@ -31,7 +39,6 @@ export default function LoginPage() {
       setLoading(true);
 
       const data = await login({ loginId, password });
-      console.log("✅ LOGIN SUCCESS:", data);
       toast("로그인 성공");
 
       const token = data?.accessToken;
@@ -125,28 +132,31 @@ export default function LoginPage() {
 
             {/* Form */}
             <div className="flex w-full flex-col gap-2.5 sm:gap-3">
-              <Input
-                placeholder="아이디 입력"
-                value={loginId}
-                onChange={(e) => setLoginId(e.target.value)}
-                className="h-11"
-              />
-              <Input
-                type="password"
-                placeholder="비밀번호 입력"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="h-11"
-              />
-
-              <button
-                type="button"
-                onClick={handleLogin}
-                disabled={loading || !loginId || !password}
-                className="mt-1 h-11 w-full rounded-md text-sm font-semibold text-[var(--foundation-neutral-40)] hover:bg-[var(--foundation-neutral-960)] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
-              >
-                {loading ? "로그인 중..." : "로그인"}
-              </button>
+              {hideLogin ? (
+                <div>
+                  <Input
+                    placeholder="아이디 입력"
+                    value={loginId}
+                    onChange={(e) => setLoginId(e.target.value)}
+                    className="h-11"
+                  />
+                  <Input
+                    type="password"
+                    placeholder="비밀번호 입력"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="h-11"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleLogin}
+                    disabled={loading || !loginId || !password}
+                    className="mt-1 h-11 w-full rounded-md text-sm font-semibold text-[var(--foundation-neutral-40)] hover:bg-[var(--foundation-neutral-960)] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+                  >
+                    {loading ? "로그인 중..." : "로그인"}
+                  </button>
+                </div>
+              ) : null}
 
               <KakaoButton
                 onClick={handleKakaoLogin}

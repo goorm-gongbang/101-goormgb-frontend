@@ -148,12 +148,15 @@ export default function PaymentCompletePage() {
                                 </div>
                             </div>
 
-                            <div className="flex items-center gap-6">
-                                <div className="w-20 text-base font-medium text-[var(--foundation-neutral-600)]">경기 시간</div>
-                                <div className="flex-1 text-base font-semibold text-[var(--foundation-neutral-240)]">
+                            <div className="flex flex-col gap-2 md:flex-row md:gap-6">
+                                <div className="w-20 text-base font-medium leading-6 text-[var(--foundation-neutral-600)]">
+                                    경기 시간
+                                </div>
+                                <div className="flex-1 text-base font-semibold leading-6 text-[var(--foundation-neutral-240)]">
                                     {formatMatchAt(matchAt)}
                                 </div>
                             </div>
+
 
                             <div className="flex flex-col gap-2 md:flex-row md:gap-6">
                                 <div className="w-20 text-base font-medium text-[var(--foundation-neutral-600)]">선택 좌석</div>
@@ -208,7 +211,7 @@ export default function PaymentCompletePage() {
                             </div>
 
                             <div className="flex flex-col gap-2">
-                                <div className="flex items-center gap-6">
+                                <div className="flex flex-col gap-2 md:flex-row md:gap-6">
                                     <div className="w-20 text-sm font-medium text-[var(--foundation-neutral-600)]">취소 기한</div>
                                     <div className="flex-1 text-sm font-medium text-[var(--foundation-neutral-240)]">
                                         {formatCancelDeadline(matchAt)}
