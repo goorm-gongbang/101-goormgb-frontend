@@ -1,4 +1,4 @@
-type TicketStatus = "available" | "soldOut" | "upcoming";
+type TicketStatus = "available" | "soldOut" | "upcoming" | "ended";
 
 type TicketStatusBadgeProps = {
   status: TicketStatus;
@@ -29,6 +29,12 @@ const STATUS_STYLE_MAP: Record<
     wrapperClassName:
       "bg-[var(--foundation-blue-50)] outline-[var(--foundation-blue-500)]",
     textClassName: "text-[var(--foundation-blue-500)]",
+  },
+  ended: {
+    label: "예매 마감",
+    wrapperClassName:
+      "bg-[var(--foundation-neutral-960)] outline-[var(--foundation-neutral-560)]",
+    textClassName: "text-[var(--foundation-neutral-560)]",
   },
 };
 
