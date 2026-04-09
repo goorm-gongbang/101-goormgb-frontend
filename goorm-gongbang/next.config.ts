@@ -48,7 +48,7 @@ const nextConfig = {
               "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.your-domain.com",
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.your-domain.com",
               "font-src 'self' https://fonts.gstatic.com",
-              "img-src 'self' data: blob: https://assets.playball.one https://*.kakaocdn.net https://cdn.your-domain.com",
+              "img-src 'self' data: blob: https://assets.playball.one https://*.kakaocdn.net https://cdn.your-domain.com https://goormgb-assets.s3.ap-northeast-2.amazonaws.com",
               "connect-src 'self' https://api.playball.one https://api.staging.playball.one https://api.goormgb.space https://*.faro-collector.grafana.net",
               "frame-ancestors 'none'",
               "base-uri 'self'",
