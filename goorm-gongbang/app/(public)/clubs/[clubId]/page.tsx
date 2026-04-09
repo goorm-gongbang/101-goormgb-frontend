@@ -50,7 +50,7 @@ const CLUB_ACCENT_BORDER_BY_NAME: Record<string, string> = {
   "삼성 라이온즈": "border-[rgba(255,255,255,0.1)]",
   "LG 트윈스": "border-[rgba(196,28,92,0.35)]",
   "두산 베어스": "border-[rgba(255,255,255,0.1)]",
-  "KT 위즈": "border-[rgba(255,255,255,0.6)]",
+  "kt 위즈": "border-[rgba(255,255,255,0.1)]",
   "SSG 랜더스": "border-[rgba(255,255,255,0.1)]",
   "롯데 자이언츠": "border-[#FF7E9F40]",
   "한화 이글스": "border-[rgba(253,184,39,0.35)]",

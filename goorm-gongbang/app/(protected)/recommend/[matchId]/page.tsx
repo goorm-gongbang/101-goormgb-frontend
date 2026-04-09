@@ -589,6 +589,7 @@ function RecommendPageContent({ matchId }: { matchId: number | null }) {
         logout();
         toast.error("유효하지 않은 입장 토큰입니다.");
         router.push("/");
+        return;
       }
       if (status === 403) {
         toast.error("보안 정책에 의해 요청이 차단되었습니다.");
@@ -665,6 +666,7 @@ function RecommendPageContent({ matchId }: { matchId: number | null }) {
         logout();
         toast.error("유효하지 않은 입장 토큰입니다.");
         router.push("/");
+        return;
       }
 
       if (status === 403) {
@@ -899,6 +901,7 @@ function RecommendPageContent({ matchId }: { matchId: number | null }) {
         logout();
         toast.error("유효하지 않은 입장 토큰입니다.");
         router.push("/");
+        return;
       }
       if (status === 404) {
         setIsSoldOutModalOpen(true);
