@@ -2,7 +2,7 @@
 
 import { useAuthStore } from "@/stores/authStore";
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { KakaoButton } from "@/components/login/KakaoButton";
 import { toast } from "sonner";
@@ -11,6 +11,8 @@ import { ApiError } from "@/lib/api";
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+
   const [loginId, setLoginId] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -18,13 +20,25 @@ export default function LoginPage() {
   const { accessToken, user, bootstrapped } = useAuthStore();
   const [hideLogin, setHideLogin] = useState(true);
 
+  const getSafeRedirectPath = () => {
+    const next = searchParams.get("next");
+
+    if (!next) return "/";
+
+    if (!next.startsWith("/")) return "/";
+    if (next.startsWith("//")) return "/";
+
+    return next;
+  };
+
+
   useEffect(() => {
     const NEXT_PUBLIC_ENV = process.env.NEXT_PUBLIC_ENV ?? "";
     if (NEXT_PUBLIC_ENV === "staging/prod") {
       setHideLogin(false);
-    } else if ( NEXT_PUBLIC_ENV === "dev" ) {
+    } else if (NEXT_PUBLIC_ENV === "dev") {
       setHideLogin(true);
-    } else{
+    } else {
       setHideLogin(false);
     }
   }, [accessToken, user, bootstrapped]);
@@ -69,7 +83,8 @@ export default function LoginPage() {
         return;
       }
 
-      router.push("/");
+      const redirectPath = getSafeRedirectPath();
+      router.push(redirectPath);
     } catch (e) {
       if (e instanceof ApiError) {
         console.error("❌ LOGIN FAIL:", e.status, e.message);
@@ -133,7 +148,12 @@ export default function LoginPage() {
             {/* Form */}
             <div className="flex w-full flex-col gap-2.5 sm:gap-3">
               {hideLogin ? (
-                <div>
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    void handleLogin();
+                  }}
+                >
                   <Input
                     placeholder="아이디 입력"
                     value={loginId}
@@ -148,14 +168,14 @@ export default function LoginPage() {
                     className="h-11"
                   />
                   <button
-                    type="button"
-                    onClick={handleLogin}
+                    type="submit"
                     disabled={loading || !loginId || !password}
                     className="mt-1 h-11 w-full rounded-md text-sm font-semibold text-[var(--foundation-neutral-40)] hover:bg-[var(--foundation-neutral-960)] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
                   >
                     {loading ? "로그인 중..." : "로그인"}
                   </button>
-                </div>
+                </form>
+
               ) : null}
 
               <KakaoButton

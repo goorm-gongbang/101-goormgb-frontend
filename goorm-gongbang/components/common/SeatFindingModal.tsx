@@ -29,13 +29,13 @@ export function SeatFindingModal({ open, rank, totalWaitingCount }: Props) {
         </div>
 
         <div className="flex flex-col items-center gap-4 self-stretch">
-          <div className="self-stretch text-center text-2xl font-semibold leading-8 text-white font-['Pretendard_Variable']">
+          <div className="self-stretch text-center text-2xl font-semibold leading-8 text-white font-['Pretendard']">
             선호하신 조건에 맞는 좌석을 찾고 있어요!
           </div>
           <div className="text-center text-base font-bold leading-6 text-white font-['Pretendard']">
-            가장 선택 가능성이 높은 좌석을 계산 중이에요.
+            현재 뒤로 가거나 새로고침 하면 <span className="text-[var(--foundation-primary-100)]">대기 순서가 초기화 돼요.</span>
             <br />
-            잠시만 기다려 주세요.
+            조금만 기다려 주세요!
           </div>
         </div>
       </div>

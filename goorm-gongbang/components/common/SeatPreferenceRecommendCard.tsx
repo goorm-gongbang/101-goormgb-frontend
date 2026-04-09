@@ -42,16 +42,36 @@ export function SeatPreferenceRecommendCard({
         <div className="flex items-center justify-center gap-2">
           <div className="text-base font-semibold leading-6 text-[var(--foundation-neutral-black)] font-['Pretendard']">
             사용자 선호 좌석 추천
-            <div className="text-xs font-normal leading-4 text-[var(--foundation-primary-500)] font-['Pretendard']">
-              {enabled
-                ? "설정한 선호 조건에 맞는 구역을 먼저 보여드려요"
-                : "추천 기능이 비활성화 되었습니다. 좌석을 직접 선택합니다."}
+            <div className="text-xs font-normal leading-4 text-[var(--text-info-n600)] font-['Pretendard']">
+              {enabled ? (
+                "설정한 선호 조건에 맞는 구역을 먼저 보여드려요"
+              ) : (
+                <>
+                  추천 기능이 비활성화 되었습니다.{" "}
+                  <span className="font-semibold">직접 선택</span>
+                  합니다.
+                </>
+              )}
             </div>
           </div>
         </div>
 
         <Toggle checked={enabled} onCheckedChange={onChange} />
       </div>
+
+      {!enabled && (
+        <div className="inline-flex h-8 w-full items-center justify-between">
+          <div className="flex items-center justify-center gap-2">
+            <div className="text-base font-semibold leading-6 text-[var(--foundation-neutral-black)] font-['Pretendard']">
+              인원 수
+              <div className="text-xs font-normal leading-4 text-[var(--text-info-n600)] font-['Pretendard']">
+                좌석은 <span className="font-semibold">최대 8석</span>{" "}선택할 수 있습니다.
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
 
       {enabled && (
         <>
@@ -75,7 +95,7 @@ export function SeatPreferenceRecommendCard({
                     id="nearby-seat-info"
                     className="absolute left-0 top-full z-20 mt-2 inline-flex w-[520px] flex-col items-start gap-2 rounded-lg bg-white p-3 shadow-[2px_3px_10px_0px_rgba(0,0,0,0.10)] outline outline-1 outline-offset-[-1px] outline-[var(--stroke-interactive-neutral-default)]"
                   >
-                    <div className="text-sm font-semibold leading-5 text-[var(--foundation-neutral-240)] font-['Pretendard_Variable']">
+                    <div className="text-sm font-semibold leading-5 text-[var(--foundation-neutral-240)] font-['Pretendard']">
                       인근 좌석 추천이란?
                     </div>
                     <ul className="flex list-disc flex-col items-start gap-2 pl-5">
@@ -112,7 +132,7 @@ export function SeatPreferenceRecommendCard({
               </div>
             </div>
 
-            <DropDown value={people} onChange={onPeopleChange} max={10} />
+            <DropDown value={people} onChange={onPeopleChange} max={8} />
           </div>
 
           <div className="inline-flex w-full items-center justify-between">

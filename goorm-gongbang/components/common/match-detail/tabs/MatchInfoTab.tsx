@@ -1,6 +1,8 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Copy } from "lucide-react";
+import { AddressCopiedToast } from "@/components/common/match-detail/tabs/AddressCopiedToast";
 
 type SeatPriceRow = {
     seatType: string;
@@ -39,8 +41,22 @@ export function MatchInfoTab({
     seatPrices,
     outfieldPrices,
 }: Props) {
+    const [showCopiedToast, setShowCopiedToast] = useState(false);
 
-    const handleCopy = () => { navigator.clipboard.writeText(stadiumAddress) }
+    const handleCopy = () => {
+        navigator.clipboard.writeText(stadiumAddress);
+        setShowCopiedToast(true);
+    };
+
+    useEffect(() => {
+        if (!showCopiedToast) return;
+
+        const timer = setTimeout(() => {
+            setShowCopiedToast(false);
+        }, 2000);
+
+        return () => clearTimeout(timer);
+    }, [showCopiedToast]);
 
     return (
         <div className="flex flex-col gap-2">
@@ -74,10 +90,8 @@ export function MatchInfoTab({
                 </div>
             </div>
 
-            {/* Price table */}
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto thin-scrollbar">
                 <div className="min-w-[720px] flex flex-col">
-                    {/* Header */}
                     <div className="border-t border-b border-[var(--stroke-interactive-neutral-default)] inline-flex">
                         <div className="w-64 p-2.5 bg-[var(--background-grey)] border-r border-[var(--stroke-interactive-neutral-default)] flex items-center">
                             <div className="text-[var(--text-normal-n240)] text-sm font-medium font-['Pretendard'] leading-5">
@@ -119,7 +133,6 @@ export function MatchInfoTab({
                         </div>
                     ))}
 
-                    {/* outfield rows (원문 구조 유지) */}
                     {outfieldPrices.map((row, idx) => {
                         const isFirst = idx === 0;
                         const isGroupRow = Boolean(row.groupLabel);
@@ -198,9 +211,7 @@ export function MatchInfoTab({
                 </div>
             </div>
 
-            {/* Notes */}
             <div className="flex flex-col gap-2 items-end">
-                {/* 상단 안내 */}
                 <div className="w-full">
                     <ul className="list-disc pl-5 space-y-1">
                         <li className="text-[var(--text-info-n600)] text-xs font-medium font-['Pretendard'] leading-4">
@@ -227,7 +238,6 @@ export function MatchInfoTab({
                     </ul>
                 </div>
 
-                {/* 하단 박스 */}
                 <div className="w-full px-2.5 py-4 bg-[var(--background-grey)] rounded-lg">
                     <ol className="list-decimal pl-5 space-y-1">
                         <li className="text-[var(--text-info-n600)] text-xs font-medium font-['Pretendard'] leading-4">
@@ -243,6 +253,7 @@ export function MatchInfoTab({
                 </div>
             </div>
 
+            {showCopiedToast && <AddressCopiedToast />}
         </div>
     );
 }

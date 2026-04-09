@@ -295,6 +295,19 @@ export default function Page() {
             : "PERSONAL_DEDUCTION";
     };
 
+    const isBankTransferDisabled = useMemo(() => {
+        if (!match?.matchAt) return true;
+
+        const matchTime = new Date(match.matchAt).getTime();
+        const now = Date.now();
+
+        if (Number.isNaN(matchTime)) return true;
+
+        const THREE_HOURS_IN_MS = 3 * 60 * 60 * 1000;
+        return matchTime - now <= THREE_HOURS_IN_MS;
+    }, [match?.matchAt]);
+
+
 
     const handleSubmitPayment = async () => {
         if (!canSubmitPayment || !matchId || !createdOrderId || isCreatingOrder) return;
@@ -737,7 +750,10 @@ export default function Page() {
                                                         name="paymentMethod"
                                                         value="bank"
                                                         checked={paymentMethod === "bank"}
-                                                        onChange={() => setPaymentMethod("bank")}
+                                                        onChange={() => {
+                                                            if (isBankTransferDisabled) return;
+                                                            setPaymentMethod("bank");
+                                                        }}
                                                         className="sr-only"
                                                     />
                                                     <div
@@ -1032,8 +1048,8 @@ export default function Page() {
 
                                                 <div className="flex-1 self-stretch flex justify-start items-center gap-2">
                                                     <div className="flex-1">
-                                                        <span className="text-[var(--foundation-neutral-240)] text-base font-semibold font-['Pretendard_Variable'] leading-6">이용 약관 동의 </span>
-                                                        <span className="text-[var(--foundation-red-500)] text-base font-semibold font-['Pretendard_Variable'] leading-6">*</span>
+                                                        <span className="text-[var(--foundation-neutral-240)] text-base font-semibold font-['Pretendard'] leading-6">이용 약관 동의 </span>
+                                                        <span className="text-[var(--foundation-red-500)] text-base font-semibold font-['Pretendard'] leading-6">*</span>
                                                     </div>
 
                                                     <button
@@ -1090,8 +1106,8 @@ export default function Page() {
 
                                                 <div className="flex-1 self-stretch flex justify-start items-center gap-2">
                                                     <div className="flex-1">
-                                                        <span className="text-[var(--foundation-neutral-240)] text-base font-semibold font-['Pretendard_Variable'] leading-6">취소/취소 수수료 동의 </span>
-                                                        <span className="text-[var(--foundation-red-500)] text-base font-semibold font-['Pretendard_Variable'] leading-6">*</span>
+                                                        <span className="text-[var(--foundation-neutral-240)] text-base font-semibold font-['Pretendard'] leading-6">취소/취소 수수료 동의 </span>
+                                                        <span className="text-[var(--foundation-red-500)] text-base font-semibold font-['Pretendard'] leading-6">*</span>
                                                     </div>
 
                                                     <button
@@ -1260,7 +1276,7 @@ export default function Page() {
                                         }}
                                         onSelectAlternativeSeat={() => {
                                             setIsCancelModalOpen(false);
-                                            router.back();
+                                            router.push(`/matches/${matchId}`);
                                         }}
                                     />
 

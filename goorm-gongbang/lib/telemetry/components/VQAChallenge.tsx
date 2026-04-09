@@ -124,10 +124,10 @@ export function VQAChallenge({
   const [state, setState] = useState<ChallengeState>(() =>
     isPracticeMode
       ? {
-          status: 'ready',
-          challenge: createPracticeChallenge(maxRetries),
-          message: PRACTICE_INSTRUCTION_MESSAGE,
-        }
+        status: 'ready',
+        challenge: createPracticeChallenge(maxRetries),
+        message: PRACTICE_INSTRUCTION_MESSAGE,
+      }
       : { status: 'loading' },
   );
   const [remainingTime, setRemainingTime] = useState(0);
@@ -249,8 +249,8 @@ export function VQAChallenge({
     setAnimationFreezeMs(null);
     setPositionOk(false);
     setTimingOk(false);
-      setDistanceToTarget(null);
-      setDropOffsetMs(null);
+    setDistanceToTarget(null);
+    setDropOffsetMs(null);
   }, [clearDeferredTransitionTimer, clearRetryTimer]);
 
   const buildAttemptResult = useCallback(
@@ -571,8 +571,8 @@ export function VQAChallenge({
     if (
       elapsed <
       CATCH_BALL_CONFIG.preReadyDelayMs +
-        CATCH_BALL_CONFIG.readyDurationMs +
-        CATCH_BALL_CONFIG.goDurationMs
+      CATCH_BALL_CONFIG.readyDurationMs +
+      CATCH_BALL_CONFIG.goDurationMs
     ) {
       return 'GO';
     }
@@ -639,8 +639,8 @@ export function VQAChallenge({
   const indicatorBottomInset = 7;
   const gaugeThumbTop = clamp(
     indicatorTopInset +
-      (1 - indicatorProgress) *
-        (VERTICAL_INDICATOR_TRACK.height - gaugeThumbSize - indicatorTopInset - indicatorBottomInset),
+    (1 - indicatorProgress) *
+    (VERTICAL_INDICATOR_TRACK.height - gaugeThumbSize - indicatorTopInset - indicatorBottomInset),
     indicatorTopInset,
     VERTICAL_INDICATOR_TRACK.height - gaugeThumbSize - indicatorBottomInset,
   );
@@ -659,9 +659,9 @@ export function VQAChallenge({
       (phase === 'COUNTDOWN' &&
         countdownStartMs !== null &&
         nowMs - countdownStartMs >=
-          CATCH_BALL_CONFIG.preReadyDelayMs +
-            CATCH_BALL_CONFIG.readyDurationMs +
-            CATCH_BALL_CONFIG.goDurationMs));
+        CATCH_BALL_CONFIG.preReadyDelayMs +
+        CATCH_BALL_CONFIG.readyDurationMs +
+        CATCH_BALL_CONFIG.goDurationMs));
   const isErrorState = state.status === 'error';
   const errorAccent =
     !isErrorState ? null : state.reason === 'max_attempts' || state.reason === 'blocked' ? 'red' : 'neutral';
@@ -676,9 +676,9 @@ export function VQAChallenge({
       ? ['인증 가능 횟수를 초과했습니다.', '경기 상세 페이지에서 다시 예매를 진행해 주세요.']
       : state.reason === 'blocked'
         ? [
-            '비정상적인 입력 패턴이 감지되었습니다.',
-            '자동화 시도로 분류될 수 있는 패턴이 감지되어 현재 세션이 종료되었습니다.',
-          ]
+          '비정상적인 입력 패턴이 감지되었습니다.',
+          '자동화 시도로 분류될 수 있는 패턴이 감지되어 현재 세션이 종료되었습니다.',
+        ]
         : [state.message];
   const errorConfirmLabel = '확인';
   const terminalErrorCardClass =
@@ -724,6 +724,20 @@ export function VQAChallenge({
     gloveRef.current = nextGlove;
     setGlove(nextGlove);
   };
+
+  /* ADD BY CKH - body scroll lock */
+  useEffect(() => {
+    const originalOverflow = document.body.style.overflow;
+    const originalTouchAction = document.body.style.touchAction;
+
+    document.body.style.overflow = "hidden";
+    document.body.style.touchAction = "none";
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      document.body.style.touchAction = originalTouchAction;
+    };
+  }, []);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-[linear-gradient(180deg,rgba(0,0,0,0.9)_0%,rgba(3,41,53,0.5)_100%)] p-4 backdrop-blur-[5px]">
