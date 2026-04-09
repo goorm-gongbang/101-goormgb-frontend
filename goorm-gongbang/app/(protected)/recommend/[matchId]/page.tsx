@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useAuthStore } from "@/stores/authStore";
 import { ChevronLeft, RotateCw } from "lucide-react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
@@ -157,6 +158,8 @@ export default function Page() {
 }
 
 function RecommendPageContent({ matchId }: { matchId: number | null }) {
+  const logout = useAuthStore((s) => s.logout);
+
   const router = useRouter();
   const searchParams = useSearchParams();
   const { setStage, start, stop } = useTelemetryContext();
@@ -491,8 +494,9 @@ function RecommendPageContent({ matchId }: { matchId: number | null }) {
       const status = getErrorStatus(e);
 
       if (status === 401) {
+        logout();
         toast.error("유효하지 않은 입장 토큰입니다.");
-        router.push(`/matches/${matchId}`);
+        router.push("/");
         return;
       }
 
@@ -582,9 +586,9 @@ function RecommendPageContent({ matchId }: { matchId: number | null }) {
       const status = getErrorStatus(e);
 
       if (status === 401) {
+        logout();
         toast.error("유효하지 않은 입장 토큰입니다.");
-        router.push(`/matches/${matchId}`);
-        return;
+        router.push("/");
       }
       if (status === 403) {
         toast.error("보안 정책에 의해 요청이 차단되었습니다.");
@@ -658,9 +662,9 @@ function RecommendPageContent({ matchId }: { matchId: number | null }) {
       }
 
       if (status === 401) {
+        logout();
         toast.error("유효하지 않은 입장 토큰입니다.");
-        router.push(`/matches/${matchId}`);
-        return;
+        router.push("/");
       }
 
       if (status === 403) {
@@ -892,9 +896,9 @@ function RecommendPageContent({ matchId }: { matchId: number | null }) {
       const status = getErrorStatus(e);
 
       if (status === 401) {
+        logout();
         toast.error("유효하지 않은 입장 토큰입니다.");
-        router.push(`/matches/${matchId}`);
-        return;
+        router.push("/");
       }
       if (status === 404) {
         setIsSoldOutModalOpen(true);
@@ -959,7 +963,7 @@ function RecommendPageContent({ matchId }: { matchId: number | null }) {
                 |
               </div>
               <div className="min-w-0 flex items-center gap-2">
-                <div className="h-7 w-7 overflow-hidden rounded-full bg-white sm:h-8 sm:w-8">
+                {/* <div className="h-7 w-7 overflow-hidden rounded-full bg-white sm:h-8 sm:w-8">
                   {homeLogoImg ? (
                     <img
                       className="h-full w-full object-cover"
@@ -967,7 +971,7 @@ function RecommendPageContent({ matchId }: { matchId: number | null }) {
                       alt={"홈 구단 로고"}
                     />
                   ) : null}
-                </div>
+                </div> */}
                 <div className="min-w-0 truncate text-sm font-medium leading-5 text-[var(--foundation-neutral-400)] sm:text-base sm:leading-6">
                   {stadiumName || "-"}
                 </div>

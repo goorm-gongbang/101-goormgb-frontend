@@ -107,7 +107,7 @@ export function BookingButton({
     // 오픈 후
     if (isOpen && disabled) {
         const disabledLabel =
-            disabledReason === "SOLD_OUT" ? "매진" : disabledReason === "ENDED" ? "경기 종료" : "예매 불가";
+            disabledReason === "SOLD_OUT" ? "매진" : disabledReason === "ENDED" ? "예매 마감" : "예매 불가";
 
         const disabledTextClass =
             disabledReason === "SOLD_OUT"

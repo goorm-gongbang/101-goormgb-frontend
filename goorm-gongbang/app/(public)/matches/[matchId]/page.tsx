@@ -23,7 +23,7 @@ import { toast } from "sonner";
 import { useTelemetry } from "@/lib/telemetry";
 import { TelemetryProvider } from "@/lib/telemetry/context";
 import { VQAChallenge } from "@/lib/telemetry/components";
-import { CircleHelp } from "lucide-react";
+import { CircleHelp, ChevronRight } from "lucide-react";
 
 /* ===========================
     UI TYPES
@@ -41,7 +41,7 @@ type OutfieldPriceRow = {
   weekend: string;
 };
 
-type SaleBadgeText = "구매 가능" | "구매 불가" | "매진" | "경기 종료";
+type SaleBadgeText = "예매 가능" | "구매 불가" | "매진" | "예매 마감" | "판매 예정";
 
 type TabKey = "INFO" | "RECOMMEND" | "REFUND";
 
@@ -90,9 +90,10 @@ function toSaleBadgeText(
   saleStatus: SaleStatus,
   purchaseStatus: PurchaseStatus,
 ): SaleBadgeText {
-  if (purchaseStatus === "PURCHASABLE") return "구매 가능";
+  if (purchaseStatus === "PURCHASABLE") return "예매 가능";
   if (saleStatus === "SOLD_OUT") return "매진";
-  if (saleStatus === "ENDED") return "경기 종료";
+  if (saleStatus === "ENDED") return "예매 마감";
+  if (saleStatus === "UPCOMING") return "판매 예정";
   return "구매 불가";
 }
 
@@ -268,7 +269,6 @@ export default function MatchDetailSectionResponsive({
 
       try {
         const data = await getMatchById(matchId);
-
         if (!alive) return;
 
         setData((data as MatchDetail) ?? null);
@@ -333,6 +333,9 @@ export default function MatchDetailSectionResponsive({
   const homeLogoUrl = resolveLogoSrc(data.homeClub.logoImg);
   const awayLogoUrl = resolveLogoSrc(data.awayClub.logoImg);
 
+  const homeClubColor = data.homeClub.clubColor;
+  const awayClubColor = data.awayClub.clubColor;
+
   const saleBadgeText = toSaleBadgeText(
     data.saleStatus,
     data.matchGuide.purchaseStatus,
@@ -343,10 +346,10 @@ export default function MatchDetailSectionResponsive({
     SaleBadgeText,
     { wrapper: string; text: string }
   > = {
-    "구매 가능": {
+    "예매 가능": {
       wrapper:
-        "bg-[var(--foundation-red-100)] outline-[var(--foundation-red-400)]",
-      text: "text-[var(--foundation-red-500)]",
+        "bg-[var(--foundation-primary-10)] outline-[var(--foundation-primary-600)]",
+      text: "text-[var(--foundation-primary-600)]",
     },
     "구매 불가": {
       wrapper:
@@ -355,13 +358,18 @@ export default function MatchDetailSectionResponsive({
     },
     매진: {
       wrapper:
-        "bg-[var(--foundation-brown-50)] outline-[var(--foundation-neutral-720)]",
-      text: "text-[var(--foundation-neutral-720)]",
+        "bg-[var(--foundation-red-50)] outline-[var(--foundation-red-400)]",
+      text: "text-[var(--foundation-red-400)]",
     },
-    "경기 종료": {
+    "예매 마감": {
       wrapper:
         "bg-[var(--foundation-neutral-900)] outline-[var(--foundation-neutral-720)]",
       text: "text-[var(--foundation-neutral-720)]",
+    },
+    "판매 예정": {
+      wrapper:
+        "bg-[var(--foundation-blue-50)] outline-[var(--foundation-blue-500)]",
+      text: "text-[var(--foundation-blue-500)]",
     },
   };
 
@@ -408,8 +416,8 @@ export default function MatchDetailSectionResponsive({
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-0">
                   {/* Home */}
-                  <div className="max-w-[1440px] relative bg-[var(--pink-800)]">
-                    <div className="h-24 sm:h-28 px-4 sm:px-6 lg:px-10 py-4 bg-[var(--pink-800)] flex items-center">
+                  <div className="max-w-[1440px] relative" style={{ backgroundColor: homeClubColor }}>
+                    <div className="h-24 sm:h-28 px-4 sm:px-6 lg:px-10 py-4 flex items-center">
                       <div className="w-full flex items-center justify-end">
                         <div className="flex items-center gap-3 sm:gap-10 md:gap-20 lg:gap-30 min-w-0">
                           {/* Logo */}
@@ -441,8 +449,8 @@ export default function MatchDetailSectionResponsive({
                   </div>
 
                   {/* Away */}
-                  <div className="relative bg-black">
-                    <div className="h-24 sm:h-28 px-4 sm:px-6 lg:px-10 py-4 bg-black flex items-center">
+                  <div className="relative" style={{ backgroundColor: awayClubColor }}>
+                    <div className="h-24 sm:h-28 px-4 sm:px-6 lg:px-10 py-4 flex items-center">
                       <div className="w-full flex items-center justify-start">
                         <div className="flex items-center gap-3 sm:gap-10 md:gap-20 lg:gap-30 min-w-0">
                           {/* Text */}
@@ -494,7 +502,7 @@ export default function MatchDetailSectionResponsive({
               <TabButton
                 active={activeTab === "RECOMMEND"}
                 onClick={() => setActiveTab("RECOMMEND")}
-                label="추천좌석 안내"
+                label="추천구역 안내"
               />
               <TabButton
                 active={activeTab === "REFUND"}
@@ -504,26 +512,27 @@ export default function MatchDetailSectionResponsive({
             </div>
 
             {/* Info */}
-            {activeTab === "INFO" && (
-              <MatchInfoTab
-                homeKo={homeKo}
-                awayKo={awayKo}
-                ageLimitText={ageLimitText}
-                stadiumKo={stadiumKo}
-                stadiumAddress={stadiumAddress}
-                matchAtText={matchAtText}
-                seatPrices={seatPrices}
-                outfieldPrices={outfieldPrices}
-              />
-            )}
+            <div className="h-[70vh] overflow-y-auto">
+              {activeTab === "INFO" && (
+                <MatchInfoTab
+                  homeKo={homeKo}
+                  awayKo={awayKo}
+                  ageLimitText={ageLimitText}
+                  stadiumKo={stadiumKo}
+                  stadiumAddress={stadiumAddress}
+                  matchAtText={matchAtText}
+                  seatPrices={seatPrices}
+                  outfieldPrices={outfieldPrices}
+                />
+              )}
 
-            {/* 추천죄석 안내 */}
-            {activeTab === "RECOMMEND" && <MatchRecommendTab />}
+              {/* 추천죄석 안내 */}
+              {activeTab === "RECOMMEND" && <MatchRecommendTab />}
 
-            {/* 취소/환불 */}
-            {activeTab === "REFUND" && <MatchRefundTab />}
+              {/* 취소/환불 */}
+              {activeTab === "REFUND" && <MatchRefundTab />}
+            </div>
           </div>
-
           {/* Right (sticky on desktop) */}
           <aside className="lg:sticky lg:top-6">
             <div className="w-full bg-[var(--background-white)] rounded-2xl shadow-[0px_1px_3px_0px_rgba(0,0,0,0.05)] outline outline-1 outline-offset-[-1px] outline-[var(--stroke-interactive-neutral-default)]">
@@ -533,9 +542,10 @@ export default function MatchDetailSectionResponsive({
                     <div className="flex flex-col items-center gap-3">
                       <div className="w-full flex items-center gap-3">
                         {saleBadgeText &&
-                          (saleBadgeText === "구매 가능" ||
+                          (saleBadgeText === "예매 가능" ||
                             saleBadgeText === "매진" ||
-                            saleBadgeText === "경기 종료") &&
+                            saleBadgeText === "판매 예정" ||
+                            saleBadgeText === "예매 마감") &&
                           (() => {
                             const s = SALE_BADGE_STYLE[saleBadgeText];
                             return (
@@ -556,7 +566,13 @@ export default function MatchDetailSectionResponsive({
                               </div>
                             );
                           })()}
-                        <div className="text-[var(--foundation-red-500)] text-sm font-semibold font-['Pretendard'] leading-5">
+                        <div
+                          className={`text-sm font-semibold font-['Pretendard'] leading-5 ${
+                            saleBadgeText === "판매 예정"
+                              ? "text-[var(--foundation-blue-500)]"
+                              : "text-[var(--foundation-red-500)]"
+                          }`}
+                        >
                           {dDayText}
                         </div>
                       </div>
@@ -595,12 +611,12 @@ export default function MatchDetailSectionResponsive({
                   <BookingButton
                     saleAt={saleAtDate}
                     disabled={
-                      saleBadgeText === "매진" || saleBadgeText === "경기 종료"
+                      saleBadgeText === "매진" || saleBadgeText === "예매 마감"
                     }
                     disabledReason={
                       saleBadgeText === "매진"
                         ? "SOLD_OUT"
-                        : saleBadgeText === "경기 종료"
+                        : saleBadgeText === "예매 마감"
                           ? "ENDED"
                           : "ETC"
                     }
@@ -616,7 +632,7 @@ export default function MatchDetailSectionResponsive({
                       >
                         <CircleHelp className="h-4 w-4 shrink-0" />
                         <span>예매 전 보안 인증을 미리 경험해보세요</span>
-                        <span aria-hidden="true">{'>'}</span>
+                        <ChevronRight className="h-4 w-4 shrink-0" />
                       </button>
                       <div className="pointer-events-none absolute left-1/2 top-full z-20 mt-2 w-[320px] -translate-x-1/2 rounded-2xl border border-[var(--foundation-neutral-880)] bg-white px-4 py-3 text-left opacity-0 shadow-[0_8px_20px_rgba(0,0,0,0.08)] transition duration-150 group-hover:opacity-100">
                         <p className="text-sm font-semibold leading-5 text-[var(--foundation-neutral-240)]">

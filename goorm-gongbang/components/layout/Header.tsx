@@ -32,7 +32,7 @@ export function Header({ className, onMyInfoClick, onMyTicketClick }: Props) {
   return (
     <div
       className={cn(
-        "w-full self-stretch h-12 px-4 sm:px-6 md:px-10 lg:px-16 xl:px-24 2xl:px-[120px] bg-[var(--foundation-neutral-980)] inline-flex justify-between items-center",
+        "sticky top-0 z-50 w-full self-stretch h-12 px-4 sm:px-6 md:px-10 lg:px-16 xl:px-24 2xl:px-[120px] bg-[var(--foundation-neutral-980)] inline-flex justify-between items-center",
         className,
       )}
     >

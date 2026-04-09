@@ -35,7 +35,7 @@ export function LoginRequiredModal({ open, onClose }: Props) {
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
             <div className="inline-flex flex-col items-center gap-6">
-                <div className="w-full max-w-[420px] rounded-2xl bg-white shadow-[0px_1px_3px_0px_rgba(0,0,0,0.05)] outline outline-1 outline-offset-[-1px] outline-[var(--stroke-interactive-neutral-default)]">
+                <div className="w-[500px] max-w-[500px] rounded-2xl bg-white shadow-[0px_1px_3px_0px_rgba(0,0,0,0.05)] outline outline-1 outline-offset-[-1px] outline-[var(--stroke-interactive-neutral-default)]">
                     <div className="inline-flex w-full flex-col items-start justify-start gap-8 p-8">
                         <div className="flex w-full flex-col items-start justify-start gap-4">
                             <div className="flex w-full flex-col items-start justify-start gap-8">
@@ -69,7 +69,7 @@ export function LoginRequiredModal({ open, onClose }: Props) {
                             </div>
 
                             <div className="inline-flex w-full items-center justify-center gap-2 p-2">
-                                <div className="text-center text-xs font-medium leading-4 font-['Pretendard_Variable']">
+                                <div className="text-center text-xs font-medium leading-4 font-['Pretendard']">
                                     <span className="text-[var(--foundation-neutral-560)]">
                                         해당 계정을 통해 표고에 로그인함으로써
                                         <br />

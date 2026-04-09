@@ -295,6 +295,19 @@ export default function Page() {
             : "PERSONAL_DEDUCTION";
     };
 
+    const isBankTransferDisabled = useMemo(() => {
+        if (!match?.matchAt) return true;
+
+        const matchTime = new Date(match.matchAt).getTime();
+        const now = Date.now();
+
+        if (Number.isNaN(matchTime)) return true;
+
+        const threeHours = 3 * 60 * 60 * 1000;
+        return matchTime - now <= threeHours;
+    }, [match?.matchAt]);
+
+
 
     const handleSubmitPayment = async () => {
         if (!canSubmitPayment || !matchId || !createdOrderId || isCreatingOrder) return;
@@ -737,7 +750,10 @@ export default function Page() {
                                                         name="paymentMethod"
                                                         value="bank"
                                                         checked={paymentMethod === "bank"}
-                                                        onChange={() => setPaymentMethod("bank")}
+                                                        onChange={() => {
+                                                            if (isBankTransferDisabled) return;
+                                                            setPaymentMethod("bank");
+                                                        }}
                                                         className="sr-only"
                                                     />
                                                     <div
@@ -1260,7 +1276,7 @@ export default function Page() {
                                         }}
                                         onSelectAlternativeSeat={() => {
                                             setIsCancelModalOpen(false);
-                                            router.back();
+                                            router.push(`/matches/${matchId}`);
                                         }}
                                     />
 

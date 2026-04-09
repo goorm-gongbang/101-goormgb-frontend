@@ -24,18 +24,46 @@ function resolveLogoSrc(input: string) {
 }
 
 const COPIED_STATE_RESET_DELAY_MS = 2000;
-const HANHWA_EAGLES_CLUB_ID = 4; // 한화 이글스 클럽 ID 상수화
 const CURRENT_YEAR = new Date().getFullYear(); // 현재 연도 동적 추출
 const SALE_STATUS_CONFIG = {
-  ON_SALE: { label: "예매 가능", color: "text-emerald-500" },
-  SOLD_OUT: { label: "매진", color: "text-slate-800" },
-  UPCOMING: { label: "판매 예정", color: "text-blue-500" },
-  ENDED: { label: "판매 종료", color: "text-slate-500" },
+  ON_SALE: { label: "예매 가능", color: "text-[var(--foundation-primary-600)]" },
+  SOLD_OUT: { label: "매진", color: "text-[var(--text-normal-n240)]" },
+  UPCOMING: { label: "판매 예정", color: "text-[var(--foundation-secondary-500)]" },
+  ENDED: { label: "예매 마감", color: "text-[var(--text-info-n600)]" },
 } as const;
+
+const CLUB_ACCENT_TEXT_BY_NAME: Record<string, string> = {
+  "KIA 타이거즈": "text-[rgba(255,255,255,0.6)]",
+  "삼성 라이온즈": "text-[rgba(255,255,255,0.6)]",
+  "LG 트윈스": "text-[#F6A3C8]",
+  "두산 베어스": "text-[rgba(255,255,255,0.6)]",
+  "kt 위즈": "text-[rgba(255,255,255,0.6)]",
+  "SSG 랜더스": "text-[rgba(255,255,255,0.6)]",
+  "롯데 자이언츠": "text-[#FF7E9F]",
+  "한화 이글스": "text-[#FFE08A]",
+  "NC 다이노스": "text-[#A9C7F5]",
+  "키움 히어로즈": "text-[#F2CDA6]",
+};
+
+const CLUB_ACCENT_BORDER_BY_NAME: Record<string, string> = {
+  "KIA 타이거즈": "border-[rgba(255,255,255,0.1)]",
+  "삼성 라이온즈": "border-[rgba(255,255,255,0.1)]",
+  "LG 트윈스": "border-[rgba(196,28,92,0.35)]",
+  "두산 베어스": "border-[rgba(255,255,255,0.1)]",
+  "KT 위즈": "border-[rgba(255,255,255,0.6)]",
+  "SSG 랜더스": "border-[rgba(255,255,255,0.1)]",
+  "롯데 자이언츠": "border-[#FF7E9F40]",
+  "한화 이글스": "border-[rgba(253,184,39,0.35)]",
+  "NC 다이노스": "border-[rgba(49,82,136,0.35)]",
+  "키움 히어로즈": "border-[rgba(242,205,166,0.2)]",
+};
 
 export default function ClubDetailPage() {
   const params = useParams();
-  const [currentMonth, setCurrentMonth] = useState(new Date(CURRENT_YEAR, 2, 1));
+  const [currentMonth, setCurrentMonth] = useState(() => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), 1);
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [club, setClub] = useState<ClubDetail | null>(null);
@@ -93,10 +121,9 @@ export default function ClubDetailPage() {
       setError(null);
       try {
         const data = await getClubById(clubId);
-
         if (!alive) return;
         setClub((data as ClubDetail) ?? null);
-        
+
       } catch (e) {
         if (!alive) return;
         if (e instanceof ApiError) {
@@ -184,7 +211,10 @@ export default function ClubDetailPage() {
   const logoSrc = resolveLogoSrc(club.logoImg);
   const bgColor = club.clubColor || "#121130";
   const stadiumName = club.stadium?.koName ?? "";
-  const isYellowClub = clubId === HANHWA_EAGLES_CLUB_ID;
+  const accentTextClass =
+    CLUB_ACCENT_TEXT_BY_NAME[club.koName] ?? "text-[var(--foundation-red-300)]";
+  const accentBorderClass =
+    CLUB_ACCENT_BORDER_BY_NAME[club.koName] ?? "border-[rgba(255,255,255,0.2)]";
 
   return (
     <div className="w-full min-h-screen bg-white">
@@ -216,9 +246,7 @@ export default function ClubDetailPage() {
               <div
                 className={cn(
                   "flex flex-wrap  justify-center lg:justify-start gap-2  text-xs sm:text-sm",
-                  isYellowClub
-                    ? "text-[var(--foundation-yellow-300)]"
-                    : "text-[var(--foundation-red-300)]",
+                  accentTextClass,
                 )}
               >
                 <span className="opacity-80">구장</span>
@@ -226,13 +254,19 @@ export default function ClubDetailPage() {
                 <button
                   type="button"
                   onClick={handleCopyStadium}
-                  className={cn(
-                    "flex items-center gap-1 hover:text-white transition-colors border-b ",
-                    isYellowClub ? "border-yellow-200" : "border-red-200",
-                  )}
+                  className="flex items-center gap-1 hover:text-white transition-colors"
                 >
-                  {copied ? "복사됨" : "주소"} <Copy size={14} />
+                  <span
+                    className={cn(
+                      "border-b",
+                      accentBorderClass,
+                    )}
+                  >
+                    {copied ? "복사됨" : "주소"}
+                  </span>
+                  <Copy size={14} />
                 </button>
+
               </div>
             </div>
 
@@ -241,9 +275,9 @@ export default function ClubDetailPage() {
                 href={club.homepageRedirectUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-center lg:justify-start gap-1 text-sm font-medium hover:underline w-fit max-w-full group self-center lg:self-start"
+                className="flex items-center justify-center lg:justify-start gap-1 text-sm font-medium w-fit max-w-full group self-center lg:self-start"
               >
-                <span className="truncate">공식 홈페이지로 이동하기</span>
+                <span className="truncate border-b">공식 홈페이지로 이동하기</span>
                 <ChevronRight
                   size={16}
                   className="group-hover:translate-x-1 transition-transform"
@@ -257,9 +291,7 @@ export default function ClubDetailPage() {
             <div
               className={cn(
                 " font-semibold tracking-wider text-xs sm:text-sm text-center lg:text-left",
-                isYellowClub
-                  ? "text-[var(--foundation-yellow-300)]"
-                  : "text-[var(--foundation-red-300)]",
+                accentTextClass,
               )}
             >
               {club.currentSeasonStats?.seasonYear ?? CURRENT_YEAR} 시즌
@@ -282,22 +314,18 @@ export default function ClubDetailPage() {
                         key={stat.label}
                         className={cn(
                           "px-3 sm:px-4",
-                          isYellowClub
-                            ? "lg:border-yellow-400/30"
-                            : "lg:border-red-400/30",
+                          accentBorderClass,
                           "lg:border-r lg:last:border-none",
                           idx % 2 === 0
                             ? cn(
                               "border-r",
-                              isYellowClub
-                                ? "border-yellow-400/20"
-                                : "border-red-400/20",
+                              accentBorderClass,
                               "lg:border-r",
                             )
                             : "border-r-0",
                         )}
                       >
-                        <div className="text-white text-[11px] sm:text-xs mb-1 opacity-80">
+                        <div className="text-[var(--foundation-neutral-940)] text-[11px] sm:text-xs mb-1 opacity-80">
                           {stat.label}
                         </div>
                         <div className="text-2xl sm:text-3xl font-bold text-white">
@@ -327,16 +355,12 @@ export default function ClubDetailPage() {
                         key={stat.label}
                         className={cn(
                           "px-3 sm:px-4",
-                          isYellowClub
-                            ? "lg:border-yellow-400/30"
-                            : "lg:border-red-400/30",
+                          accentBorderClass,
                           "lg:border-r lg:last:border-none",
                           idx % 2 === 0
                             ? cn(
                               "border-r",
-                              isYellowClub
-                                ? "border-yellow-400/20"
-                                : "border-red-400/20",
+                              accentBorderClass,
                               "lg:border-r",
                             )
                             : "border-r-0",
@@ -356,7 +380,7 @@ export default function ClubDetailPage() {
                 <div
                   className={cn(
                     "text-sm text-center lg:text-left",
-                    isYellowClub ? "text-yellow-100" : "text-red-100",
+                    accentTextClass,
                   )}
                 >
                   현재 시즌 정보가 준비 중입니다.
@@ -433,6 +457,7 @@ export default function ClubDetailPage() {
                   const config = match
                     ? SALE_STATUS_CONFIG[match.saleStatus]
                     : null;
+                  const isHoverable = !!match && match.saleStatus !== "ENDED";
 
                   return (
                     <div
@@ -440,18 +465,23 @@ export default function ClubDetailPage() {
                       className={cn(
                         "min-h-[160px] sm:min-h-[180px] lg:min-h-[200px]",
                         "border border-slate-200 rounded-lg flex flex-col items-center transition-all overflow-hidden",
-                        !match && "bg-[var(--background-grey)]",
+                        isHoverable && "hover:border-[var(--foundation-primary-300)]",
+                        (!match || match.saleStatus === "ENDED") && "bg-[var(--background-grey)]",
+
                         !isCurrentMonth && "opacity-30",
                       )}
                     >
-                      <div className="w-full flex items-center px-2 sm:px-3 py-2 border-b border-slate-300">
+                      <div className={cn(
+                        "w-full flex items-center px-2 sm:px-3 py-2 border-b border-slate-300",
+                        (!match || match.saleStatus === "ENDED") && "bg-[var(--background-grey)]"
+                      )}>
                         <div className="flex items-center gap-1.5">
                           <span
                             className={cn(
                               "text-[11px] font-bold",
-                              match
-                                ? "text-[var(--text-normal-n240)]"
-                                : "text-slate-400",
+                              (!match || match.saleStatus === "ENDED")
+                                ? "text-[var(--foundation-neutral-720)]"
+                                : "text-[var(--text-normal-n240)]",
                             )}
                           >
                             {format(day, "d")}
@@ -459,9 +489,9 @@ export default function ClubDetailPage() {
                           <span
                             className={cn(
                               "text-[11px] font-bold",
-                              match
-                                ? "text-[var(--text-normal-n240)]"
-                                : "text-slate-400",
+                              (!match || match.saleStatus === "ENDED")
+                                ? "text-[var(--foundation-neutral-720)]"
+                                : "text-[var(--text-normal-n240)]",
                             )}
                           >
                             {match
@@ -477,7 +507,12 @@ export default function ClubDetailPage() {
                         </div>
 
                         {match?.isHomeMatch && (
-                          <div className="ml-auto w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                          <div className={cn(
+                            "ml-auto w-1.5 h-1.5 rounded-full bg-emerald-500",
+                            (!match || match.saleStatus === "ENDED")
+                              ? "bg-[var(--text-info-n600)]"
+                              : "bg-[var(--foundation-primary-500)]",
+                          )} />
                         )}
                       </div>
 
@@ -532,9 +567,9 @@ export default function ClubDetailPage() {
                           <ClubMatchCard match={match} config={config} />
                         ) : (
                           <div className="h-full flex items-center justify-center text-center">
-                            <span className="text-[10px] text-slate-400 font-medium leading-tight">
+                            {/* <span className="text-[10px] text-slate-400 font-medium leading-tight">
                               경기가 없습니다
-                            </span>
+                            </span> */}
                           </div>
                         )}
                       </div>

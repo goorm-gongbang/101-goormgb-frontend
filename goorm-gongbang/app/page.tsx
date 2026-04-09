@@ -27,32 +27,6 @@ function toMatchCardVariant(saleState?: SaleStatus) {
   return undefined;
 }
 
-function overlayTexts(saleState: SaleStatus, salesOpenAt?: string) {
-  switch (saleState) {
-    case "UPCOMING": {
-      const openText = salesOpenAt
-        ? `${formatKST(salesOpenAt, {
-          month: "numeric",
-          day: "numeric",
-          hour: "2-digit",
-          minute: "2-digit",
-          year: undefined,
-        })} 오픈`
-        : "오픈 예정";
-      return { top: "Coming Soon", main: openText };
-    }
-
-    case "SOLD_OUT":
-      return { top: "Sold Out", main: "예매 마감" };
-
-    case "ENDED":
-      return { top: "Ended", main: "경기 종료" };
-
-    default:
-      return { top: undefined, main: undefined };
-  }
-}
-
 function TeamLogo({ club }: { club: Club }) {
   return <IconPreview logoImg={club.logoImg} size="md" />;
 }
@@ -152,7 +126,6 @@ export default function Home() {
     (async () => {
       try {
         const data = await getMatches(selectedDate);
-
         if (cancelled) return;
 
         setMatchesPayload(data ?? null);
@@ -202,7 +175,7 @@ export default function Home() {
   /* 3월 28일은 총 5개의 경기가 있습니다. */
   const countText = useMemo(() => {
     const dateLabel = formatKST(selectedDate, {
-      month: "numeric",
+      month: "long",
       day: "numeric",
       year: undefined,
       hour: undefined,
@@ -267,7 +240,7 @@ export default function Home() {
                 ) : (
                   matchCards.map((m, idx) => {
                     const dateText = formatKST(m.matchAt, {
-                      month: "numeric",
+                      month: "long",
                       day: "numeric",
                       year: undefined,
                       hour: undefined,
@@ -285,8 +258,7 @@ export default function Home() {
                     )}`;
 
                     const variant = toMatchCardVariant(m.saleStatus); // comming soon, soild out, ended
-                    const overlay = overlayTexts(m.saleStatus, m.salesOpenAt); // 예매 중(ON_SALE), 판매 예정(UPCOMING), 매진(SOLD_OUT), 경기 종료(ENDED)
-                    const isClickable = m.saleStatus === "ON_SALE";
+                    const isClickable = m.saleStatus !== "ENDED";
 
                     return (
                       <button
@@ -301,7 +273,7 @@ export default function Home() {
                       >
                         <MatchCard
                           elevated={idx === 0}
-                          variant={variant} // comming soon, soild out, ended
+                          variant={variant} // on_sale, upcoming, sold_out, ended
                           dateText={dateText} // 3월 28일
                           timeText={timeText} // 토 · 14 : 00
                           stadiumKo={m.stadium.koName} // 대구 삼성 라이온즈 파크
