@@ -17,3 +17,6 @@ export * from "./recommendation.service";
 
 // Seat Service
 export * from "./seat.service";
+
+// Mypage Service
+export * from "./mypage.service";

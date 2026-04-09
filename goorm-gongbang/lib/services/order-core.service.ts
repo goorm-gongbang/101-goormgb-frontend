@@ -18,6 +18,7 @@ import type {
   ClubDetail,
   OnboardingStatusResponse,
   OnboardingPreferencesRequest,
+  UpdateOnboardingPreferencesRequest,
   ClubMonthMatches,
   OnboardingPreferencesResponse,
   PreferredBlockUpdateRequest,
@@ -94,6 +95,10 @@ export const saveOnboardingPreferences = (body: OnboardingPreferencesRequest) =>
 /* 온보딩 선호도 응답 */
 export const getOnboardingPreferences = () =>
   auth.get<OnboardingPreferencesResponse>(`${API_BASE_URL}/order/onboarding/preferences`);
+
+/* 온보딩 선호도 수정 (온보딩 완료 후 마이페이지에서 업데이트) */
+export const updateOnboardingPreferences = (body: UpdateOnboardingPreferencesRequest) =>
+  auth.put(`${API_BASE_URL}/order/onboarding/preferences`, body);
 
 /* 선호 구역 수정 */
 export const saveOnboardingPreferencesBlocks = (body: PreferredBlockUpdateRequest) =>

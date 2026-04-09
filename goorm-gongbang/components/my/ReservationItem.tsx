@@ -7,30 +7,35 @@ interface ReservationItemProps {
     index: number;
     isLast: boolean;
     onActionClick: (e: React.MouseEvent, item: Reservation) => void;
+    isLoading?: boolean;
 }
 
-export function ReservationItem({ item, index, isLast, onActionClick }: ReservationItemProps) {
+export function ReservationItem({ item, isLast, onActionClick, isLoading }: ReservationItemProps) {
     const router = useRouter();
 
-    // 오늘 이전 날짜 판별
+    // 오늘 이전/당일 날짜 판별
     const matchDateStr = item.date.split(" (")[0].replace(/\./g, "-");
     const matchDate = new Date(matchDateStr);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const isPastMatch = matchDate.getTime() < today.getTime();
+    const isDDay = matchDate.getTime() === today.getTime();
 
-    const showActionBtn = (item.status === "PAYMENT_WAITING" || item.status === "RESERVED" || item.status === "UNDER_REVIEW") && !isPastMatch;
+    const showActionBtn = (item.status === "PAYMENT_PENDING" || item.status === "PAID" || item.status === "RESERVED" || item.status === "UNDER_REVIEW") && !isPastMatch;
 
-    // 진행 상태별 뱃지 배경색 렌더링 도우미 함수 
+    // 진행 상태별 뱃지 배경색 렌더링 도우미 함수
     const getBadgeColor = (status: ReservationStatus) => {
         switch (status) {
-            case "PAYMENT_WAITING":
-                return "bg-[var(--foundation-primary-500)]"; // 초록색 테마
+            case "PAYMENT_PENDING":
+                return "bg-[var(--foundation-primary-500)]"; // 초록색
+            case "PAID":
             case "RESERVED":
                 return "bg-[#3B82F6]"; // 파란색
             case "UNDER_REVIEW":
-                return "bg-[var(--foundation-orange-500)]"; // 주황색 (확인 필요)
+                return "bg-[var(--foundation-orange-500)]"; // 주황색
+            case "CANCEL_REQUESTED":
             case "CANCEL_PROCESSING":
+            case "CANCELLED":
             case "REFUND_PROCESSING":
             case "CANCEL_COMPLETED":
             case "REFUND_COMPLETED":
@@ -62,13 +67,14 @@ export function ReservationItem({ item, index, isLast, onActionClick }: Reservat
                 </div>
 
                 {/* 버튼 렌더링 */}
-                {showActionBtn && (
+                {showActionBtn && !(isDDay && (item.status === "PAID" || item.status === "RESERVED")) && (
                     <button
-                        className="flex items-center text-[13px] font-bold text-[#666] hover:text-[#1A1A1A] transition-colors"
+                        className="flex items-center text-[13px] font-bold text-[#666] hover:text-[#1A1A1A] transition-colors disabled:opacity-40 disabled:pointer-events-none"
                         onClick={(e) => onActionClick(e, item)}
+                        disabled={isLoading}
                     >
-                        {item.status === "PAYMENT_WAITING" ? "입금하기" : item.status === "UNDER_REVIEW" ? "문의하기" : "취소하기"}
-                        <ChevronRight size={14} className="ml-0.5" />
+                        {isLoading ? "처리 중..." : (item.status === "PAYMENT_PENDING" ? "입금하기" : item.status === "UNDER_REVIEW" ? "문의하기" : "취소하기")}
+                        {!isLoading && <ChevronRight size={14} className="ml-0.5" />}
                     </button>
                 )}
             </div>
