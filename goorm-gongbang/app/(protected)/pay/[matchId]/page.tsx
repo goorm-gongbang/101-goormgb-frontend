@@ -303,7 +303,8 @@ export default function Page() {
 
         if (Number.isNaN(matchTime)) return true;
 
-        const threeHours = 3 * 60 * 60 * 1000;
+        const THREE_HOURS_IN_MS = 3 * 60 * 60 * 1000;
+        return matchTime - now <= THREE_HOURS_IN_MS;
         return matchTime - now <= threeHours;
     }, [match?.matchAt]);
 
