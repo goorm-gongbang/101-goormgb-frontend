@@ -15,7 +15,7 @@ let faroInstance: FaroInstance | null = null;
 const TRACE_TARGET_URLS = [
   /api\.staging\.playball\.one/,
   /api\.playball\.one/,
-  /api\.dev\.goormgb\.space/,
+  /api\.goormgb\.space/,
 ];
 
 /**
