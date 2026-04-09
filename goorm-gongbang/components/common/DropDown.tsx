@@ -78,8 +78,7 @@ export function DropDown({
                 className={cn(
                     "w-20 p-0 bg-[var(--foundation-neutral-white)] rounded-md",
                     "outline outline-1 outline-offset-[-1px] outline-[var(--foundation-neutral-880)]",
-                    "max-h-56 overflow-y-auto",
-                    "thin-scrollbar",
+                    "max-h-56 overflow-y-auto scrollbar-hide",
                     contentClassName
                 )}
             >

@@ -23,16 +23,21 @@ interface MatchCardProps {
 }
 
 export function ClubMatchCard({ match, config }: MatchCardProps) {
-  const isClickable = match.saleStatus === "ON_SALE";
-
+  const isClickable = match.saleStatus !== "ENDED";
+  const isEnded = match.saleStatus === "ENDED";
   const CardContent = (
     <div
       className={cn(
         "w-full h-full flex flex-col items-center gap-2 sm:gap-3 group transition-opacity",
+        isEnded && "bg-[var(--background-grey)]",
         !isClickable && "cursor-default",
       )}
     >
-      <div className="relative w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-14 mt-1 sm:mt-2 transition-transform group-hover:scale-105">
+      <div className={cn(
+        "relative w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-14 mt-1 sm:mt-2 transition-transform",
+        isEnded && "grayscale opacity-70",
+      )}
+      >
         <Image
           src={resolveLogoSrc(match.opponentClub.logoImg)}
           alt={match.opponentClub.koName}
@@ -41,7 +46,13 @@ export function ClubMatchCard({ match, config }: MatchCardProps) {
           className="object-contain"
         />
       </div>
-      <div className="text-[11px] sm:text-[12px] font-black text-slate-900 text-center break-words leading-tight">
+      <div className={cn(
+        "text-[11px] sm:text-[12px] font-black text-slate-900 text-center break-words leading-tight",
+        isEnded
+              ? "text-[var(--text-info-n600)]"
+              : "text-slate-900",
+        )}
+      >
         {match.opponentClub.koName}
       </div>
       <div

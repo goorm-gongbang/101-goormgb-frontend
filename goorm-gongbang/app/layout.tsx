@@ -31,7 +31,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <Providers>
           <Header />
-            <main className="overflow-x-hidden">
+            <main className="overflow-x-hidden overflow-y-hidden">
               {children}
             </main>
         </Providers>

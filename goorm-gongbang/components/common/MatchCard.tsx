@@ -43,10 +43,11 @@ export function MatchCard({
     away,
     home,
 }: Props) {
+    // ON_SALE(예매 가능), UPCOMING(판매 예정), SOLD_OUT(매진), ENDED(예매 마감)
     const badgeStatus =
         variant === "soldOut" ? "soldOut"
         : variant === "comingSoon" ? "upcoming" 
-        : variant === "ended" ? "soldOut"
+        : variant === "ended" ? "ended"
         : "available";
 
 
