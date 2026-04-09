@@ -22,9 +22,9 @@ export default function LoginPage() {
     const NEXT_PUBLIC_ENV = process.env.NEXT_PUBLIC_ENV ?? "";
     if (NEXT_PUBLIC_ENV === "staging/prod") {
       setHideLogin(false);
-    } else if ( NEXT_PUBLIC_ENV === "dev" ) {
+    } else if (NEXT_PUBLIC_ENV === "dev") {
       setHideLogin(true);
-    } else{
+    } else {
       setHideLogin(false);
     }
   }, [accessToken, user, bootstrapped]);
@@ -133,7 +133,12 @@ export default function LoginPage() {
             {/* Form */}
             <div className="flex w-full flex-col gap-2.5 sm:gap-3">
               {hideLogin ? (
-                <div>
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    void handleLogin();
+                  }}
+                >
                   <Input
                     placeholder="아이디 입력"
                     value={loginId}
@@ -148,14 +153,14 @@ export default function LoginPage() {
                     className="h-11"
                   />
                   <button
-                    type="button"
-                    onClick={handleLogin}
+                    type="submit"
                     disabled={loading || !loginId || !password}
                     className="mt-1 h-11 w-full rounded-md text-sm font-semibold text-[var(--foundation-neutral-40)] hover:bg-[var(--foundation-neutral-960)] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
                   >
                     {loading ? "로그인 중..." : "로그인"}
                   </button>
-                </div>
+                </form>
+
               ) : null}
 
               <KakaoButton
