@@ -38,6 +38,7 @@ function getCanvasFingerprint(): string {
 
 /**
  * 브라우저 메타 정보 수집
+ * navigator.webdriver: Headless Chrome(Puppeteer)은 true, 일반 브라우저는 false
  */
 function getBrowserMeta(): string {
   return [
@@ -47,6 +48,7 @@ function getBrowserMeta(): string {
     navigator.language,
     new Date().getTimezoneOffset(),
     navigator.hardwareConcurrency ?? 0,
+    navigator.webdriver ? 1 : 0,
   ].join("|");
 }
 
