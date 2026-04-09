@@ -30,7 +30,7 @@ const nextConfig = {
   // 기존 OTel 및 권장 설정 유지
   compress: true,
   poweredByHeader: false,
-  // 완전 비활성화 
+  // 브라우저 소스 맵 비활성화
   productionBrowserSourceMaps: false,
 
   // 보안 헤더 유지
