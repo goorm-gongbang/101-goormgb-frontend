@@ -1,31 +1,56 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { SquarePen, Check } from "lucide-react";
+import Image from "next/image";
+import { getAccountInfo, updateNickname } from "@/lib/services";
 
 /* ===========================
    개인정보 수정 폼
    - 계정 정보: 이메일(조회), 닉네임(수정), 본인 인증(조회)
    - 닉네임: 클릭 → input 전환, Enter/체크 아이콘으로 저장, ESC로 취소
-   - 저장 시: toast (API 미연동)
-
-   [TODO] API 연동 시
-   - mock 데이터("트윈스심장", "twins@email.com") → 실제 유저 정보로 교체
-   - handleSave → PATCH /api/users/me { nickname } 호출
-   - 닉네임 중복 / 유효성 검증 추가
-   - 본인 인증 미완료 상태 UI 추가 (현재는 "본인 인증 완료"로 하드코딩)
+   - 저장 시: toast
 =========================== */
 
 export function ProfileEditForm() {
-    const [nickname, setNickname] = useState("트윈스심장");
+    const [email, setEmail] = useState("");
+    const [profileImageUrl, setProfileImageUrl] = useState("");
+    const [nickname, setNickname] = useState("");
     const [isEditing, setIsEditing] = useState(false);
     const [tempNickname, setTempNickname] = useState(nickname);
+    const fetchedRef = useRef(false);
 
-    const handleSave = () => {
-        setNickname(tempNickname);
-        setIsEditing(false);
-        toast.success("개인정보가 업데이트되었습니다");
+    useEffect(() => {
+        if (fetchedRef.current) return;
+        fetchedRef.current = true;
+
+        getAccountInfo()
+            .then((data) => {
+                setEmail(data.email);
+                setNickname(data.nickname);
+                setTempNickname(data.nickname);
+                setProfileImageUrl(data.profileImageUrl);
+            })
+            .catch((err) => {
+                toast.error(err.message || "계정 정보를 불러오지 못했습니다.");
+            });
+    }, []);
+
+    const handleSave = async () => {
+        if (!tempNickname.trim()) {
+            toast.error("닉네임을 입력해주세요.");
+            return;
+        }
+
+        try {
+            await updateNickname({ nickname: tempNickname });
+            setNickname(tempNickname);
+            setIsEditing(false);
+            toast.success("개인정보가 업데이트되었습니다");
+        } catch (err: any) {
+            toast.error(err.message || "닉네임 수정에 실패했습니다.");
+        }
     };
 
     return (
@@ -39,10 +64,24 @@ export function ProfileEditForm() {
                 <div className="h-px bg-[#F0F0F0] mb-5" />
 
                 <div className="flex flex-col gap-7">
+                    {/* 프로필 이미지 */}
+                    {profileImageUrl && (
+                        <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium text-[#1A1A1A]">프로필 이미지</span>
+                            <Image
+                                src={profileImageUrl}
+                                alt="프로필 이미지"
+                                width={40}
+                                height={40}
+                                className="rounded-full object-cover"
+                            />
+                        </div>
+                    )}
+
                     {/* 이메일 */}
                     <div className="flex items-center justify-between">
                         <span className="text-sm font-medium text-[#1A1A1A]">이메일</span>
-                        <span className="text-[15px] text-[#1A1A1A]">twins@email.com</span>
+                        <span className="text-[15px] text-[#1A1A1A]">{email}</span>
                     </div>
 
                     {/* 닉네임 (수정 가능 스타일) */}

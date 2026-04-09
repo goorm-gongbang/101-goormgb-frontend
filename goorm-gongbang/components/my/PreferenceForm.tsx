@@ -25,7 +25,7 @@
       → 저장 함수 handleSave → API 호출로 교체 (saveOnboardingPreferences 참고)
 =========================== */
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { ChevronUp, ChevronDown } from "lucide-react";
 import { ChipButton } from "@/components/common/Button";
@@ -39,6 +39,8 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { getOnboardingPreferences, updateOnboardingPreferences } from "@/lib/services";
+import type { Viewpoint, SeatHeight, Section, SeatPositionPref, EnvironmentPref, MoodPref, ObstructionSensitivity, PriceMode } from "@/lib/types";
 
 /* ===========================
    타입 정의 (온보딩과 동일)
@@ -83,19 +85,82 @@ const clubOptions = [
 ] as const;
 
 /* ===========================
-   Mock 초기값
+   Forward 매핑 (UI → API enum)
 =========================== */
-const MOCK_VIEW: ViewPreference[] = ["중앙", "1루 내야", "3루 내야"];
-const MOCK_CHEER: CheerPreference = "응원석 인접";
-const MOCK_CLUB = clubOptions[0]; // 두산 베어스
-const MOCK_HEIGHT: HeightPreference = "중단";
-const MOCK_ZONE: ZonePreference = "중앙 쪽";
-const MOCK_VIEWTYPE: ViewTypePreference = "통로 선호";
-const MOCK_ENV: EnvPreference = "그늘 선호";
-const MOCK_MOOD: MoodPreference = "열정적인 응원";
-const MOCK_DIST: DistPreference = "보통";
-const MOCK_PRICE: PricePreference = "14,000원~ 17,000원";
-const MOCK_BLOCKS: number[] = [70, 71, 72, 80, 81, 82]; // 예시 선택 블록
+const VIEWPOINT_MAP: Record<ViewPreference, Viewpoint> = {
+    "중앙": "CENTER", "1루 내야": "INFIELD_1B", "3루 내야": "INFIELD_3B",
+    "외야(좌)": "OUTFIELD_L", "외야(중)": "OUTFIELD_C", "외야(우)": "OUTFIELD_R",
+};
+const SEAT_HEIGHT_MAP: Record<HeightPreference, SeatHeight> = {
+    하단: "LOW", 중단: "MID", 상단: "HIGH", 무관: "ANY",
+};
+const SECTION_MAP: Record<ZonePreference, Section> = {
+    "중앙 쪽": "MIDDLE", 중간: "CENTER_SIDE", "코너(파울라인)": "CORNER", 무관: "ANY",
+};
+const CHEER_MAP: Record<CheerPreference, "NEAR" | "FAR" | "ANY"> = {
+    "응원석 인접": "NEAR", "응원석 비인접": "FAR", 무관: "ANY",
+};
+const SEAT_POSITION_MAP: Record<ViewTypePreference, SeatPositionPref> = {
+    "통로 선호": "AISLE", "중앙 선호": "MIDDLE", 무관: "ANY",
+};
+const ENV_MAP: Record<EnvPreference, EnvironmentPref> = {
+    "그늘 선호": "SHADE", "햇빛 무관": "SUN_OK", 무관: "ANY",
+};
+const MOOD_MAP: Record<MoodPreference, MoodPref> = {
+    "열정적인 응원": "CHEERFUL", "조용한 관람": "QUIET", 무관: "ANY",
+};
+const OBSTRUCTION_MAP: Record<DistPreference, ObstructionSensitivity> = {
+    "안전망 민감": "NET_SENSITIVE", "난간·기둥 민감": "RAIL_PILLAR_SENSITIVE", 보통: "NORMAL", 무관: "ANY",
+};
+
+/* ===========================
+   Reverse 매핑 (API enum → UI)
+=========================== */
+const R_VIEWPOINT: Record<string, ViewPreference> = {
+    CENTER: "중앙", INFIELD_1B: "1루 내야", INFIELD_3B: "3루 내야",
+    OUTFIELD_L: "외야(좌)", OUTFIELD_C: "외야(중)", OUTFIELD_R: "외야(우)",
+};
+const R_HEIGHT: Record<string, HeightPreference> = {
+    LOW: "하단", MID: "중단", HIGH: "상단", ANY: "무관",
+};
+const R_SECTION: Record<string, ZonePreference> = {
+    MIDDLE: "중앙 쪽", CENTER_SIDE: "중간", CORNER: "코너(파울라인)", ANY: "무관",
+};
+const R_CHEER: Record<string, CheerPreference> = {
+    NEAR: "응원석 인접", FAR: "응원석 비인접", ANY: "무관",
+};
+const R_SEAT_POSITION: Record<string, ViewTypePreference> = {
+    AISLE: "통로 선호", MIDDLE: "중앙 선호", ANY: "무관",
+};
+const R_ENV: Record<string, EnvPreference> = {
+    SHADE: "그늘 선호", SUN_OK: "햇빛 무관", ANY: "무관",
+};
+const R_MOOD: Record<string, MoodPreference> = {
+    CHEERFUL: "열정적인 응원", QUIET: "조용한 관람", ANY: "무관",
+};
+const R_OBSTRUCTION: Record<string, DistPreference> = {
+    NET_SENSITIVE: "안전망 민감", RAIL_PILLAR_SENSITIVE: "난간·기둥 민감", NORMAL: "보통", ANY: "무관",
+};
+
+function priceFromApi(priceMode: PriceMode, priceMin: number, priceMax: number): PricePreference | null {
+    if (priceMode === "ANY") return "무관";
+    if (priceMin === 0 && priceMax === 13000) return "~ 13,000원";
+    if (priceMin === 14000 && priceMax === 17000) return "14,000원~ 17,000원";
+    if (priceMin === 18000 && priceMax === 29000) return "18,000원~ 29,000원";
+    if (priceMin === 30000) return "30,000원~ ";
+    return null;
+}
+
+function priceToPayload(p: PricePreference | null): { priceMode: PriceMode; priceMin: number | null; priceMax: number | null } {
+    if (!p || p === "무관") return { priceMode: "ANY", priceMin: null, priceMax: null };
+    switch (p) {
+        case "~ 13,000원": return { priceMode: "RANGE", priceMin: 0, priceMax: 13000 };
+        case "14,000원~ 17,000원": return { priceMode: "RANGE", priceMin: 14000, priceMax: 17000 };
+        case "18,000원~ 29,000원": return { priceMode: "RANGE", priceMin: 18000, priceMax: 29000 };
+        case "30,000원~ ": return { priceMode: "RANGE", priceMin: 30000, priceMax: null };
+        default: return { priceMode: "ANY", priceMin: null, priceMax: null };
+    }
+}
 
 /* ===========================
    유틸 함수
@@ -222,16 +287,6 @@ function QuestionSection({
 /* ===========================
    구분선 + 섹션 타이틀
 =========================== */
-function SectionDivider({ title }: { title: string }) {
-    return (
-        <div className="self-stretch flex items-center gap-3 pt-2">
-            <div className="text-xs font-bold text-[#999999] whitespace-nowrap">
-                {title}
-            </div>
-            <div className="flex-1 h-px bg-[#F0F0F0]" />
-        </div>
-    );
-}
 
 /* ===========================
    메인 컴포넌트
@@ -240,50 +295,90 @@ export function PreferenceForm() {
     const router = useRouter();
 
     /* Step 0: 블록 선택 */
-    const [selectedBlocks, setSelectedBlocks] = useState<number[]>(MOCK_BLOCKS);
+    const [selectedBlocks, setSelectedBlocks] = useState<number[]>([]);
 
     /* Step 1: 필수성 질문들 */
-    const [view, setView] = useState<ViewPreference[]>(MOCK_VIEW);
-    const [selectedClub, setSelectedClub] = useState<(typeof clubOptions)[number] | null>(MOCK_CLUB);
-    const [cheer, setCheer] = useState<CheerPreference | null>(MOCK_CHEER);
-    const [zone, setZone] = useState<ZonePreference | null>(MOCK_ZONE);
-    const [height, setHeight] = useState<HeightPreference | null>(MOCK_HEIGHT);
+    const [view, setView] = useState<ViewPreference[]>([]);
+    const [selectedClub, setSelectedClub] = useState<(typeof clubOptions)[number] | null>(null);
+    const [cheer, setCheer] = useState<CheerPreference | null>(null);
+    const [zone, setZone] = useState<ZonePreference | null>(null);
+    const [height, setHeight] = useState<HeightPreference | null>(null);
 
     /* Step 2: 단일 선택 */
-    const [viewType, setViewType] = useState<ViewTypePreference | null>(MOCK_VIEWTYPE);
-    const [env, setEnv] = useState<EnvPreference | null>(MOCK_ENV);
-    const [mood, setMood] = useState<MoodPreference | null>(MOCK_MOOD);
-    const [dist, setDist] = useState<DistPreference | null>(MOCK_DIST);
-    const [price, setPrice] = useState<PricePreference | null>(MOCK_PRICE);
+    const [viewType, setViewType] = useState<ViewTypePreference | null>(null);
+    const [env, setEnv] = useState<EnvPreference | null>(null);
+    const [mood, setMood] = useState<MoodPreference | null>(null);
+    const [dist, setDist] = useState<DistPreference | null>(null);
+    const [price, setPrice] = useState<PricePreference | null>(null);
 
     /* UI 관련 상태 */
     const [optionalOpen, setOptionalOpen] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isClubOpen, setIsClubOpen] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
 
-    /**
-     * 변경 사항이 있는지 확인하는 함수
-     */
+    /* dirty 체크용 초기값 스냅샷 */
+    const initialRef = useRef({
+        blocks: [] as number[], view: [] as ViewPreference[],
+        clubId: null as number | null, cheer: null as CheerPreference | null,
+        zone: null as ZonePreference | null, height: null as HeightPreference | null,
+        viewType: null as ViewTypePreference | null, env: null as EnvPreference | null,
+        mood: null as MoodPreference | null, dist: null as DistPreference | null,
+        price: null as PricePreference | null,
+    });
+
+    /* API에서 기존 선호 데이터 로드 */
+    useEffect(() => {
+        getOnboardingPreferences().then((data) => {
+            const sorted = [...data.preferences].sort((a, b) => a.priority - b.priority);
+            const pref1 = sorted[0];
+
+            const loadedBlocks = data.preferredBlockIds;
+            const loadedView = sorted.map((p) => R_VIEWPOINT[p.viewpoint]).filter(Boolean) as ViewPreference[];
+            const loadedClub = clubOptions.find((c) => c.id === data.favoriteClubId) ?? null;
+            const loadedCheer = R_CHEER[data.cheerProximityPref] ?? null;
+            const loadedZone = pref1 ? (R_SECTION[pref1.section ?? "ANY"] ?? null) : null;
+            const loadedHeight = pref1 ? (R_HEIGHT[pref1.seatHeight ?? "ANY"] ?? null) : null;
+            const loadedViewType = pref1 ? (R_SEAT_POSITION[pref1.seatPositionPref ?? "ANY"] ?? null) : null;
+            const loadedEnv = pref1 ? (R_ENV[pref1.environmentPref ?? "ANY"] ?? null) : null;
+            const loadedMood = pref1 ? (R_MOOD[pref1.moodPref ?? "ANY"] ?? null) : null;
+            const loadedDist = pref1 ? (R_OBSTRUCTION[pref1.obstructionSensitivity ?? "ANY"] ?? null) : null;
+            const loadedPrice = pref1 ? priceFromApi(pref1.priceMode ?? "ANY", pref1.priceMin ?? 0, pref1.priceMax ?? 0) : null;
+
+            setSelectedBlocks(loadedBlocks);
+            setView(loadedView);
+            setSelectedClub(loadedClub);
+            setCheer(loadedCheer);
+            setZone(loadedZone);
+            setHeight(loadedHeight);
+            setViewType(loadedViewType);
+            setEnv(loadedEnv);
+            setMood(loadedMood);
+            setDist(loadedDist);
+            setPrice(loadedPrice);
+
+            initialRef.current = {
+                blocks: loadedBlocks, view: loadedView,
+                clubId: loadedClub?.id ?? null, cheer: loadedCheer,
+                zone: loadedZone, height: loadedHeight,
+                viewType: loadedViewType, env: loadedEnv,
+                mood: loadedMood, dist: loadedDist, price: loadedPrice,
+            };
+        }).catch(() => {});
+    }, []);
+
     const checkIsDirty = () => {
-        const isBlocksDirty = JSON.stringify([...selectedBlocks].sort()) !== JSON.stringify([...MOCK_BLOCKS].sort());
-        const isViewDirty = JSON.stringify(view) !== JSON.stringify(MOCK_VIEW);
-        const isClubDirty = selectedClub?.id !== MOCK_CLUB.id;
-        const isCheerDirty = cheer !== MOCK_CHEER;
-        const isZoneDirty = zone !== MOCK_ZONE;
-        const isHeightDirty = height !== MOCK_HEIGHT;
-        const isOtherDirty =
-            viewType !== MOCK_VIEWTYPE ||
-            env !== MOCK_ENV ||
-            mood !== MOCK_MOOD ||
-            dist !== MOCK_DIST ||
-            price !== MOCK_PRICE;
-
-        return isBlocksDirty || isViewDirty || isClubDirty || isCheerDirty || isZoneDirty || isHeightDirty || isOtherDirty;
+        const s = initialRef.current;
+        return (
+            JSON.stringify([...selectedBlocks].sort()) !== JSON.stringify([...s.blocks].sort()) ||
+            JSON.stringify(view) !== JSON.stringify(s.view) ||
+            (selectedClub?.id ?? null) !== s.clubId ||
+            cheer !== s.cheer || zone !== s.zone || height !== s.height ||
+            viewType !== s.viewType || env !== s.env ||
+            mood !== s.mood || dist !== s.dist || price !== s.price
+        );
     };
 
-    /**
-     * 뒤로가기 클릭 핸들러
-     */
     const handleBackClick = () => {
         if (checkIsDirty()) {
             setIsModalOpen(true);
@@ -292,34 +387,54 @@ export function PreferenceForm() {
         }
     };
 
-    /**
-     * 블록 토글 핸들러
-     */
     const handleBlockToggle = (idx: number) => {
         setSelectedBlocks((prev) =>
             prev.includes(idx) ? prev.filter((i) => i !== idx) : [...prev, idx]
         );
     };
 
-    /* 저장
-     * [TODO] 실제 API 연동 시 가이드 (onboarding 통합 시 필수 작업)
-     * 1. lib/services의 saveOnboardingPreferences API 사용
-     * 2. 서버 Enum으로 변환하기 위해 아래 매핑 상수와 통합 필요:
-     *    - VIEWPOINT_MAP, SEAT_HEIGHT_MAP, SECTION_MAP (onboarding/page.tsx)
-     *    - SEAT_POSITION_MAP, ENV_MAP, MOOD_MAP, OBSTRUCTION_MAP (onboarding/option/page.tsx)
-     */
-    const handleSave = () => {
-        const payload = {
-            step1: {
-                view: view.map((v, i) => ({ priority: i + 1, value: v })),
-                clubId: selectedClub?.id,
-                cheer,
-                zone,
-                height,
-            },
-            step2: { viewType, env, mood, dist, price },
-        };
-        toast.success("내블럭 및 선호 데이터가 업데이트되었습니다.");
+    const handleSave = async () => {
+        if (!selectedClub || !cheer || view.length === 0) {
+            toast.error("필수 항목을 모두 입력해주세요.");
+            return;
+        }
+
+        const preferences = view.map((v, i) =>
+            i === 0
+                ? {
+                    priority: 1 as const,
+                    viewpoint: VIEWPOINT_MAP[v],
+                    seatHeight: height ? SEAT_HEIGHT_MAP[height] : "ANY" as const,
+                    section: zone ? SECTION_MAP[zone] : "ANY" as const,
+                    seatPositionPref: viewType ? SEAT_POSITION_MAP[viewType] : "ANY" as const,
+                    environmentPref: env ? ENV_MAP[env] : "ANY" as const,
+                    moodPref: mood ? MOOD_MAP[mood] : "ANY" as const,
+                    obstructionSensitivity: dist ? OBSTRUCTION_MAP[dist] : "ANY" as const,
+                    ...priceToPayload(price),
+                }
+                : {
+                    priority: (i + 1) as 2 | 3,
+                    viewpoint: VIEWPOINT_MAP[v],
+                }
+        );
+
+        try {
+            setIsSaving(true);
+            await updateOnboardingPreferences({
+                favoriteClubId: selectedClub.id,
+                cheerProximityPref: CHEER_MAP[cheer],
+                preferredBlockIds: selectedBlocks,
+                preferences,
+            });
+            initialRef.current = {
+                blocks: selectedBlocks, view,
+                clubId: selectedClub.id, cheer,
+                zone, height, viewType, env, mood, dist, price,
+            };
+            toast.success("선호 데이터가 업데이트되었습니다.");
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     return (
@@ -570,9 +685,10 @@ export function PreferenceForm() {
             <button
                 type="button"
                 onClick={handleSave}
-                className="w-full py-3.5 bg-[var(--foundation-primary-500)] hover:bg-[var(--foundation-primary-600)] active:scale-[0.99] text-white text-sm font-semibold rounded-[12px] transition-all"
+                disabled={isSaving}
+                className="w-full py-3.5 bg-[var(--foundation-primary-500)] hover:bg-[var(--foundation-primary-600)] active:scale-[0.99] text-white text-sm font-semibold rounded-[12px] transition-all disabled:opacity-60 disabled:cursor-not-allowed"
             >
-                저장하기
+                {isSaving ? "저장 중..." : "저장하기"}
             </button>
 
             {/* ─── 확인 모달 ─── */}

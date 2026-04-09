@@ -12,21 +12,15 @@
    4. 프로필 이미지 업로드 기능 추가
 =========================== */
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/authStore";
 import { cn } from "@/lib/utils";
 import { ChevronRight } from "lucide-react";
+import { getMyPageProfile } from "@/lib/services";
+import type { MyPageProfileData } from "@/lib/types";
 
-/* ===========================
-   Mock 데이터
-=========================== */
-const MOCK_USER = {
-    nickname: "트윈스심장",
-    profileImage: null as string | null,
-    loginType: "KAKAO" as "KAKAO" | "EMAIL" | null,
-};
 
 /* ===========================
    타입
@@ -85,12 +79,20 @@ export function MyPageLayout({ children }: Props) {
 
     const isLoggedIn = bootstrapped && !!accessToken && !!user;
 
+    const [profileData, setProfileData] = useState<MyPageProfileData | null>(null);
+
     // Guard
     useEffect(() => {
         if (bootstrapped && !isLoggedIn) {
             router.replace("/login");
         }
     }, [bootstrapped, isLoggedIn, router]);
+
+    useEffect(() => {
+        if (isLoggedIn) {
+            getMyPageProfile().then(setProfileData).catch(() => {});
+        }
+    }, [isLoggedIn]);
 
     // 로그아웃
     const handleLogout = () => {
@@ -109,7 +111,10 @@ export function MyPageLayout({ children }: Props) {
 
     if (!isLoggedIn) return null;
 
-    const initial = MOCK_USER.nickname.charAt(0);
+    const nickname = profileData?.profile.nickname ?? "";
+    const profileImageUrl = profileData?.profile.profileImageUrl ?? "";
+    const snsProvider = profileData?.profile.snsProvider ?? "";
+    const initial = nickname.charAt(0);
 
     return (
         <div className="min-h-screen bg-[#F5F5F5]">
@@ -122,9 +127,9 @@ export function MyPageLayout({ children }: Props) {
                     <div className="flex items-center gap-4">
 
                         {/* 프로필 이미지 */}
-                        {MOCK_USER.profileImage ? (
+                        {profileImageUrl ? (
                             <img
-                                src={MOCK_USER.profileImage}
+                                src={profileImageUrl}
                                 alt="프로필"
                                 className="w-[60px] h-[60px] rounded-full object-cover flex-shrink-0"
                             />
@@ -142,11 +147,11 @@ export function MyPageLayout({ children }: Props) {
                             {/* 닉네임 + 소셜 뱃지 */}
                             <div className="flex items-center gap-2">
                                 <span className="text-[#1A1A1A] text-[17px] font-bold leading-6">
-                                    {MOCK_USER.nickname}
+                                    {nickname}
                                 </span>
-                                {MOCK_USER.loginType === "KAKAO" && (
+                                {snsProvider && (
                                     <span className="inline-flex items-center gap-1 bg-[#FEE500] text-[#000000] text-[10px] font-semibold px-2 py-0.5 rounded-full">
-                                        KAKAO
+                                        {snsProvider.toUpperCase()}
                                     </span>
                                 )}
                             </div>

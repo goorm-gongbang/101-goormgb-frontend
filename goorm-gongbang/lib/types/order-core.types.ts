@@ -165,9 +165,17 @@ export type PreferenceBase = Pick<
   "priority" | "viewpoint" | "seatHeight" | "section"
 >;
 
-/** 온보딩 선호도 저장 요청 */
+/** 온보딩 선호도 저장 요청 (POST - 최초 등록) */
 export type OnboardingPreferencesRequest = {
   marketingConsent: { marketingAgreed: boolean };
+  favoriteClubId: number;
+  cheerProximityPref: "NEAR" | "FAR" | "ANY";
+  preferredBlockIds: number[];
+  preferences: Preference[];
+};
+
+/** 온보딩 선호도 수정 요청 (PUT - 마이페이지에서 업데이트) */
+export type UpdateOnboardingPreferencesRequest = {
   favoriteClubId: number;
   cheerProximityPref: "NEAR" | "FAR" | "ANY";
   preferredBlockIds: number[];
