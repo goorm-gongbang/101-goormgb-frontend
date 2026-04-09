@@ -512,7 +512,7 @@ export default function MatchDetailSectionResponsive({
             </div>
 
             {/* Info */}
-            <div className="h-[70vh] overflow-y-auto scrollbar-hide">
+            <div className="h-[70vh] overflow-y-auto scrollbar-hide thin-scrollbar">
               {activeTab === "INFO" && (
                 <MatchInfoTab
                   homeKo={homeKo}

@@ -90,7 +90,7 @@ export function MatchInfoTab({
                 </div>
             </div>
 
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto thin-scrollbar">
                 <div className="min-w-[720px] flex flex-col">
                     <div className="border-t border-b border-[var(--stroke-interactive-neutral-default)] inline-flex">
                         <div className="w-64 p-2.5 bg-[var(--background-grey)] border-r border-[var(--stroke-interactive-neutral-default)] flex items-center">

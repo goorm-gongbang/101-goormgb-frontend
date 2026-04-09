@@ -51,7 +51,7 @@ export function TicketStatusBadge({ status }: TicketStatusBadgeProps) {
     >
       <div
         className={[
-          "text-center text-xs font-semibold leading-4 font-['Pretendard_Variable']",
+          "text-center text-xs font-semibold leading-4 font-['Pretendard']",
           style.textClassName,
         ].join(" ")}
       >

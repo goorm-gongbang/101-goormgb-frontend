@@ -21,7 +21,7 @@ export function RecommendSoldOutModal({ open, onMoveToSeatMap }: Props) {
             <span className="font-medium font-['Pretendard']">
               설정하신 조건에 맞는 추천 좌석이 모두 예매되었어요. 지금은 추천 대신
             </span>
-            <span className="font-semibold font-['Pretendard_Variable']">
+            <span className="font-semibold font-['Pretendard']">
               {" "}좌석 맵에서 직접 선택
             </span>
             <span className="font-medium font-['Pretendard']">

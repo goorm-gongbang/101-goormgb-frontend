@@ -1048,8 +1048,8 @@ export default function Page() {
 
                                                 <div className="flex-1 self-stretch flex justify-start items-center gap-2">
                                                     <div className="flex-1">
-                                                        <span className="text-[var(--foundation-neutral-240)] text-base font-semibold font-['Pretendard_Variable'] leading-6">이용 약관 동의 </span>
-                                                        <span className="text-[var(--foundation-red-500)] text-base font-semibold font-['Pretendard_Variable'] leading-6">*</span>
+                                                        <span className="text-[var(--foundation-neutral-240)] text-base font-semibold font-['Pretendard'] leading-6">이용 약관 동의 </span>
+                                                        <span className="text-[var(--foundation-red-500)] text-base font-semibold font-['Pretendard'] leading-6">*</span>
                                                     </div>
 
                                                     <button
@@ -1106,8 +1106,8 @@ export default function Page() {
 
                                                 <div className="flex-1 self-stretch flex justify-start items-center gap-2">
                                                     <div className="flex-1">
-                                                        <span className="text-[var(--foundation-neutral-240)] text-base font-semibold font-['Pretendard_Variable'] leading-6">취소/취소 수수료 동의 </span>
-                                                        <span className="text-[var(--foundation-red-500)] text-base font-semibold font-['Pretendard_Variable'] leading-6">*</span>
+                                                        <span className="text-[var(--foundation-neutral-240)] text-base font-semibold font-['Pretendard'] leading-6">취소/취소 수수료 동의 </span>
+                                                        <span className="text-[var(--foundation-red-500)] text-base font-semibold font-['Pretendard'] leading-6">*</span>
                                                     </div>
 
                                                     <button

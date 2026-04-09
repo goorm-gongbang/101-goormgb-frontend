@@ -5,7 +5,7 @@ export function MatchRecommendTab() {
     <div className="w-full inline-flex flex-col justify-start items-start gap-4">
       {/* 1 */}
       <section className="self-stretch flex flex-col justify-start items-start gap-2">
-        <h3 className="self-stretch justify-center text-black text-lg font-medium font-['Pretendard_Variable'] leading-5">
+        <h3 className="self-stretch justify-center text-black text-lg font-medium font-['Pretendard'] leading-5">
           1. 추천 좌석이 뭔가요?
         </h3>
         <div className="self-stretch pl-7 flex flex-col justify-center items-start gap-1.5 list-disc">
@@ -21,7 +21,7 @@ export function MatchRecommendTab() {
 
       {/* 2 */}
       <section className="self-stretch flex flex-col justify-start items-start gap-2">
-        <h3 className="self-stretch justify-center text-black text-lg font-medium font-['Pretendard_Variable'] leading-5">
+        <h3 className="self-stretch justify-center text-black text-lg font-medium font-['Pretendard'] leading-5">
           2. 어떻게 사용하나요?
         </h3>
 
@@ -48,7 +48,7 @@ export function MatchRecommendTab() {
 
       {/* 3 */}
       <section className="self-stretch flex flex-col justify-start items-start gap-2">
-        <h3 className="self-stretch justify-center text-black text-lg font-medium font-['Pretendard_Variable'] leading-5">
+        <h3 className="self-stretch justify-center text-black text-lg font-medium font-['Pretendard'] leading-5">
           3. 추천 결과는 어떻게 보이나요?
         </h3>
 
@@ -83,7 +83,7 @@ export function MatchRecommendTab() {
 
       {/* 4 */}
       <section className="self-stretch flex flex-col justify-start items-start gap-2">
-        <h3 className="self-stretch justify-center text-black text-lg font-medium font-['Pretendard_Variable'] leading-5">
+        <h3 className="self-stretch justify-center text-black text-lg font-medium font-['Pretendard'] leading-5">
           4. 인원 수 / 연석 추천 정책
         </h3>
 
@@ -102,7 +102,7 @@ export function MatchRecommendTab() {
 
       {/* 5 */}
       <section className="self-stretch flex flex-col justify-start items-start gap-2">
-        <h3 className="self-stretch justify-center text-black text-lg font-medium font-['Pretendard_Variable'] leading-5">
+        <h3 className="self-stretch justify-center text-black text-lg font-medium font-['Pretendard'] leading-5">
           5. 새로고침 정책
         </h3>
 
@@ -121,7 +121,7 @@ export function MatchRecommendTab() {
 
       {/* 6 */}
       <section className="self-stretch flex flex-col justify-start items-start gap-2">
-        <h3 className="self-stretch justify-center text-black text-lg font-medium font-['Pretendard_Variable'] leading-5">
+        <h3 className="self-stretch justify-center text-black text-lg font-medium font-['Pretendard'] leading-5">
           6. 유의사항
         </h3>
 

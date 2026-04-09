@@ -33,7 +33,7 @@ export function PaymentTimeoutModal({ open, onConfirm }: PaymentTimeoutModalProp
               onClick={onConfirm}
               className="cursor-pointer flex-1 h-10 min-w-20 px-4 py-2 bg-[var(--foundation-primary-500)] rounded-md flex justify-center items-center"
             >
-              <span className="text-center text-[var(--foundation-neutral-white)] text-sm font-semibold font-['Pretendard_Variable'] leading-5">
+              <span className="text-center text-[var(--foundation-neutral-white)] text-sm font-semibold font-['Pretendard'] leading-5">
                 확인
               </span>
             </button>
