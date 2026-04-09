@@ -2,7 +2,7 @@
 
 import { useAuthStore } from "@/stores/authStore";
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { KakaoButton } from "@/components/login/KakaoButton";
 import { toast } from "sonner";
@@ -11,12 +11,26 @@ import { ApiError } from "@/lib/api";
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+
   const [loginId, setLoginId] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const setAccessToken = useAuthStore((s) => s.setAccessToken);
   const { accessToken, user, bootstrapped } = useAuthStore();
   const [hideLogin, setHideLogin] = useState(true);
+
+  const getSafeRedirectPath = () => {
+    const next = searchParams.get("next");
+
+    if (!next) return "/";
+
+    if (!next.startsWith("/")) return "/";
+    if (next.startsWith("//")) return "/";
+
+    return next;
+  };
+
 
   useEffect(() => {
     const NEXT_PUBLIC_ENV = process.env.NEXT_PUBLIC_ENV ?? "";
@@ -69,7 +83,8 @@ export default function LoginPage() {
         return;
       }
 
-      router.push("/");
+      const redirectPath = getSafeRedirectPath();
+      router.push(redirectPath);
     } catch (e) {
       if (e instanceof ApiError) {
         console.error("❌ LOGIN FAIL:", e.status, e.message);
