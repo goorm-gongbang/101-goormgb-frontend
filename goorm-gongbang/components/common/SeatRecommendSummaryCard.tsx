@@ -87,17 +87,18 @@ export function SeatRecommendSummaryCard({
                             </div>
 
                             <div className="self-stretch inline-flex justify-start items-start gap-1">
-                                <div className="text-right justify-center text-xl font-semibold leading-8 text-[var(--foundation-neutral-160)] font-['Pretendard_Variable']">
+                                <div className="text-right justify-center text-xl font-semibold leading-8 text-[var(--foundation-neutral-160)] font-['Pretendard']">
                                     {item.blockLabel}
                                 </div>
 
                                 <div className="flex flex-1 justify-end">
-                                    <div className="inline-flex flex-col items-end gap-1 sm:flex-row sm:items-center sm:gap-4">
+                                    <div className="inline-flex flex-row items-center gap-4 min-[1024px]:max-[1280px]:flex-col min-[1024px]:max-[1280px]:items-end min-[1024px]:max-[1280px]:gap-1">
+
                                         <div className="inline-flex items-center gap-0.5 whitespace-nowrap">
                                             <span className="text-sm font-normal leading-6 text-[var(--foundation-neutral-600)] font-['Pretendard']">
                                                 이용 가능 연석
                                             </span>
-                                            <span className="pl-0.5 text-base font-semibold leading-6 text-[var(--foundation-primary-600)] font-['Pretendard_Variable']">
+                                            <span className="pl-0.5 text-base font-semibold leading-6 text-[var(--foundation-primary-600)] font-['Pretendard']">
                                                 {item.remainingSeatCount}개
                                             </span>
                                         </div>
@@ -106,7 +107,7 @@ export function SeatRecommendSummaryCard({
                                             <span className="text-sm font-normal leading-6 text-[var(--foundation-neutral-600)] font-['Pretendard']">
                                                 잔여 좌석
                                             </span>
-                                            <span className="pl-0.5 text-base font-semibold leading-6 text-[var(--foundation-primary-600)] font-['Pretendard_Variable']">
+                                            <span className="pl-0.5 text-base font-semibold leading-6 text-[var(--foundation-primary-600)] font-['Pretendard']">
                                                 {item.remainCount}석
                                             </span>
                                         </div>

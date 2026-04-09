@@ -14,6 +14,7 @@ import { RecommendSeatUnavailableModal } from "@/components/common/RecommendSeat
 import { RecommendSoldOutModal } from "@/components/common/RecommendSoldOutModal";
 import { SeatRecommendSummaryCard, type SeatRecommendItem } from "@/components/common/SeatRecommendSummaryCard";
 import { SeatFindingModal } from "@/components/common/SeatFindingModal";
+import { SeatLimitExceededModal } from "@/components/common/SeatLimitExceededModal";
 import { TicketingNavigator } from "@/components/common/TicketingNavigator";
 import { Toggle } from "@/components/common/Toggle";
 import { StadiumMap } from "@/components/my/StadiumMap";
@@ -221,6 +222,10 @@ function RecommendPageContent({ matchId }: { matchId: number | null }) {
   const stadiumName = matchInfo?.stadium?.koName ?? "";
   const homeLogoImg = homeClub?.logoImg ?? "";
 
+  const MAX_SELECTABLE_SEATS = 8;
+  const [isSeatLimitModalOpen, setIsSeatLimitModalOpen] = useState(false);
+  const seatLimitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const formattedMatchAt = useMemo(() => {
     return formatMatchAt(matchInfo?.matchAt);
   }, [matchInfo?.matchAt]);
@@ -252,6 +257,8 @@ function RecommendPageContent({ matchId }: { matchId: number | null }) {
     selectedRecommend,
     selectedSeatBlocks,
   ]);
+
+  const hasMatchMeta = formattedMatchAt && homeClub && awayClub && stadiumName;
 
   const selectedSeatRows = useMemo(() => {
     if (!selectedSeatListItem) return [];
@@ -538,11 +545,18 @@ function RecommendPageContent({ matchId }: { matchId: number | null }) {
 
     if (!targetSeat || targetSeat.saleStatus !== "AVAILABLE") return;
 
-    setSelectedSeatIds((prev) =>
-      prev.includes(seatId)
-        ? prev.filter((id) => id !== seatId)
-        : [...prev, seatId],
-    );
+    const isAlreadySelected = selectedSeatIds.includes(seatId);
+    if (isAlreadySelected) {
+      setSelectedSeatIds((prev) => prev.filter((id) => id !== seatId));
+      return;
+    }
+
+    if (selectedSeatIds.length >= MAX_SELECTABLE_SEATS) {
+      showSeatLimitModal();
+      return;
+    }
+
+    setSelectedSeatIds((prev) => [...prev, seatId]);
   };
 
   const handleQueueEnd = useCallback((message: string) => {
@@ -561,6 +575,27 @@ function RecommendPageContent({ matchId }: { matchId: number | null }) {
       router.push(`/matches/${matchId}`);
     }
   }, [clearQueuePolling, matchId, router]);
+
+  const showSeatLimitModal = useCallback(() => {
+    setIsSeatLimitModalOpen(true);
+
+    if (seatLimitTimerRef.current) {
+      clearTimeout(seatLimitTimerRef.current);
+    }
+
+    seatLimitTimerRef.current = setTimeout(() => {
+      setIsSeatLimitModalOpen(false);
+      seatLimitTimerRef.current = null;
+    }, 2500);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (seatLimitTimerRef.current) {
+        clearTimeout(seatLimitTimerRef.current);
+      }
+    };
+  }, []);
 
   const handleAssignRecommendedSeats = async () => {
     if (!matchId || !selectedRecommendId || assigning) return;
@@ -956,29 +991,29 @@ function RecommendPageContent({ matchId }: { matchId: number | null }) {
             </button>
 
             <div className="min-w-0 flex flex-wrap items-center gap-x-2 gap-y-1 sm:gap-x-3">
-              <div className="text-sm font-semibold leading-5 text-[var(--foundation-neutral-240)] sm:text-base sm:leading-6 lg:text-lg">
-                {formattedMatchAt || "-"}
-              </div>
-              <div className="text-sm font-semibold leading-5 text-[var(--foundation-neutral-240)] sm:text-base sm:leading-6 lg:text-lg">
-                {homeClub && awayClub ? `${homeClub.koName} vs ${awayClub.koName}` : "-"}
-              </div>
-              <div className="hidden text-sm leading-5 text-[var(--foundation-neutral-600)] sm:block sm:text-base">
-                |
-              </div>
-              <div className="min-w-0 flex items-center gap-2">
-                {/* <div className="h-7 w-7 overflow-hidden rounded-full bg-white sm:h-8 sm:w-8">
-                  {homeLogoImg ? (
-                    <img
-                      className="h-full w-full object-cover"
-                      src={resolveLogoSrc("lg-twins.png")}
-                      alt={"홈 구단 로고"}
-                    />
-                  ) : null}
-                </div> */}
-                <div className="min-w-0 truncate text-sm font-medium leading-5 text-[var(--foundation-neutral-400)] sm:text-base sm:leading-6">
-                  {stadiumName || "-"}
-                </div>
-              </div>
+              {hasMatchMeta ? (
+                <>
+                  <div className="text-sm font-semibold leading-5 text-[var(--foundation-neutral-240)] sm:text-base sm:leading-6 lg:text-lg">
+                    {formattedMatchAt}
+                  </div>
+                  <div className="text-sm font-semibold leading-5 text-[var(--foundation-neutral-240)] sm:text-base sm:leading-6 lg:text-lg">
+                    {`${homeClub.koName} vs ${awayClub.koName}`}
+                  </div>
+                  <div className="hidden text-sm leading-5 text-[var(--foundation-neutral-600)] sm:block sm:text-base">
+                    |
+                  </div>
+                  <div className="min-w-0 truncate text-sm font-medium leading-5 text-[var(--foundation-neutral-400)] sm:text-base sm:leading-6">
+                    {stadiumName}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="h-5 w-40 animate-pulse rounded bg-[var(--foundation-neutral-920)]" />
+                  <div className="h-5 w-32 animate-pulse rounded bg-[var(--foundation-neutral-920)]" />
+                  <div className="h-5 w-24 animate-pulse rounded bg-[var(--foundation-neutral-940)]" />
+                </>
+              )}
+
             </div>
           </div>
 
@@ -1039,34 +1074,34 @@ function RecommendPageContent({ matchId }: { matchId: number | null }) {
                 <div className="flex w-full flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex flex-1 flex-col items-start gap-3">
                     <div className="w-full text-lg font-semibold leading-6 text-[var(--text-normal-n240)]">
-                      좌석 추천 리스트
+                      추천 구역 리스트
                     </div>
                     <div className="w-full text-sm font-medium leading-5 text-[var(--text-info-n600)]">
                       ※ 추천 구역 선택 시 해당 블럭 내 연석 좌석이 자동 배정됩니다.
                     </div>
                   </div>
 
-                    <button
-                      type="button"
-                      aria-label="좌석 추천 새로고침"
-                      onClick={() => void loadSeatAccess()}
-                      disabled={loading || assigning}
-                      className="cursor-pointer inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--background-interactive-neutral-default)] outline outline-1 outline-offset-[-1px] outline-[var(--foundation-neutral-800)] disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      <RotateCw
-                        size={16}
-                        strokeWidth={1.75}
-                        className={[
-                          "text-[var(--text-normal-n240)]",
-                          loading ? "animate-spin" : "",
-                        ].join(" ")}
-                      />
-                    </button>
+                  <button
+                    type="button"
+                    aria-label="좌석 추천 새로고침"
+                    onClick={() => void loadSeatAccess()}
+                    disabled={loading || assigning}
+                    className="cursor-pointer inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--background-interactive-neutral-default)] outline outline-1 outline-offset-[-1px] outline-[var(--foundation-neutral-800)] disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <RotateCw
+                      size={16}
+                      strokeWidth={1.75}
+                      className={[
+                        "text-[var(--text-normal-n240)]",
+                        loading ? "animate-spin" : "",
+                      ].join(" ")}
+                    />
+                  </button>
                 </div>
 
-                <div className="w-full overflow-hidden">
+                <div className="w-full max-h-[480px] overflow-y-auto pr-1 thin-scrollbar">
                   {loading ? (
-                    <div className="w-full rounded-lg bg-[var(--background-white)] p-6 text-sm text-[var(--foundation-neutral-500)]">
+                    <div className="w-full text-sm text-[var(--foundation-neutral-500)]">
                       <RecommendSeatSkeleton />
                     </div>
                   ) : isRecommendEmpty ? (
@@ -1124,24 +1159,22 @@ function RecommendPageContent({ matchId }: { matchId: number | null }) {
                   </div>
                 </div>
                 <div className="flex w-full items-center justify-between gap-3">
-                    <div className="text-base font-semibold leading-6 text-black">
-                      선택한 좌석
-                    </div>
-                    <div className="text-right text-sm font-normal leading-5 text-[var(--foundation-secondary-600)]">
-                      총 {selectedSeatRows.length}석 선택되었습니다
-                    </div>
+                  <div className="text-base font-semibold leading-6 text-black">
+                    선택한 좌석
                   </div>
+                  <div className="text-right text-sm font-normal leading-5 text-[var(--foundation-secondary-600)]">
+                    총 {selectedSeatRows.length}석 선택되었습니다
+                  </div>
+                </div>
                 <div className="flex w-full flex-col items-start gap-4 bg-[var(--foundation-neutral-white)] px-2 py-2 outline outline-1 outline-offset-[-1px] outline-[var(--stroke-interactive-neutral-default)]">
-                  
-
                   <div className="flex w-full flex-col overflow-hidden">
                     <div className="inline-flex w-full items-start gap-2">
-                      <div className="flex flex-1 items-center gap-3 bg-[var(--foundation-neutral-940)] p-2">
+                      <div className="flex flex-1 items-center gap-2 bg-[var(--foundation-neutral-940)] p-2">
                         <div className="text-sm font-semibold leading-5 text-[var(--foundation-neutral-240)]">
                           좌석 등급
                         </div>
                       </div>
-                      <div className="flex flex-1 items-center gap-3 bg-[var(--foundation-neutral-980)] p-2">
+                      <div className="flex flex-1 items-center gap-2 bg-[var(--foundation-neutral-980)] p-2">
                         <div className="text-sm font-semibold leading-5 text-[var(--foundation-neutral-240)]">
                           좌석 번호
                         </div>
@@ -1296,11 +1329,11 @@ function RecommendPageContent({ matchId }: { matchId: number | null }) {
       {vqaPrompt && (
         <VQAChallenge
           onSuccess={() => {
-            
+
             settleVqaPrompt(true);
           }}
           onCancel={() => {
-            
+
             settleVqaPrompt(false);
             if (matchId) {
               router.push(`/matches/${matchId}`);
@@ -1308,6 +1341,8 @@ function RecommendPageContent({ matchId }: { matchId: number | null }) {
           }}
         />
       )}
+
+      <SeatLimitExceededModal open={isSeatLimitModalOpen} />
     </div>
   );
 }
