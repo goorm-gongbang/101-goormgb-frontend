@@ -545,18 +545,18 @@ function RecommendPageContent({ matchId }: { matchId: number | null }) {
 
     if (!targetSeat || targetSeat.saleStatus !== "AVAILABLE") return;
 
-    setSelectedSeatIds((prev) => {
-      if (prev.includes(seatId)) {
-        return prev.filter((id) => id !== seatId);
-      }
+    const isAlreadySelected = selectedSeatIds.includes(seatId);
+    if (isAlreadySelected) {
+      setSelectedSeatIds((prev) => prev.filter((id) => id !== seatId));
+      return;
+    }
 
-      if (prev.length >= MAX_SELECTABLE_SEATS) {
-        showSeatLimitModal();
-        return prev;
-      }
+    if (selectedSeatIds.length >= MAX_SELECTABLE_SEATS) {
+      showSeatLimitModal();
+      return;
+    }
 
-      return [...prev, seatId];
-    });
+    setSelectedSeatIds((prev) => [...prev, seatId]);
   };
 
   const handleQueueEnd = useCallback((message: string) => {
