@@ -139,7 +139,7 @@ export default function SupportWritePage() {
     return (
         <div className="min-h-screen bg-[#F8F9FA]">
             {/* ─── 상단 헤더 (breadcrumb) ─── */}
-            <div className="bg-white border-b border-[#F0F0F0]">
+            <div className="sticky top-12 z-10 bg-white border-b border-[#F0F0F0]">
                 <div className="max-w-[1240px] mx-auto px-6 h-12 flex items-center justify-end">
                     <nav className="flex items-center gap-1.5 text-xs text-[#999999]">
                         <button

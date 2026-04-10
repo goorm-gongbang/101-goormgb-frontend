@@ -76,16 +76,10 @@ export function Footer() {
                                         홈
                                     </Link>
                                     <Link
-                                        href="/"
+                                        href="/my"
                                         className="text-sm font-medium leading-5 text-[var(--foundation-neutral-200)] hover:underline"
                                     >
                                         마이페이지
-                                    </Link>
-                                    <Link
-                                        href="/"
-                                        className="text-sm font-medium leading-5 text-[var(--foundation-neutral-200)] hover:underline"
-                                    >
-                                        공지사항
                                     </Link>
                                 </div>
                             </div>
@@ -96,19 +90,19 @@ export function Footer() {
                                 </div>
                                 <div className="flex flex-col gap-3">
                                     <Link
-                                        href="/"
+                                        href="/refund"
                                         className="text-sm font-medium leading-5 text-[var(--foundation-neutral-200)] hover:underline"
                                     >
                                         취소 환불 정책
                                     </Link>
                                     <Link
-                                        href="/"
+                                        href="/privacy"
                                         className="text-sm font-medium leading-5 text-[var(--foundation-neutral-200)] hover:underline"
                                     >
                                         개인 정보 처리 방침
                                     </Link>
                                     <Link
-                                        href="/"
+                                        href="/terms"
                                         className="text-sm font-medium leading-5 text-[var(--foundation-neutral-200)] hover:underline"
                                     >
                                         이용약관
@@ -122,29 +116,31 @@ export function Footer() {
                                 </div>
                                 <div className="flex flex-col gap-3">
                                     <Link
-                                        href="/"
+                                        href="/notices"
                                         className="text-sm font-medium leading-5 text-[var(--foundation-neutral-200)] hover:underline"
                                     >
                                         공지사항
                                     </Link>
                                     <Link
-                                        href="/"
+                                        href="/faq"
                                         className="text-sm font-medium leading-5 text-[var(--foundation-neutral-200)] hover:underline"
                                     >
                                         FAQ
                                     </Link>
                                     <Link
-                                        href="/"
+                                        href="/my/support"
                                         className="text-sm font-medium leading-5 text-[var(--foundation-neutral-200)] hover:underline"
                                     >
                                         1:1 문의
                                     </Link>
-                                    <Link
-                                        href="/"
+                                    <a
+                                        href="https://walla.my/a/playballPartnership"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
                                         className="text-sm font-medium leading-5 text-[var(--foundation-neutral-200)] hover:underline"
                                     >
-                                        제휴/입점 문의
-                                    </Link>
+                                        제휴 문의
+                                    </a>
                                 </div>
                             </div>
                         </div>

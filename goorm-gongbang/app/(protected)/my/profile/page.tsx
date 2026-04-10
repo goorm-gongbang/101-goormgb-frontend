@@ -22,7 +22,7 @@ export default function ProfileEditPage() {
     return (
         <div className="min-h-screen bg-[#F5F5F5]">
             {/* ─── 상단 헤더 (breadcrumb) ─── */}
-            <div className="sticky top-0 z-10 bg-white border-b border-[#F0F0F0]">
+            <div className="sticky top-12 z-10 bg-white border-b border-[#F0F0F0]">
                 <div className="max-w-[1200px] mx-auto px-4 h-12 flex items-center justify-end">
                     <nav className="flex items-center gap-1.5 text-xs text-[#9E9E9E]">
                         <button
