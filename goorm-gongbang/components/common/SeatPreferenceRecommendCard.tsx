@@ -84,6 +84,8 @@ export function SeatPreferenceRecommendCard({
               <button
                 type="button"
                 onClick={() => setIsNearbySeatInfoOpen((prev) => !prev)}
+                onMouseEnter={() => setIsNearbySeatInfoOpen(true)}
+                onMouseLeave={() => setIsNearbySeatInfoOpen(false)}
                 className="relative h-4 w-4 cursor-pointer overflow-visible"
                 aria-expanded={isNearbySeatInfoOpen}
                 aria-controls="nearby-seat-info"

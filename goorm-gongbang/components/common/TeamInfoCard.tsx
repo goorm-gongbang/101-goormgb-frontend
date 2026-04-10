@@ -96,8 +96,8 @@ export function TeamInfoCard({
                 type="button"
                 disabled={buttonDisabled}
                 onClick={(e) => {
-                    e.stopPropagation(); // 카드 클릭과 분리
-                    onButtonClick?.();
+                    e.stopPropagation();
+                    (onClick ?? onButtonClick)?.();
                 }}
                 className={cn(
                     "cursor-pointer self-stretch h-6 min-w-14 p-2 rounded-md outline outline-1 outline-offset-[-1px] outline-[var(--foundation-primary-500)] inline-flex justify-center items-center",

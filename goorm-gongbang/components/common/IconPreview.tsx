@@ -3,7 +3,7 @@
 import { cn } from "@/lib/utils";
 import { CDN_CLUBS_BASE_URL } from "@/lib/api/config";
 
-type Size = "xl" | "lg" | "md" | "sm";
+type Size = "xl" | "lg" | "md" | "md_2" | "sm";
 
 type Props = {
   logoImg: string;
@@ -44,6 +44,13 @@ const SIZE_PRESETS: Record<
       "w-24 h-24 px-3.13 py-4 bg-transparent inline-flex flex-col justify-center items-center gap-1.5 overflow-hidden",
     inner: "flex flex-col justify-start items-center gap-2",
     img: "w-24 h-16",
+  },
+  
+  md_2: {
+    container:
+      "w-24 h-24 px-3.13 py-4 bg-transparent inline-flex flex-col justify-center items-center gap-1.5 overflow-hidden",
+    inner: "flex flex-col justify-start items-center gap-2",
+    img: "w-34 h-26",
   },
 
   sm: {

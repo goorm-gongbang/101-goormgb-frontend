@@ -52,7 +52,7 @@ export function PreferredZoneModal({
             </button>
           </div>
 
-          <div className="mt-4 flex w-full flex-1 flex-col overflow-hidden">
+          <div className="flex w-full flex-1 flex-col overflow-hidden">
             <div className="inline-flex w-full items-center justify-start gap-2">
               <div className="text-sm font-medium leading-5 text-[var(--foundation-primary-500)]">
                 현재 선택 개수 : {selectedBlocks.length}개
@@ -64,6 +64,7 @@ export function PreferredZoneModal({
                 selectedBlocks={selectedBlocks}
                 onToggle={onToggleBlock}
                 onReset={onReset}
+                hideMeta
               />
             </div>
           </div>
