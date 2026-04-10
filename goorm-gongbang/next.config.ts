@@ -39,9 +39,27 @@ const nextConfig = {
       {
         source: "/:path*",
         headers: [
+          {
+            // Report-Only: 위반 시 차단하지 않고 브라우저 콘솔에 로그만 출력
+            // 검증 완료 후 "Content-Security-Policy"로 변경하여 강제 적용
+            key: "Content-Security-Policy-Report-Only",
+            value: [
+              "default-src 'self'",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.your-domain.com",
+              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.your-domain.com",
+              "font-src 'self' https://fonts.gstatic.com",
+              "img-src 'self' data: blob: https://assets.playball.one https://*.kakaocdn.net https://cdn.your-domain.com https://goormgb-assets.s3.ap-northeast-2.amazonaws.com",
+              "connect-src 'self' https://api.playball.one https://api.staging.playball.one https://api.goormgb.space https://*.faro-collector.grafana.net",
+              "frame-ancestors 'none'",
+              "base-uri 'self'",
+              "form-action 'self'",
+            ].join("; "),
+          },
           { key: "X-Content-Type-Options", value: "nosniff" },
-          { key: "X-Frame-Options", value: "SAMEORIGIN" },
+          { key: "X-Frame-Options", value: "DENY" },
           { key: "X-XSS-Protection", value: "1; mode=block" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
         ],
       },
       {
