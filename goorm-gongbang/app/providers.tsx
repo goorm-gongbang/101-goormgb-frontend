@@ -10,35 +10,25 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { usePathname } from "next/navigation";
 import { useAuthStore } from "@/stores/authStore";
 import { refreshAccessToken, getMe } from "@/lib/services";
-import { initFaro } from "@/lib/client/faro";
-import { trackPageView } from "@/lib/client/analytics";
+import { getBotToken } from "@/lib/client/bot-token";
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   const setAccessToken = useAuthStore((s) => s.setAccessToken);
   const setUser = useAuthStore((s) => s.setUser);
-  const bootstrapped = useAuthStore((s) => s.bootstrapped); // 초기 인증 복구 절차 플래그
+  const bootstrapped = useAuthStore((s) => s.bootstrapped);
   const setBootstrapped = useAuthStore((s) => s.setBootstrapped);
 
-  const pathname = usePathname();
-  const faroInitialized = useRef(false);
+  const botTokenInitialized = useRef(false);
 
-  // [Faro] 초기화 (1회만)
+  // [X-Bot-Token] 사전 생성 (1회만)
   useEffect(() => {
-    if (!faroInitialized.current) {
-      initFaro();
-      faroInitialized.current = true;
+    if (!botTokenInitialized.current) {
+      getBotToken();
+      botTokenInitialized.current = true;
     }
   }, []);
-
-  // [Faro] 페이지 뷰 추적
-  useEffect(() => {
-    if (bootstrapped && pathname) {
-      trackPageView(pathname);
-    }
-  }, [bootstrapped, pathname]);
 
   useEffect(() => {
     let mounted = true;

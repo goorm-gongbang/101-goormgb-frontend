@@ -203,7 +203,7 @@ export default function PrivacyPolicyPage() {
                             <div className="bg-[#FAFAFA] rounded-xl p-5 border border-[#F0F0F0]">
                                 <ul className="space-y-1">
                                     <li><span className="font-bold">서비스명:</span> 플레이볼 (Playball)</li>
-                                    <li><span className="font-bold">이메일:</span> <a href="mailto:lab.jehyun@gmail.com" className="text-[var(--foundation-primary-600)] hover:underline">lab.jehyun@gmail.com</a></li>
+                                    <li><span className="font-bold">이메일:</span> <a href="mailto:support@playball.one" className="text-[var(--foundation-primary-600)] hover:underline">support@playball.one</a></li>
                                 </ul>
                             </div>
                         </section>
