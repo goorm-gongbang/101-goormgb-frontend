@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { RotateCcw } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { getTicketQr } from "@/lib/services";
@@ -17,7 +17,7 @@ export interface TicketInfo {
     location: string;
     time: string;
     dateStr?: string; // e.g., "2026. 03. 28 (토) 14:00"
-    status?: "PAYMENT_WAITING" | "RESERVED" | "UNDER_REVIEW";
+    status?: "PAYMENT_PENDING" | "PAYMENT_WAITING" | "PAID" | "RESERVED" | "UNDER_REVIEW";
 }
 
 interface TicketDetailModalProps {
@@ -28,53 +28,61 @@ interface TicketDetailModalProps {
 }
 
 export function TicketDetailModal({ isOpen, onClose, ticketInfo, ticketId }: TicketDetailModalProps) {
-    const [mounted, setMounted] = useState(false);
     const [timeLeft, setTimeLeft] = useState(0);
     const [refreshKey, setRefreshKey] = useState(0);
     const [qrData, setQrData] = useState<TicketQrData | null>(null);
     const [qrLoading, setQrLoading] = useState(false);
     const [qrUnavailableMessage, setQrUnavailableMessage] = useState<string | null>(null);
+    const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+    // QR 데이터 fetch + 닫힐 때 초기화
     useEffect(() => {
-        setMounted(true);
-    }, []);
+        if (!isOpen) {
+            if (timerRef.current) clearInterval(timerRef.current);
+            setQrData(null);
+            setTimeLeft(0);
+            setQrUnavailableMessage(null);
+            setQrLoading(false);
+            return;
+        }
+        if (!ticketId || ticketInfo?.status === "UNDER_REVIEW" || ticketInfo?.status === "PAYMENT_WAITING") return;
 
-    // QR 데이터 fetch
-    useEffect(() => {
-        if (!isOpen || !ticketId || ticketInfo?.status === "UNDER_REVIEW") return;
         setQrData(null);
         setQrUnavailableMessage(null);
+        setTimeLeft(0);
         setQrLoading(true);
+
+        let cancelled = false;
         getTicketQr(ticketId)
             .then((data) => {
+                if (cancelled) return;
                 setQrData(data);
                 const remaining = Math.max(0, Math.floor((new Date(data.expiresAt).getTime() - Date.now()) / 1000));
                 setTimeLeft(remaining);
             })
             .catch((err) => {
+                if (cancelled) return;
                 if (err instanceof ApiError && err.status === 400) {
                     setQrUnavailableMessage(err.message || "아직 입장 가능 시간이 아닙니다.");
                 }
             })
-            .finally(() => setQrLoading(false));
-    }, [isOpen, ticketId, refreshKey]);
+            .finally(() => { if (!cancelled) setQrLoading(false); });
+        return () => { cancelled = true; };
+    }, [isOpen, ticketId, ticketInfo?.status, refreshKey]);
 
     // 카운트다운
     useEffect(() => {
-        if (!isOpen || !qrData || timeLeft <= 0) return;
-        const timer = setInterval(() => {
-            setTimeLeft((prev) => {
-                if (prev <= 1) {
-                    clearInterval(timer);
-                    return 0;
-                }
-                return prev - 1;
-            });
+        if (timerRef.current) clearInterval(timerRef.current);
+        if (!qrData?.qrToken || timeLeft <= 0) return;
+        timerRef.current = setInterval(() => {
+            setTimeLeft((prev) => (prev <= 1 ? 0 : prev - 1));
         }, 1000);
-        return () => clearInterval(timer);
-    }, [isOpen, qrData]);
+        return () => {
+            if (timerRef.current) clearInterval(timerRef.current);
+        };
+    }, [qrData?.qrToken, timeLeft > 0]);
 
-    if (!mounted || !isOpen || !ticketInfo) return null;
+    if (!ticketInfo) return null;
 
     // "2026. 03. 29 (일) 14:00" -> "2026년 3월 29일 14:00" 변환 (단순화)
     const formatFullDate = (dateStr?: string) => {
@@ -149,10 +157,7 @@ export function TicketDetailModal({ isOpen, onClose, ticketInfo, ticketId }: Tic
                         {/* 상단: QR & 유효시간 */}
                         <div className="flex flex-col items-center px-6">
                             {ticketInfo.status === "UNDER_REVIEW" ? (
-                                <div className="w-full flex flex-col items-center py-10 gap-4">
-                                    <div className="w-20 h-20 rounded-full bg-gray-50 flex items-center justify-center">
-                                        <RotateCcw className="text-[#999] w-10 h-10" />
-                                    </div>
+                                <div className="w-full flex flex-col items-center py-6 gap-4">
                                     <p className="text-[#333] text-[15px] font-bold text-center leading-relaxed">
                                         비정상 예매 시도가 감지되어<br />
                                         정밀 확인을 진행하고 있습니다.
@@ -171,10 +176,19 @@ export function TicketDetailModal({ isOpen, onClose, ticketInfo, ticketId }: Tic
                             ) : (
                                 <>
                                     {/* QR 코드 영역 */}
-                                    <div className="w-[190px] h-[190px] mb-4 flex items-center justify-center relative">
+                                    <div className="w-[240px] h-[190px] mb-4 flex items-center justify-center relative">
                                         {qrLoading ? (
                                             <div className="w-full h-full flex items-center justify-center">
                                                 <div className="w-10 h-10 border-4 border-[#E8E8E8] border-t-[var(--foundation-primary-500)] rounded-full animate-spin" />
+                                            </div>
+                                        ) : ticketInfo.status === "PAYMENT_WAITING" ? (
+                                            <div className="w-[240px] flex flex-col items-center justify-center gap-2 text-center">
+                                                <p className="text-[#333] text-[15px] font-bold text-center leading-relaxed">
+                                                    무통장입금이 완료되지 않았습니다.
+                                                </p>
+                                                <p className="text-[#888] text-[13px] text-center">
+                                                    입금 완료 후 티켓을 확인할 수 있습니다.
+                                                </p>
                                             </div>
                                         ) : qrUnavailableMessage ? (
                                             <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-center">
@@ -221,22 +235,20 @@ export function TicketDetailModal({ isOpen, onClose, ticketInfo, ticketId }: Tic
                         </div>
 
                         {/* 하단: 구역/블럭/좌석 */}
-                        {ticketInfo.status !== "UNDER_REVIEW" && (
-                            <div className="px-6 flex flex-col gap-5">
-                                <div className="flex flex-col gap-1.5">
-                                    <span className="text-[14px] font-bold text-[#888]">구역/블럭</span>
-                                    <span className="text-[18px] font-bold text-[#1A1A1A]">
-                                        {ticketInfo.type} {ticketInfo.zone}
-                                    </span>
-                                </div>
-                                <div className="flex flex-col gap-1.5">
-                                    <span className="text-[14px] font-bold text-[#888]">좌석</span>
-                                    <span className="text-[18px] font-bold text-[#1A1A1A]">
-                                        {ticketInfo.seat}
-                                    </span>
-                                </div>
+                        <div className="px-6 flex flex-col gap-5">
+                            <div className="flex flex-col gap-1.5">
+                                <span className="text-[14px] font-bold text-[#888]">구역/블럭</span>
+                                <span className="text-[18px] font-bold text-[#1A1A1A]">
+                                    {ticketInfo.type} {ticketInfo.zone}
+                                </span>
                             </div>
-                        )}
+                            <div className="flex flex-col gap-1.5">
+                                <span className="text-[14px] font-bold text-[#888]">좌석</span>
+                                <span className="text-[18px] font-bold text-[#1A1A1A]">
+                                    {ticketInfo.seat}
+                                </span>
+                            </div>
+                        </div>
 
                     </div>
 
