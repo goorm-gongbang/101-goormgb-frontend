@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { deleteAccount } from "@/lib/services";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface DeleteAccountModalProps {
     isOpen: boolean;
@@ -63,22 +64,22 @@ export function DeleteAccountModal({ isOpen, onClose, onDeleteSuccess }: DeleteA
                 {/* 체크박스 */}
                 <div className="flex flex-col gap-3 mb-8">
                     <label className="flex items-start gap-3 cursor-pointer">
-                        <input
-                            type="checkbox"
+                        <Checkbox
+                            id="check1"
                             checked={checked1}
-                            onChange={(e) => setChecked1(e.target.checked)}
-                            className="mt-0.5 w-5 h-5 accent-[var(--foundation-primary-500)] cursor-pointer flex-shrink-0"
+                            onCheckedChange={(v) => setChecked1(!!v)}
+                            className="mt-0.5 flex-shrink-0 data-[state=checked]:bg-[var(--foundation-primary-500)] data-[state=checked]:border-[var(--foundation-primary-500)]"
                         />
                         <span className="text-[14px] text-[#3D3D3D]">
                             회원 탈퇴 시 계정 및 모든 데이터가 삭제되며 복구할 수 없음을 확인했습니다.
                         </span>
                     </label>
                     <label className="flex items-start gap-3 cursor-pointer">
-                        <input
-                            type="checkbox"
+                        <Checkbox
+                            id="check2"
                             checked={checked2}
-                            onChange={(e) => setChecked2(e.target.checked)}
-                            className="mt-0.5 w-5 h-5 accent-[var(--foundation-primary-500)] cursor-pointer flex-shrink-0"
+                            onCheckedChange={(v) => setChecked2(!!v)}
+                            className="mt-0.5 flex-shrink-0 data-[state=checked]:bg-[var(--foundation-primary-500)] data-[state=checked]:border-[var(--foundation-primary-500)]"
                         />
                         <span className="text-[14px] text-[#3D3D3D]">
                             이용약관 및 개인정보 처리방침에 따른 탈퇴 정책을 확인했습니다.
