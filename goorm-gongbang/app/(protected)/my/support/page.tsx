@@ -29,38 +29,6 @@ import { InquiryItem, Inquiry } from "@/components/my/InquiryItem";
    }
 =========================== */
 
-const MOCK_INQUIRIES: Inquiry[] = [
-    {
-        id: 1,
-        status: "COMPLETED",
-        statusLabel: "답변 완료",
-        category: "결제/수수료",
-        title: "무통장입금(가상계좌)은 이용 제한이 있나요?",
-        description: "가상계좌 입금을 하려고 하는데, 혹시 미성년자나 특정 연령대에서 이용할 수 없는 제한이 있는지 궁금합니다.",
-        date: "2026.02.09",
-        answer: "무통장입금(가상계좌)는 19세 미만 고객에게만 제공됩니다."
-    },
-    {
-        id: 2,
-        status: "WAITING",
-        statusLabel: "답변 대기",
-        category: "예매/상품",
-        title: "결제 중에 예매 정보를 변경할 수 있나요?",
-        description: "좌석을 선택하고 결제 페이지로 넘어갔는데, 이 상태에서 인원수를 한 명 더 추가하거나 구역을 바꿀 수 있는 방법이 있을까요? 창을 닫으면 좌석이 풀릴까봐 걱정돼서 문의드립니다.",
-        date: "2026.01.09",
-        answer: (
-            <div className="flex flex-col gap-4">
-                <p>결제 단계로 넘어온 이후에는 선택한 예매 정보 변경이 어렵습니다.</p>
-                <ul className="list-disc list-inside flex flex-col gap-1 text-[15px]">
-                    <li>정보를 변경하려면 현재 창을 종료한 뒤 다시 예매해 주시기 바랍니다.</li>
-                    <li>지정석의 경우, ‘취소 후 재예매’ 기능을 통해 가격을 변경하실 수 있습니다.</li>
-                </ul>
-                <p className="text-[#666] font-medium mt-1">※ 단, 취소 후 재예매 서비스는 상품에 따라 제공되지 않을 수 있습니다.</p>
-            </div>
-        )
-    }
-];
-
 export default function SupportPage() {
     const router = useRouter();
     const pathname = usePathname();
@@ -69,7 +37,7 @@ export default function SupportPage() {
     const loadInquiries = useCallback(() => {
         const saved = localStorage.getItem("my-inquiries");
         const localInquiries = saved ? JSON.parse(saved) : [];
-        setInquiries([...localInquiries, ...MOCK_INQUIRIES]);
+        setInquiries(localInquiries);
     }, []);
 
     useEffect(() => {
