@@ -8,7 +8,7 @@ import { CancelTicketModal } from "@/components/my/CancelTicketModal";
 import { TicketInfo } from "@/components/my/TicketDetailModal";
 import { RESERVATION_STATUS_MAP } from "../page";
 import { getTicketDetail } from "@/lib/services";
-import { parseFeeRate } from "@/lib/utils";
+import { calculateCancelFee } from "@/lib/utils";
 import type { TicketDetail } from "@/lib/types";
 
 function formatDate(iso: string): string {
@@ -78,11 +78,10 @@ export default function ReservationDetailPage({ params }: { params: Promise<{ id
         dateStr: matchDateStr,
     };
 
-    const cancelFeeAmount = (() => {
-        if (!detail.cancellationPolicy) return 0;
-        const r = parseFeeRate(detail.cancellationPolicy.feeRate);
-        return r > 0 ? Math.round((detail.payment?.totalAmount ?? 0) * r) + 2000 : 0;
-    })();
+    const cancelFeeAmount = calculateCancelFee(
+        detail.payment?.totalAmount ?? 0,
+        detail.cancellationPolicy?.feeRate
+    );
 
     return (
         <div className="min-h-screen bg-[#F5F5F5] font-pretendard pb-20">

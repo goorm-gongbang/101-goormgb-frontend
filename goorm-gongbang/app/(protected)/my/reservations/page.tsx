@@ -18,7 +18,7 @@ import { CancelTicketModal } from "@/components/my/CancelTicketModal";
 import { TicketInfo } from "@/components/my/TicketDetailModal";
 import { ReservationItem } from "@/components/my/ReservationItem";
 import { getTicketList, getTicketDetail } from "@/lib/services";
-import { parseFeeRate } from "@/lib/utils";
+import { calculateCancelFee } from "@/lib/utils";
 import type { TicketItem, TicketSummary } from "@/lib/types";
 
 /* ===========================
@@ -193,8 +193,7 @@ export default function ReservationsPage() {
             try {
                 const detail = await getTicketDetail(Number(item.id));
                 const totalAmount = detail.payment?.totalAmount ?? 0;
-                const feeRate = parseFeeRate(detail.cancellationPolicy?.feeRate);
-                const cancelFee = feeRate > 0 ? Math.round(totalAmount * feeRate) + 2000 : 0;
+                const cancelFee = calculateCancelFee(totalAmount, detail.cancellationPolicy?.feeRate);
                 setCancelInfo({ paymentAmount: totalAmount, cancelFee });
                 setIsCancelModalOpen(true);
             } catch (error: any) {

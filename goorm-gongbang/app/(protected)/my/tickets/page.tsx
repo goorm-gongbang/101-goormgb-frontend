@@ -8,6 +8,7 @@ import { TicketDetailModal } from "@/components/my/TicketDetailModal";
 import { CancelTicketModal } from "@/components/my/CancelTicketModal";
 import { TicketCard, Ticket, TicketStatus } from "@/components/my/TicketCard";
 import { getUpcomingTickets, getTicketDetail } from "@/lib/services";
+import { calculateCancelFee } from "@/lib/utils";
 import type { UpcomingTicketItem } from "@/lib/types";
 
 /* UpcomingTicketItem (API) → Ticket (UI) 매핑 */
@@ -129,9 +130,7 @@ export default function TicketsPage() {
     setSelectedTicket(ticket);
     getTicketDetail(Number(ticket.id)).then((detail) => {
       const totalAmount = detail.payment?.totalAmount ?? 0;
-      const feeRate = detail.cancellationPolicy?.feeRate ?? "0";
-      const rate = parseFloat(feeRate.replace("%", "")) / 100;
-      const cancelFee = rate > 0 ? Math.round(totalAmount * rate) + 2000 : 0;
+      const cancelFee = calculateCancelFee(totalAmount, detail.cancellationPolicy?.feeRate);
       setCancelInfo({ paymentAmount: totalAmount, cancelFee });
       setIsCancelModalOpen(true);
     });

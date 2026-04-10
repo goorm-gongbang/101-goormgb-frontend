@@ -14,3 +14,19 @@ export function parseFeeRate(feeRate: string | null | undefined): number {
   const parsed = parseFloat(cleaned);
   return isNaN(parsed) ? 0 : parsed / 100;
 }
+
+/** 취소 수수료 고정 금액 (원) */
+export const CANCEL_FIXED_FEE = 2000;
+
+/**
+ * 취소 수수료를 계산합니다.
+ * totalAmount가 0이거나 feeRate가 0이면 0을 반환합니다.
+ */
+export function calculateCancelFee(
+  totalAmount: number,
+  feeRate: string | null | undefined
+): number {
+  if (totalAmount <= 0) return 0;
+  const rate = parseFeeRate(feeRate);
+  return rate > 0 ? Math.round(totalAmount * rate) + CANCEL_FIXED_FEE : 0;
+}

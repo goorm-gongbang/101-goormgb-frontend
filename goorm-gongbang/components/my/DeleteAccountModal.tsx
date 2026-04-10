@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 import { deleteAccount } from "@/lib/services";
 
 interface DeleteAccountModalProps {
@@ -30,8 +31,8 @@ export function DeleteAccountModal({ isOpen, onClose, onDeleteSuccess }: DeleteA
         try {
             await deleteAccount();
             onDeleteSuccess();
-        } catch {
-            // 에러 처리는 서비스 레이어에서
+        } catch (error: any) {
+            toast.error(error?.message || "회원 탈퇴 처리 중 오류가 발생했습니다.");
         } finally {
             setIsSubmitting(false);
         }
