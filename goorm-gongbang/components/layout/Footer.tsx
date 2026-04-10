@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import Image from "next/image";
 
 export function Footer() {
     return (
@@ -7,12 +8,18 @@ export function Footer() {
             <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-6">
                 <div className="flex flex-col justify-start gap-8 lg:flex-row lg:items-start lg:justify-between lg:gap-9">
                     <div className="flex flex-1 flex-col gap-8 lg:flex-row lg:items-start lg:gap-9">
-                        <div className="opacity-90 flex items-end gap-10">
-                            <div className="flex h-28 w-40 items-center p-2">
-                                <div className="h-full w-36" />
-                                <img src="/logo.png" alt="logo" />
+                        <div className="opacity-90 flex items-end">
+                            <div className="flex h-28 w-40 items-center justify-start p-2">
+                                <Image
+                                    src="/logo.png"
+                                    alt="logo"
+                                    width={144}
+                                    height={56}
+                                    className="h-auto w-auto max-w-full"
+                                />
                             </div>
                         </div>
+
 
                         <div className="flex max-w-[420px] flex-col gap-6">
                             <div className="flex flex-col gap-2">
