@@ -120,7 +120,7 @@ export default function TermsPage() {
                         <section className="bg-[#FAFAFA] rounded-xl p-6 border border-[#F0F0F0]">
                             <h2 className="text-base font-bold text-[#1A1A1A] mb-3">부칙</h2>
                             <p className="text-sm">본 약관은 2026년 2월 24일부터 시행됩니다.</p>
-                            <p className="text-sm mt-1">문의: <a href="mailto:lab.jehyun@gmail.com" className="text-[var(--foundation-primary-600)] hover:underline">lab.jehyun@gmail.com</a></p>
+                            <p className="text-sm mt-1">문의: <a href="mailto:support@playball.one" className="text-[var(--foundation-primary-600)] hover:underline">support@playball.one</a></p>
                         </section>
                     </div>
                 </div>

@@ -81,6 +81,7 @@ export default function TicketsPage() {
 
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const [isTicketModalOpen, setIsTicketModalOpen] = useState(false);
+  const [ticketModalKey, setTicketModalKey] = useState(0);
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
   const [cancelInfo, setCancelInfo] = useState<{ paymentAmount: number; cancelFee: number } | null>(null);
 
@@ -107,6 +108,7 @@ export default function TicketsPage() {
   const handleOpenTicket = (ticket: Ticket) => {
     setSelectedTicket(ticket);
     setIsTicketModalOpen(true);
+    setTicketModalKey(prev => prev + 1);
   };
 
   const handleDeposit = (ticket: Ticket) => {
@@ -248,12 +250,15 @@ export default function TicketsPage() {
         )}
 
         {/* 티켓 상세 모달 (Layer) */}
-        <TicketDetailModal
-          isOpen={isTicketModalOpen}
-          onClose={() => setIsTicketModalOpen(false)}
-          ticketInfo={selectedTicket}
-          ticketId={selectedTicket ? Number(selectedTicket.id) : undefined}
-        />
+        {isTicketModalOpen && (
+          <TicketDetailModal
+            key={ticketModalKey}
+            isOpen={isTicketModalOpen}
+            onClose={() => setIsTicketModalOpen(false)}
+            ticketInfo={selectedTicket}
+            ticketId={selectedTicket ? Number(selectedTicket.id) : undefined}
+          />
+        )}
 
         {/* 취소 모달 */}
         <CancelTicketModal

@@ -6,6 +6,7 @@
 
 import { useAuthStore } from "@/stores/authStore";
 import { ApiError } from "./error";
+import { getBotTokenSync } from "@/lib/client/bot-token";
 
 // 공통 기본 설정
 const baseConfig: RequestInit = {
@@ -75,6 +76,12 @@ function buildRequest<T>(init: FetchOptions<T>): RequestInit {
     } else {
       processedBody = body as BodyInit;
     }
+  }
+
+  // X-Bot-Token: 브라우저 검증 토큰 (봇 탐지용)
+  const botToken = getBotTokenSync();
+  if (botToken) {
+    headers.set("X-Bot-Token", botToken);
   }
 
   return {

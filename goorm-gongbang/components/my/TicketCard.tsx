@@ -36,8 +36,7 @@ export function TicketCard({ ticket, onClick, onDeposit, onCancel }: TicketCardP
 
     const canCancel = !isDDay && (ticket.actions ? ticket.actions.canCancel : ticket.status === "RESERVED");
 
-    // 클릭 가능 여부 (입금 대기 상태는 클릭 불가)
-    const isClickable = !isWaiting;
+    const isClickable = true;
 
     return (
         <div
