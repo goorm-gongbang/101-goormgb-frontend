@@ -502,20 +502,6 @@ export default function Page() {
                             </div>
 
                             <div className="min-w-0 flex items-center gap-2">
-                                <div
-                                    data-logo="LG"
-                                    data-mode="Color"
-                                    data-size="xsmall"
-                                    className="w-7 h-7 sm:w-8 sm:h-8 bg-white inline-flex flex-col justify-center items-center overflow-hidden shrink-0"
-                                >
-                                    <img
-                                        className="h-full w-full object-cover"
-                                        src={resolveLogoSrc("lg-twins.png")}
-                                        alt={"홈 구단 로고"}
-                                    />
-
-                                </div>
-
                                 <div className="min-w-0 text-[var(--foundation-neutral-400)] text-sm sm:text-base font-medium leading-5 sm:leading-6 truncate">
                                     {match?.stadium.koName ?? "-"}
                                 </div>

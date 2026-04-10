@@ -234,7 +234,7 @@ export default function Home() {
               </div>
 
               {/* MatchCard list */}
-              <div className="w-full flex flex-col items-center gap-3">
+              <div className="w-full flex flex-col items-center gap-3 min-h-[608px]">
                 {loadingMatches ? (
                   <div className="w-full flex flex-col items-center gap-3">
                     {Array.from({ length: 5 }).map((_, i) => (
@@ -242,7 +242,7 @@ export default function Home() {
                     ))}
                   </div>
                 ) : matchCards.length === 0 ? (
-                  <div className="w-full max-w-[1074px] rounded-2xl border border-[var(--foundation-neutral-880)] bg-[var(--foundation-neutral-white)] px-6 py-12 text-center">
+                  <div className="w-full max-w-[1074px] rounded-2xl bg-[var(--foundation-neutral-white)] px-6 py-12 text-center">
                     <p className="text-base font-medium text-[var(--foundation-neutral-400)]">
                       선택한 날짜에는 예정된 경기가 없습니다.
                     </p>
