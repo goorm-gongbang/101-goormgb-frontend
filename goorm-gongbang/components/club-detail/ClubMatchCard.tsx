@@ -28,7 +28,7 @@ export function ClubMatchCard({ match, config }: MatchCardProps) {
   const CardContent = (
     <div
       className={cn(
-        "w-full h-full flex flex-col items-center gap-2 sm:gap-3 group transition-opacity",
+        "w-full h-full flex flex-col items-center gap-1 group transition-opacity",
         isEnded && "bg-[var(--background-grey)]",
         !isClickable && "cursor-default",
       )}
@@ -47,7 +47,7 @@ export function ClubMatchCard({ match, config }: MatchCardProps) {
         />
       </div>
       <div className={cn(
-        "text-[11px] sm:text-[12px] font-black text-slate-900 text-center break-words leading-tight",
+        "mt-2 text-xs sm:text-sm font-medium text-slate-900 text-center break-words leading-tight",
         isEnded
               ? "text-[var(--text-info-n600)]"
               : "text-slate-900",
@@ -57,7 +57,7 @@ export function ClubMatchCard({ match, config }: MatchCardProps) {
       </div>
       <div
         className={cn(
-          "mt-auto text-[10px] font-bold w-full py-1.5 transition-all text-center",
+          "text-xs sm:text-sm font-medium w-full py-1.5 transition-all text-center",
           config.color,
         )}
       >

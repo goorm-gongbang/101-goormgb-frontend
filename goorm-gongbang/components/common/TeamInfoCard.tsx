@@ -50,7 +50,7 @@ export function TeamInfoCard({
             onClick={onClick}
             className={cn(
                 "group relative rounded-2xl outline outline-1 outline-offset-[-1px]",
-                "outline-[var(--foundation-neutral-880)]",
+                "outline-[var(--foundation-neutral-880)]/50",
                 "self-stretch px-4 py-3 inline-flex flex-col justify-start items-start gap-1.5",
                 onClick && "cursor-pointer",
                 className
@@ -85,7 +85,7 @@ export function TeamInfoCard({
             {/* Team name */}
             <div className="self-stretch flex flex-col justify-center items-center">
                 <div className="self-stretch inline-flex justify-center items-center">
-                    <div className="text-center justify-center text-[var(--foundation-neutral-20)] text-xs font-medium font-['Pretendard'] leading-4">
+                    <div className="text-center justify-center text-[var(--foundation-neutral-20)] mb-2 font-medium font-['Pretendard'] leading-5">
                         {teamName}
                     </div>
                 </div>
@@ -100,7 +100,7 @@ export function TeamInfoCard({
                     (onClick ?? onButtonClick)?.();
                 }}
                 className={cn(
-                    "cursor-pointer self-stretch h-6 min-w-14 p-2 rounded-md outline outline-1 outline-offset-[-1px] outline-[var(--foundation-primary-500)] inline-flex justify-center items-center",
+                    "cursor-pointer self-stretch h-8 min-w-14 p-2 rounded-md outline outline-1 outline-offset-[-1px] outline-[var(--foundation-primary-500)] inline-flex justify-center items-center",
                     "group-hover:bg-[var(--foundation-primary-10)]",
                     buttonDisabled && "opacity-50 cursor-not-allowed"
                 )}
