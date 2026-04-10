@@ -110,6 +110,9 @@ export default function LoginPage() {
         return;
       }
 
+      const next = searchParams.get("next");
+      if (next) sessionStorage.setItem("kakao_redirect_next", next);
+
       window.location.href = loginUrl;
     } catch (e) {
       if (e instanceof ApiError) {
