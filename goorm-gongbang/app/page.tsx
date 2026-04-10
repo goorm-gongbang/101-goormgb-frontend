@@ -31,6 +31,10 @@ function TeamLogo({ club }: { club: Club }) {
   return <IconPreview logoImg={club.logoImg} size="md" />;
 }
 
+function TeamLogoClub({ club }: { club: Club }) {
+  return <IconPreview logoImg={club.logoImg} size="md_2" />;
+}
+
 function MatchCardSkeleton({ elevated }: { elevated?: boolean }) {
   return (
     <div
@@ -237,6 +241,12 @@ export default function Home() {
                       <MatchCardSkeleton key={i} elevated={i === 0} />
                     ))}
                   </div>
+                ) : matchCards.length === 0 ? (
+                  <div className="w-full max-w-[1074px] rounded-2xl border border-[var(--foundation-neutral-880)] bg-[var(--foundation-neutral-white)] px-6 py-12 text-center">
+                    <p className="text-base font-medium text-[var(--foundation-neutral-400)]">
+                      선택한 날짜에는 예정된 경기가 없습니다.
+                    </p>
+                  </div>
                 ) : (
                   matchCards.map((m, idx) => {
                     const dateText = formatKST(m.matchAt, {
@@ -335,8 +345,8 @@ export default function Home() {
                           key={t.clubId}
                           dataLogo={t.koName} // 두산 베어스
                           teamName={t.koName} // 두산 베어스
-                          logo={<TeamLogo club={t} />} // <IconPreview index={7} size="md" />
-                          onButtonClick={() =>
+                          logo={<TeamLogoClub club={t} />} // <IconPreview index={7} size="md" />
+                          onClick={() =>
                             router.push(`/clubs/${t.clubId}`)
                           }
                         />
