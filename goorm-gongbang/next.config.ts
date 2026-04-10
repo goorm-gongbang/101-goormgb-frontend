@@ -24,6 +24,16 @@ const nextConfig = {
         hostname: "assets.playball.one",
         pathname: "/static/clubs/**",
       },
+      {
+        protocol: "http",
+        hostname: "k.kakaocdn.net",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "k.kakaocdn.net",
+        pathname: "/**",
+      },
     ],
   },
 
