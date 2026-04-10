@@ -50,14 +50,14 @@ export function ReservationItem({ item, isLast, onActionClick, isLoading }: Rese
             onClick={() => {
                 router.push(`/my/reservations/${item.id}`);
             }}
-            className={`grid grid-cols-[minmax(180px,1fr)_minmax(200px,1fr)_100px_80px_minmax(280px,2fr)_minmax(200px,1fr)] items-center px-6 py-[18px] text-[14px] text-[#1A1A1A] font-medium transition-colors hover:bg-gray-50 cursor-pointer
+            className={`grid grid-cols-[150px_minmax(200px,1fr)_120px_80px_minmax(280px,2fr)_200px] items-center px-6 py-[18px] text-[14px] text-[#1A1A1A] font-medium transition-colors hover:bg-gray-50 cursor-pointer
                 ${!isLast ? 'border-b border-[#F0F0F0]' : ''}
             `}
         >
             <div className="tracking-tight">{item.date}</div>
             <div>{item.matchTitle}</div>
             <div className="text-[#666]">{item.location}</div>
-            <div className="text-[#666]">{item.count}</div>
+            <div className="text-[#666] text-center">{item.count}</div>
             <div className="truncate pr-4">{item.seat}</div>
 
             {/* 진행 상황 및 액션 영역 */}

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronRight, ChevronLeft, ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronLeft, ChevronDown, ChevronUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const NOTICE_DATA = [
@@ -296,26 +296,7 @@ export default function NoticesPage() {
 
     return (
         <div className="min-h-screen bg-[#F5F5F5]">
-            {/* ─── 상단 헤더 (breadcrumb) ─── */}
-            <div className="sticky top-0 z-10 bg-white border-b border-[#F0F0F0]">
-                <div className="max-w-[1200px] mx-auto px-4 h-12 flex items-center justify-end">
-                    <nav className="flex items-center gap-1.5 text-xs text-[#9E9E9E]">
-                        <button
-                            type="button"
-                            onClick={() => router.push("/my")}
-                            className="hover:text-[#1A1A1A] transition-colors"
-                        >
-                            마이페이지
-                        </button>
-                        <span>&gt;</span>
-                        <span className="text-[#1A1A1A] font-medium">공지사항</span>
-                    </nav>
-                </div>
-            </div>
-
-            {/* ─── 본문 ─── */}
             <div className="max-w-[1200px] mx-auto px-4 py-8">
-                {/* 이전으로 돌아가기 */}
                 <button
                     type="button"
                     onClick={() => router.back()}
@@ -327,7 +308,7 @@ export default function NoticesPage() {
 
                 <div className="mb-8 ml-2">
                     <h1 className="flex items-baseline gap-3">
-                        <span className="text-[32px] font-black tracking-tight text-[#1A1A1A]">공지사항</span>
+                        <span className="text-[24px] font-bold text-[#1A1A1A]">공지사항</span>
                         <span className="text-[15px] font-medium text-[#9E9E9E]">총 {NOTICE_DATA.length}건</span>
                     </h1>
                 </div>

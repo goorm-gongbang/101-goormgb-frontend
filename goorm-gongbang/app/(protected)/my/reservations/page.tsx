@@ -18,7 +18,7 @@ import { CancelTicketModal } from "@/components/my/CancelTicketModal";
 import { TicketInfo } from "@/components/my/TicketDetailModal";
 import { ReservationItem } from "@/components/my/ReservationItem";
 import { getTicketList, getTicketDetail } from "@/lib/services";
-import { parseFeeRate } from "@/lib/utils";
+import { calculateCancelFee } from "@/lib/utils";
 import type { TicketItem, TicketSummary } from "@/lib/types";
 
 /* ===========================
@@ -50,7 +50,7 @@ export const RESERVATION_STATUS_MAP: Record<string, string> = {
     PAID: "결제 완료",
     RESERVED: "결제 완료",
     UNDER_REVIEW: "정밀 확인 중",
-    CANCEL_REQUESTED: "취소 요청 중",
+    CANCEL_REQUESTED: "취소를 처리하고 있어요.",
     CANCEL_PROCESSING: "취소 처리 중",
     CANCELLED: "취소 완료",
     REFUND_PROCESSING: "환불 처리 중",
@@ -193,7 +193,7 @@ export default function ReservationsPage() {
             try {
                 const detail = await getTicketDetail(Number(item.id));
                 const totalAmount = detail.payment?.totalAmount ?? 0;
-                const cancelFee = Math.round(totalAmount * parseFeeRate(detail.cancellationPolicy?.feeRate));
+                const cancelFee = calculateCancelFee(totalAmount, detail.cancellationPolicy?.feeRate);
                 setCancelInfo({ paymentAmount: totalAmount, cancelFee });
                 setIsCancelModalOpen(true);
             } catch (error: any) {
@@ -207,7 +207,7 @@ export default function ReservationsPage() {
     return (
         <div className="min-h-screen bg-[#F5F5F5] font-pretendard">
             {/* ─── 상단 헤더 (breadcrumb) ─── */}
-            <div className="sticky top-0 z-10 bg-white border-b border-[#F0F0F0]">
+            <div className="sticky top-12 z-10 bg-white border-b border-[#F0F0F0]">
                 <div className="max-w-[1200px] mx-auto px-4 h-12 flex items-center justify-end">
                     <nav className="flex items-center gap-1.5 text-[13px] text-[#9E9E9E]">
                         <button
@@ -282,12 +282,13 @@ export default function ReservationsPage() {
                 </div>
 
                 {/* 테이블 */}
-                <div className="bg-white rounded-[12px] border border-[#E8E8E8] overflow-hidden">
-                    <div className="grid grid-cols-[minmax(180px,1fr)_minmax(200px,1fr)_100px_80px_minmax(280px,2fr)_minmax(200px,1fr)] items-center px-6 py-4 bg-[#FAFAFA] border-b border-[#E8E8E8] text-[14px] text-[#666] font-semibold">
+                <div className="overflow-x-auto">
+                <div className="bg-white rounded-[12px] border border-[#E8E8E8] overflow-hidden min-w-[1078px]">
+                    <div className="grid grid-cols-[150px_minmax(200px,1fr)_120px_80px_minmax(280px,2fr)_200px] items-center px-6 py-4 bg-[#FAFAFA] border-b border-[#E8E8E8] text-[14px] text-[#666] font-semibold">
                         <div>경기 일시</div>
                         <div>경기 정보</div>
                         <div>장소</div>
-                        <div>티켓 수</div>
+                        <div className="text-center">티켓 수</div>
                         <div>좌석 정보</div>
                         <div className="pl-4">진행 상황</div>
                     </div>
@@ -309,6 +310,7 @@ export default function ReservationsPage() {
                             ))
                         )}
                     </div>
+                </div>
                 </div>
 
                 {/* Pagination */}
