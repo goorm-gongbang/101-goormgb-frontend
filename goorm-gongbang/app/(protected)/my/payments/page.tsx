@@ -15,6 +15,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { ChevronLeft, Plus, Trash2, CreditCard, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -63,17 +64,19 @@ function PaymentIcon({ type, size = 36 }: { type: PaymentMethodType; size?: numb
                 className="rounded-xl flex-shrink-0 overflow-hidden bg-[#FEE500] flex items-center justify-center"
                 style={{ width: size, height: size }}
             >
-                <img src="/pay/kakao.png" alt="카카오페이" style={{ width: size * 0.75, height: size * 0.75, objectFit: "contain" }} />
+                <Image src="/pay/kakao.png" alt="카카오페이" width={size * 0.75} height={size * 0.75} style={{ objectFit: "contain" }} />
             </div>
         );
     }
     if (type === "tosspay") {
         return (
-            <img
+            <Image
                 src="/pay/toss.png"
                 alt="토스페이"
+                width={size}
+                height={size}
                 className="rounded-xl flex-shrink-0"
-                style={{ width: size, height: size, objectFit: "cover" }}
+                style={{ objectFit: "cover" }}
             />
         );
     }
@@ -98,11 +101,12 @@ type AddModalProps = {
     existingTypes: PaymentMethodType[];
 };
 
+const ADD_OPTIONS: { type: PaymentMethodType; label: string; desc: string }[] = [
+    { type: "kakaopay", label: "카카오페이", desc: "카카오 계정으로 간편 결제" },
+    { type: "tosspay", label: "토스페이", desc: "토스 앱으로 간편 결제" },
+];
+
 function AddPaymentModal({ onClose, onAdd, existingTypes }: AddModalProps) {
-    const OPTIONS: { type: PaymentMethodType; label: string; desc: string }[] = [
-        { type: "kakaopay", label: "카카오페이", desc: "카카오 계정으로 간편 결제" },
-        { type: "tosspay", label: "토스페이", desc: "토스 앱으로 간편 결제" },
-    ];
 
     return (
         <div
@@ -117,7 +121,7 @@ function AddPaymentModal({ onClose, onAdd, existingTypes }: AddModalProps) {
                 <p className="text-xs text-[#9E9E9E] mb-5">추가할 결제 수단을 선택하세요</p>
 
                 <ul className="flex flex-col gap-2">
-                    {OPTIONS.map((opt) => {
+                    {ADD_OPTIONS.map((opt) => {
                         const alreadyAdded = existingTypes.includes(opt.type);
                         return (
                             <li key={opt.type}>
