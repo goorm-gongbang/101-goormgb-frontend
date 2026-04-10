@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils";
 import { ChevronRight } from "lucide-react";
 import { getMyPageProfile } from "@/lib/services";
 import type { MyPageProfileData } from "@/lib/types";
+import { DeleteAccountModal } from "./DeleteAccountModal";
 
 
 /* ===========================
@@ -49,11 +50,12 @@ const SECTIONS: Section[] = [
     {
         title: "일반",
         items: [
-            { label: "공지사항", href: "/my/notices" },
-            { label: "FAQ", href: "/my/faq" },
+            { label: "공지사항", href: "/notices" },
+            { label: "FAQ", href: "/faq" },
             { label: "1:1 문의", href: "/my/support" },
-            { label: "이용약관", href: "/my/terms" },
-            { label: "개인정보 처리방침", href: "/my/privacy" },
+            { label: "이용약관", href: "/terms" },
+            { label: "취소·환불 정책", href: "/refund" },
+            { label: "개인정보 처리방침", href: "/privacy" },
         ],
     },
 ];
@@ -80,6 +82,7 @@ export function MyPageLayout({ children }: Props) {
     const isLoggedIn = bootstrapped && !!accessToken && !!user;
 
     const [profileData, setProfileData] = useState<MyPageProfileData | null>(null);
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
 
     // Guard
     useEffect(() => {
@@ -97,7 +100,7 @@ export function MyPageLayout({ children }: Props) {
     // 로그아웃
     const handleLogout = () => {
         logoutStore();
-        router.replace("/login");
+        router.replace("/");
     };
 
     // 로딩 중
@@ -253,7 +256,7 @@ export function MyPageLayout({ children }: Props) {
                     {/* 회원 탈퇴 */}
                     <button
                         type="button"
-                        onClick={() => {/* 추후 구현 */ }}
+                        onClick={() => setShowDeleteModal(true)}
                         className="w-full flex items-center py-3.5 text-[var(--foundation-red-500)] text-sm font-normal hover:opacity-80 transition-opacity"
                     >
                         회원 탈퇴
@@ -267,6 +270,16 @@ export function MyPageLayout({ children }: Props) {
                     </div>
                 )}
             </div>
+
+            {/* 회원 탈퇴 모달 */}
+            <DeleteAccountModal
+                isOpen={showDeleteModal}
+                onClose={() => setShowDeleteModal(false)}
+                onDeleteSuccess={() => {
+                    logoutStore();
+                    router.replace("/");
+                }}
+            />
         </div>
     );
 }

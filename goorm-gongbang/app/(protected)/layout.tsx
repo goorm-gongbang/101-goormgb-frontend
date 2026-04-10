@@ -16,6 +16,8 @@ export default function ProtectedLayout({
   const bootstrapped = useAuthStore((s) => s.bootstrapped);
   const accessToken = useAuthStore((s) => s.accessToken);
   const user = useAuthStore((s) => s.user);
+  const intentionalLogout = useAuthStore((s) => s.intentionalLogout);
+  const clearLogoutFlag = useAuthStore((s) => s.clearLogoutFlag);
 
   const isLoggedIn = bootstrapped && !!accessToken && !!user;
 
@@ -23,12 +25,16 @@ export default function ProtectedLayout({
     if (!bootstrapped) return;
 
     if (!isLoggedIn) {
-      const query = searchParams.toString();
-      const next = query ? `${pathname}?${query}` : pathname;
-
-      router.replace(`/login?next=${encodeURIComponent(next)}`);
+      if (intentionalLogout) {
+        clearLogoutFlag();
+        router.replace("/login");
+      } else {
+        const query = searchParams.toString();
+        const next = query ? `${pathname}?${query}` : pathname;
+        router.replace(`/login?next=${encodeURIComponent(next)}`);
+      }
     }
-  }, [bootstrapped, isLoggedIn, pathname, searchParams, router]);
+  }, [bootstrapped, isLoggedIn, intentionalLogout, clearLogoutFlag, pathname, searchParams, router]);
 
   if (!bootstrapped) {
     return (

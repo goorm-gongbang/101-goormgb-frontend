@@ -1,11 +1,3 @@
-/* ===========================
-   이용 약관 페이지
-   Route: /my/terms
-   - 브레드크럼: 마이페이지 > 이용 약관
-   - 이전으로 돌아가기 버튼 포함
-   - 이용 약관.md 내용 반영
-=========================== */
-
 "use client";
 
 import { useRouter } from "next/navigation";
@@ -16,26 +8,7 @@ export default function TermsPage() {
 
     return (
         <div className="min-h-screen bg-[#F5F5F5]">
-            {/* ─── 상단 헤더 (breadcrumb) ─── */}
-            <div className="sticky top-0 z-10 bg-white border-b border-[#F0F0F0]">
-                <div className="max-w-[1200px] mx-auto px-4 h-12 flex items-center justify-end">
-                    <nav className="flex items-center gap-1.5 text-xs text-[#9E9E9E]">
-                        <button
-                            type="button"
-                            onClick={() => router.push("/my")}
-                            className="hover:text-[#1A1A1A] transition-colors"
-                        >
-                            마이페이지
-                        </button>
-                        <span>&gt;</span>
-                        <span className="text-[#1A1A1A] font-medium">이용 약관</span>
-                    </nav>
-                </div>
-            </div>
-
-            {/* ─── 본문 ─── */}
             <div className="max-w-[1200px] mx-auto px-4 py-5">
-                {/* 이전으로 돌아가기 */}
                 <button
                     type="button"
                     onClick={() => router.back()}

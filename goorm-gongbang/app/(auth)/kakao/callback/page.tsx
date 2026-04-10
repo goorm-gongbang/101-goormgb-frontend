@@ -41,8 +41,14 @@ export default function KakaoCallbackPage() {
         if (data?.user) {
           setUser({ id: String(data.user.userId), status: data.user.status });
         }
-        if (data?.onboardingRequired) router.replace("/onboarding/intro");
-        else router.replace("/");
+
+        if (data?.onboardingRequired) {
+          router.replace("/onboarding/intro");
+        } else {
+          const next = sessionStorage.getItem("kakao_redirect_next");
+          sessionStorage.removeItem("kakao_redirect_next");
+          router.replace(next && next.startsWith("/") ? next : "/");
+        }
 
         toast.success("로그인 성공");
       } catch (e) {

@@ -10,7 +10,13 @@ export function ConditionalFooter() {
   const showFooter =
     pathname === "/" ||
     pathname.startsWith("/matches/") ||
-    pathname.startsWith("/clubs/");
+    pathname.startsWith("/clubs/") ||
+    pathname.startsWith("/my") ||
+    pathname === "/notices" ||
+    pathname === "/faq" ||
+    pathname === "/refund" ||
+    pathname === "/privacy" ||
+    pathname === "/terms";
 
   if (!showFooter) return null;
 

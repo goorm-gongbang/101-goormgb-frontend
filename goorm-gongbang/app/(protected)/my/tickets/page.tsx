@@ -8,6 +8,7 @@ import { TicketDetailModal } from "@/components/my/TicketDetailModal";
 import { CancelTicketModal } from "@/components/my/CancelTicketModal";
 import { TicketCard, Ticket, TicketStatus } from "@/components/my/TicketCard";
 import { getUpcomingTickets, getTicketDetail } from "@/lib/services";
+import { calculateCancelFee } from "@/lib/utils";
 import type { UpcomingTicketItem } from "@/lib/types";
 
 /* UpcomingTicketItem (API) → Ticket (UI) 매핑 */
@@ -129,9 +130,7 @@ export default function TicketsPage() {
     setSelectedTicket(ticket);
     getTicketDetail(Number(ticket.id)).then((detail) => {
       const totalAmount = detail.payment?.totalAmount ?? 0;
-      const feeRate = detail.cancellationPolicy?.feeRate ?? "0";
-      const rate = parseFloat(feeRate.replace("%", "")) / 100;
-      const cancelFee = Math.round(totalAmount * rate);
+      const cancelFee = calculateCancelFee(totalAmount, detail.cancellationPolicy?.feeRate);
       setCancelInfo({ paymentAmount: totalAmount, cancelFee });
       setIsCancelModalOpen(true);
     });
@@ -140,7 +139,7 @@ export default function TicketsPage() {
   return (
     <div className="min-h-screen bg-[#F5F5F5] font-pretendard">
       {/* ─── 상단 헤더 (breadcrumb) ─── */}
-      <div className="sticky top-0 z-10 bg-white border-b border-[#F0F0F0]">
+      <div className="sticky top-12 z-10 bg-white border-b border-[#F0F0F0]">
         <div className="max-w-[1200px] mx-auto px-4 h-12 flex items-center justify-end">
           <nav className="flex items-center gap-1.5 text-xs text-[#9E9E9E]">
             <button
