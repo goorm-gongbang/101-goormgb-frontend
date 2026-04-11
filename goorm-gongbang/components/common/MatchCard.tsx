@@ -70,8 +70,9 @@ export function MatchCard({
                     className={cn(
                         "w-full h-28 overflow-hidden bg-[var(--foundation-neutral-white)] rounded-2xl",
                         "px-4 sm:px-6 lg:px-9",
-                        "outline outline-1 outline-offset-[-1px] outline-[var(--foundation-neutral-880)]",
+                        "outline outline-1 outline-offset-[-1px] outline-[var(--foundation-neutral-880)]/50",
                         "flex items-center",
+                        "hover:outline-[var(--foundation-neutral-880)]",
                         "hover:shadow-[0px_0px_12px_0px_rgba(0,0,0,0.08)]"
                     )}
                 >

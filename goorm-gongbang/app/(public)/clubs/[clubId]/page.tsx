@@ -464,7 +464,7 @@ export default function ClubDetailPage() {
                       key={dateKey}
                       className={cn(
                         "min-h-[160px] sm:min-h-[180px] lg:min-h-[200px]",
-                        "border border-slate-200 rounded-lg flex flex-col items-center transition-all overflow-hidden",
+                        "border border-slate-200/50 rounded-lg flex flex-col items-center transition-all overflow-hidden",
                         isHoverable && "hover:border-[var(--foundation-primary-300)]",
                         (!match || match.saleStatus === "ENDED") && "bg-[var(--background-grey)]",
 

@@ -145,7 +145,7 @@ export const getAccountInfo = async (): Promise<AccountInfo> => {
 /* 회원 탈퇴 */
 export const deleteAccount = async (): Promise<void> => {
   try {
-    await auth.delete(`${API_BASE_URL}/auth/account`);
+    await auth.post(`${API_BASE_URL}/withdraw`);
   } catch (err) {
     if (err instanceof ApiError) {
       if (err.status === 403) throw new Error("탈퇴 권한이 없습니다.");

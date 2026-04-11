@@ -62,8 +62,8 @@ export function Footer() {
                         </div>
                     </div>
 
-                    <div className="flex flex-col gap-8 lg:h-44 lg:gap-20">
-                        <div className="flex flex-col gap-8 sm:flex-row sm:justify-end sm:gap-16">
+                    <div className="flex flex-col gap-8">
+                        <div className="flex flex-col gap-8 sm:flex-row sm:flex-wrap sm:gap-8 lg:gap-16">
                             <div className="flex flex-col gap-6">
                                 <div className="text-base font-semibold leading-6 text-[var(--foundation-primary-500)]">
                                     바로 가기
