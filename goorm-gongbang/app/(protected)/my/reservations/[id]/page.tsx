@@ -8,7 +8,7 @@ import { CancelTicketModal } from "@/components/my/CancelTicketModal";
 import { TicketInfo } from "@/components/my/TicketDetailModal";
 import { RESERVATION_STATUS_MAP } from "../page";
 import { getTicketDetail } from "@/lib/services";
-import { parseFeeRate } from "@/lib/utils";
+import { calculateCancelFee } from "@/lib/utils";
 import type { TicketDetail } from "@/lib/types";
 
 function formatDate(iso: string): string {
@@ -78,10 +78,15 @@ export default function ReservationDetailPage({ params }: { params: Promise<{ id
         dateStr: matchDateStr,
     };
 
+    const cancelFeeAmount = calculateCancelFee(
+        detail.payment?.totalAmount ?? 0,
+        detail.cancellationPolicy?.feeRate
+    );
+
     return (
         <div className="min-h-screen bg-[#F5F5F5] font-pretendard pb-20">
             {/* 상단 헤더 */}
-            <div className="sticky top-0 z-10 bg-white border-b border-[#F0F0F0]">
+            <div className="sticky top-12 z-10 bg-white border-b border-[#F0F0F0]">
                 <div className="max-w-[1200px] mx-auto px-4 h-12 flex items-center justify-end">
                     <nav className="flex items-center gap-1.5 text-[13px] text-[#9E9E9E]">
                         <button type="button" onClick={() => router.push("/my")} className="hover:text-[#1A1A1A] transition-colors">마이페이지</button>
@@ -262,43 +267,60 @@ export default function ReservationDetailPage({ params }: { params: Promise<{ id
                     )}
 
                     {/* 결제 정보 (일반 예매) */}
-                    {!isCancelled && detail.payment && (
+                    {!isCancelled && detail.status !== "PAYMENT_PENDING" && detail.payment && (
                         <section className="flex flex-col gap-4">
                             <h2 className="text-[18px] font-bold text-[#1A1A1A]">결제 정보</h2>
-                            <div className="bg-white border border-[#E8E8E8] rounded-2xl p-6">
-                                <div className="grid grid-cols-[100px_1fr] items-center pb-5 border-b border-[#F0F0F0]">
+                            <div className="bg-white border border-[#E8E8E8] rounded-2xl p-6 flex flex-col gap-5">
+                                <div className="grid grid-cols-[100px_1fr] items-center">
                                     <span className="text-[14px] text-[#999] font-medium">결제 일시</span>
-                                    <span className="text-[15px] font-medium text-[#1A1A1A]">{formatDate(detail.payment.paidAt)}</span>
+                                    <span className="text-[15px] font-medium text-[#1A1A1A]">
+                                        {detail.status === "PAYMENT_PENDING"
+                                            ? (detail.createdAt ? formatDate(detail.createdAt) : "-")
+                                            : (detail.payment ? formatDate(detail.payment.paidAt) : "-")}
+                                    </span>
                                 </div>
-                                <div className="grid grid-cols-[100px_1fr] items-center pt-5">
+                                <div className="grid grid-cols-[100px_1fr] items-center">
                                     <span className="text-[14px] text-[#999] font-medium">결제 수단</span>
-                                    <span className="text-[15px] font-medium text-[#1A1A1A]">{detail.payment.paymentMethod}</span>
+                                    <span className="text-[15px] font-medium text-[#1A1A1A]">
+                                        {detail.status === "PAYMENT_PENDING"
+                                            ? (detail.virtualAccount ? `무통장입금 (${detail.virtualAccount.bank})` : "-")
+                                            : (detail.payment ? detail.payment.paymentMethod : "-")}
+                                    </span>
                                 </div>
                             </div>
                         </section>
                     )}
 
                     {/* 결제 금액 (일반 예매) */}
-                    {!isCancelled && detail.payment && (
+                    {!isCancelled && (detail.payment || detail.status === "PAYMENT_PENDING") && (
                         <section className="flex flex-col gap-4">
                             <h2 className="text-[18px] font-bold text-[#1A1A1A]">결제 금액</h2>
                             <div className="bg-white border border-[#E8E8E8] rounded-2xl p-6">
-                                <div className="flex justify-between items-center pb-4 border-b border-[#E8E8E8]">
-                                    <span className="text-[18px] font-bold text-[var(--foundation-primary-500)]">총 결제 금액</span>
-                                    <span className="text-[20px] font-bold text-[var(--foundation-primary-500)]">{detail.payment.totalAmount.toLocaleString()} 원</span>
-                                </div>
-                                <div className="flex flex-col gap-2.5 py-5 border-b border-[#E8E8E8]">
-                                    {seatLabels.map((label, idx) => (
-                                        <div key={idx} className="flex justify-between items-center text-[14px]">
-                                            <span className="text-[#333] font-medium">{label}</span>
-                                            <span className="text-[#1A1A1A] font-medium">{(detail.payment!.totalAmount - detail.payment!.serviceFee).toLocaleString()} 원</span>
-                                        </div>
-                                    ))}
-                                    <div className="flex justify-between items-center text-[14px]">
-                                        <span className="text-[#333] font-medium">수수료</span>
-                                        <span className="text-[#1A1A1A] font-medium">{detail.payment.serviceFee.toLocaleString()} 원</span>
-                                    </div>
-                                </div>
+                                {(() => {
+                                    const totalAmount = detail.payment?.totalAmount ?? 0;
+                                    const serviceFee = detail.payment?.serviceFee ?? 0;
+                                    return (
+                                        <>
+                                            <div className="flex justify-between items-center pb-4 border-b border-[#E8E8E8]">
+                                                <span className="text-[18px] font-bold text-[var(--foundation-primary-500)]">총 결제 금액</span>
+                                                <span className="text-[20px] font-bold text-[var(--foundation-primary-500)]">{totalAmount.toLocaleString()} 원</span>
+                                            </div>
+                                            <div className="flex flex-col gap-2.5 py-5 border-b border-[#E8E8E8]">
+                                                {seatLabels.map((label, idx) => (
+                                                    <div key={idx} className="flex justify-between items-center text-[14px]">
+                                                        <span className="text-[#333] font-medium">{label}</span>
+                                                        <span className="text-[#1A1A1A] font-medium">{(totalAmount - serviceFee).toLocaleString()} 원</span>
+                                                    </div>
+                                                ))}
+                                                <div className="flex justify-between items-center text-[14px]">
+                                                    <span className="text-[#333] font-medium">수수료</span>
+                                                    <span className="text-[#1A1A1A] font-medium">{serviceFee.toLocaleString()} 원</span>
+                                                </div>
+                                            </div>
+                                        </>
+                                    );
+                                })()}
+
                                 {detail.cancellationPolicy && (
                                     <>
                                         <div className="grid grid-cols-[100px_1fr] items-center py-5 border-b border-[#F0F0F0]">
@@ -368,10 +390,7 @@ export default function ReservationDetailPage({ params }: { params: Promise<{ id
                 ticketInfo={cancelTicketInfo}
                 ticketId={Number(resolvedParams.id)}
                 paymentAmount={detail.payment?.totalAmount ?? 0}
-                cancelFee={detail.cancellationPolicy
-                    ? Math.round((detail.payment?.totalAmount ?? 0) * parseFeeRate(detail.cancellationPolicy.feeRate))
-                    : 0
-                }
+                cancelFee={cancelFeeAmount}
                 onCancelSuccess={handleCancelSuccess}
             />
         </div>

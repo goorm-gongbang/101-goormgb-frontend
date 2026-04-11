@@ -137,6 +137,9 @@ export type VirtualAccount = {
   accountNumber: string;
   holder: string;
   depositDeadline: string;
+  totalAmount?: number;
+  serviceFee?: number;
+  paymentMethod?: string;
 };
 
 export type TicketCancellation = {
@@ -148,6 +151,7 @@ export type TicketCancellation = {
 export type TicketDetail = {
   ticketId: number;
   status: string;
+  createdAt: string;
   match: TicketMatch;
   seats: TicketSeat[];
   payment: TicketPayment | null;

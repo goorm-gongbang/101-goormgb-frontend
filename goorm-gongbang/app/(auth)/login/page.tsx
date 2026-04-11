@@ -110,6 +110,9 @@ export default function LoginPage() {
         return;
       }
 
+      const next = searchParams.get("next");
+      if (next) sessionStorage.setItem("kakao_redirect_next", next);
+
       window.location.href = loginUrl;
     } catch (e) {
       if (e instanceof ApiError) {
@@ -165,7 +168,7 @@ export default function LoginPage() {
                     placeholder="비밀번호 입력"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="h-11"
+                    className="mt-2 h-11"
                   />
                   <button
                     type="submit"

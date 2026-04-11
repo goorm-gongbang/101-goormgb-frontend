@@ -47,7 +47,7 @@ export default function SupportPage() {
     return (
         <div className="min-h-screen bg-[#F8F9FA]">
             {/* ─── 상단 헤더 (breadcrumb) ─── */}
-            <div className="bg-white border-b border-[#F0F0F0]">
+            <div className="sticky top-12 z-10 bg-white border-b border-[#F0F0F0]">
                 <div className="max-w-[1240px] mx-auto px-6 h-12 flex items-center justify-end">
                     <nav className="flex items-center gap-1.5 text-xs text-[#999999]">
                         <button
@@ -75,8 +75,8 @@ export default function SupportPage() {
                     이전으로 돌아가기
                 </button>
 
-                <div className="mb-10 flex items-center justify-between">
-                    <h1 className="text-[32px] font-extrabold tracking-tight text-[#1A1A1A]">1:1 문의</h1>
+                <div className="mb-8 flex items-center justify-between">
+                    <h1 className="text-[24px] font-bold text-[#1A1A1A]">1:1 문의</h1>
                     <ActionButton
                         onClick={() => router.push("/my/support/write")}
                         size="lg"
