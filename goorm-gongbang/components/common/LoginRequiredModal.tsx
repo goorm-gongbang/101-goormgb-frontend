@@ -19,6 +19,9 @@ const handleKakaoLogin = async () => {
             return;
         }
 
+        const next = window.location.pathname + window.location.search;
+        sessionStorage.setItem("kakao_redirect_next", next);
+
         window.location.href = loginUrl;
     } catch (e) {
         if (e instanceof ApiError) {
