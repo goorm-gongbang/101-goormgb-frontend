@@ -20,6 +20,7 @@ type AuthState = {
   setAccessToken: (t: string | null) => void;
   setUser: (u: User | null) => void;
   logout: () => void;
+  expireSession: () => void;
   clearLogoutFlag: () => void;
 };
 
@@ -36,7 +37,8 @@ export const useAuthStore = create<AuthState>()(
       setBootstrapped: (v) => set({ bootstrapped: v }), // 완료시 True로 변경
       setAccessToken: (t) => set({ accessToken: t }), // refresh 성공 시 호출
       setUser: (u) => set({ user: u }), // refresh 성공 시 호출
-      logout: () => set({ accessToken: null, user: null, intentionalLogout: true }), // 로그아웃 시 초기화
+      logout: () => set({ accessToken: null, user: null, intentionalLogout: true }), // 명시적 로그아웃
+      expireSession: () => set({ accessToken: null, user: null, intentionalLogout: false }), // 세션 만료
       clearLogoutFlag: () => set({ intentionalLogout: false }),
     }),
     {

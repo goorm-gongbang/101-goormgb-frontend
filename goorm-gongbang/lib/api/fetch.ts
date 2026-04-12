@@ -137,7 +137,7 @@ export async function authFetch<T = unknown>(
   const newToken = await getRefreshedTokenOnce();
   if (!newToken) {
     // refresh 실패 → 로그아웃
-    useAuthStore.getState().logout();
+    useAuthStore.getState().expireSession();
     return res;
   }
 
