@@ -16,25 +16,23 @@ export default function ProtectedLayout({
   const bootstrapped = useAuthStore((s) => s.bootstrapped);
   const accessToken = useAuthStore((s) => s.accessToken);
   const user = useAuthStore((s) => s.user);
-  const intentionalLogout = useAuthStore((s) => s.intentionalLogout);
-  const clearLogoutFlag = useAuthStore((s) => s.clearLogoutFlag);
-
   const isLoggedIn = bootstrapped && !!accessToken && !!user;
 
   useEffect(() => {
     if (!bootstrapped) return;
 
     if (!isLoggedIn) {
+      const { intentionalLogout, clearLogoutFlag } = useAuthStore.getState();
       if (intentionalLogout) {
         clearLogoutFlag();
-        router.replace("/login");
+        router.replace("/");
       } else {
         const query = searchParams.toString();
         const next = query ? `${pathname}?${query}` : pathname;
         router.replace(`/login?next=${encodeURIComponent(next)}`);
       }
     }
-  }, [bootstrapped, isLoggedIn, intentionalLogout, clearLogoutFlag, pathname, searchParams, router]);
+  }, [bootstrapped, isLoggedIn, pathname, searchParams, router]);
 
   if (!bootstrapped) {
     return (
