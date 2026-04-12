@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import { toast } from "sonner";
 import { useState, useEffect, useMemo } from "react";
 import { ChevronLeft, Minus, Plus } from "lucide-react";
@@ -112,7 +112,7 @@ export default function Page() {
     const discount = 0;
     const totalAmount = ticketAmount + fee - discount;
     const seatLabels = seats.map((seat) => `${seat.sectionName} ${seat.blockCode}블럭 ${seat.rowNo}열 ${seat.seatNo}번`);
-    const matchTitle = match ? `${match.homeClub.koName} vs ${match.awayClub.koName}` : "-";
+    const matchTitle = match ? `${match.homeClub.koName} vs ${match.awayClub.koName}` : "";
 
     const formatMatchAt = (value?: string) => {
         if (!value) return "-";
@@ -307,7 +307,7 @@ export default function Page() {
         return matchTime - now <= THREE_HOURS_IN_MS;
     }, [match?.matchAt]);
 
-
+    const hasMatchMeta = formatMatchAt(match?.matchAt) && matchTitle && match?.stadium.koName;
 
     const handleSubmitPayment = async () => {
         if (!canSubmitPayment || !matchId || !createdOrderId || isCreatingOrder) return;
@@ -488,25 +488,35 @@ export default function Page() {
                             />
                         </button>
 
-                        <div className="min-w-0 flex flex-wrap items-center gap-x-2 gap-y-1 sm:gap-x-3">
-                            <div className="text-[var(--foundation-neutral-240)] text-sm sm:text-base lg:text-lg font-semibold leading-5 sm:leading-6">
-                                {formatMatchAt(match?.matchAt)}
-                            </div>
+                        {hasMatchMeta ? (
+                            <>
+                                <div className="min-w-0 flex flex-wrap items-center gap-x-2 gap-y-1 sm:gap-x-3">
+                                    <div className="text-[var(--foundation-neutral-240)] text-sm sm:text-base lg:text-lg font-semibold leading-5 sm:leading-6">
+                                        {formatMatchAt(match?.matchAt)}
+                                    </div>
 
-                            <div className="text-[var(--foundation-neutral-240)] text-sm sm:text-base lg:text-lg font-semibold leading-5 sm:leading-6">
-                                {matchTitle}
-                            </div>
+                                    <div className="text-[var(--foundation-neutral-240)] text-sm sm:text-base lg:text-lg font-semibold leading-5 sm:leading-6">
+                                        {matchTitle}
+                                    </div>
 
-                            <div className="hidden sm:block text-[var(--foundation-neutral-600)] text-sm sm:text-base leading-5">
-                                |
-                            </div>
+                                    <div className="hidden sm:block text-[var(--foundation-neutral-600)] text-sm sm:text-base leading-5">
+                                        |
+                                    </div>
 
-                            <div className="min-w-0 flex items-center gap-2">
-                                <div className="min-w-0 text-[var(--foundation-neutral-400)] text-sm sm:text-base font-medium leading-5 sm:leading-6 truncate">
-                                    {match?.stadium.koName ?? "-"}
+                                    <div className="min-w-0 flex items-center gap-2">
+                                        <div className="min-w-0 text-[var(--foundation-neutral-400)] text-sm sm:text-base font-medium leading-5 sm:leading-6 truncate">
+                                            {match?.stadium.koName ?? "-"}
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
-                        </div>
+                            </>
+                        ) : (
+                            <>
+                                <div className="h-5 w-40 animate-pulse rounded bg-[var(--foundation-neutral-920)]" />
+                                <div className="h-5 w-32 animate-pulse rounded bg-[var(--foundation-neutral-920)]" />
+                                <div className="h-5 w-24 animate-pulse rounded bg-[var(--foundation-neutral-940)]" />
+                            </>
+                        )}
                     </div>
 
                     <div className="w-full lg:w-auto overflow-x-auto">
@@ -1289,10 +1299,4 @@ export default function Page() {
             </div>
         </div>
     );
-}
-
-function resolveLogoSrc(input: string) {
-    if (/^https?:\/\//i.test(input)) return input;
-    if (!CDN_CLUBS_BASE_URL) return input;
-    return new URL(input.replace(/^\//, ""), CDN_CLUBS_BASE_URL).toString();
 }
