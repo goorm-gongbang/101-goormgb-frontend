@@ -38,7 +38,7 @@ export const useAuthStore = create<AuthState>()(
       setAccessToken: (t) => set({ accessToken: t }), // refresh 성공 시 호출
       setUser: (u) => set({ user: u }), // refresh 성공 시 호출
       logout: () => set({ accessToken: null, user: null, intentionalLogout: true }), // 명시적 로그아웃
-      expireSession: () => set({ accessToken: null, user: null, intentionalLogout: false }), // 세션 만료
+      expireSession: () => set({ accessToken: null, user: null }), // 세션 만료 (intentionalLogout은 건드리지 않음)
       clearLogoutFlag: () => set({ intentionalLogout: false }),
     }),
     {
