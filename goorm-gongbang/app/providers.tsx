@@ -5,36 +5,39 @@
     1. 쿠키 기반 refresh로 access token을 복구
     2. 토큰으로 내정보(/api/me) 받아서 zustand 삽입
     3. bootstrapped 플래그로 렌더링 제어
+    4. 온보딩 필요 여부에 따라 전역 라우팅 제어
 =========================== */
 
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/authStore";
 import { refreshAccessToken, getMe } from "@/lib/services";
 import { getBotToken } from "@/lib/client/bot-token";
-import { usePathname, useRouter } from "next/navigation";
+
+function isOnboardingPath(pathname: string) {
+  return pathname === "/onboarding" || pathname.startsWith("/onboarding/");
+}
+
+function isAuthPath(pathname: string) {
+  return pathname === "/login" || pathname.startsWith("/kakao/callback");
+}
 
 export default function Providers({ children }: { children: React.ReactNode }) {
-  const setAccessToken = useAuthStore((s) => s.setAccessToken);
-  const setUser = useAuthStore((s) => s.setUser);
-  const setBootstrapped = useAuthStore((s) => s.setBootstrapped);
-
-  const botTokenInitialized = useRef(false);
-
   const router = useRouter();
   const pathname = usePathname();
 
-  const [onboardingRequired, setOnboardingRequired] = useState<boolean | null>(null);
+  const setAccessToken = useAuthStore((s) => s.setAccessToken);
+  const setUser = useAuthStore((s) => s.setUser);
+  const setBootstrapped = useAuthStore((s) => s.setBootstrapped);
   const bootstrapped = useAuthStore((s) => s.bootstrapped);
 
-  function isOnboardingPath(pathname: string) {
-    return pathname === "/onboarding" || pathname.startsWith("/onboarding/");
-  }
+  const [onboardingRequired, setOnboardingRequired] = useState<boolean | null>(
+    null,
+  );
 
-  function isAuthPath(pathname: string) {
-    return pathname === "/login" || pathname.startsWith("/kakao/callback");
-  }
+  const botTokenInitialized = useRef(false);
 
   // [X-Bot-Token] 사전 생성 (1회만)
   useEffect(() => {
@@ -48,29 +51,40 @@ export default function Providers({ children }: { children: React.ReactNode }) {
     let mounted = true;
 
     (async () => {
-      const token = await refreshAccessToken(); // [1] refresh로 accessToken 복구 (쿠키 기반)
-      if (!mounted) return;
-      if (token) setAccessToken(token); // 토큰이 있으면 store에 저장
+      const token = await refreshAccessToken();
 
-      /* [2] 유저 정보 가져오기: /api/me */
+      if (!mounted) return;
+
       if (token) {
+        setAccessToken(token);
+
         try {
           const user = await getMe();
-          if (mounted) {
-            setUser(user ?? null);
-            setOnboardingRequired(Boolean(user?.onboardingRequired));
-          }
+
+          if (!mounted) return;
+
+          setUser(user ?? null);
+          setOnboardingRequired(user?.onboardingRequired === true);
         } catch {
-          if (mounted) {
-            setUser(null);
-            setOnboardingRequired(null);
-          } // 토큰은 있는데 me가 실패하면 세션 문제 가능 → 정리
+          if (!mounted) return;
+
+          setUser(null);
+          setOnboardingRequired(null);
         }
+      } else {
+        setAccessToken(null);
+        setUser(null);
+        setOnboardingRequired(null);
       }
-      if (mounted) setBootstrapped(true); // [3] 부트스트랩 완료 (초기 절차 끝)
+
+      if (mounted) {
+        setBootstrapped(true);
+      }
     })();
 
-    return () => { mounted = false; };
+    return () => {
+      mounted = false;
+    };
   }, [setAccessToken, setUser, setBootstrapped]);
 
   useEffect(() => {
@@ -87,7 +101,6 @@ export default function Providers({ children }: { children: React.ReactNode }) {
       router.replace("/");
     }
   }, [bootstrapped, onboardingRequired, pathname, router]);
-
 
   return <>{children}</>;
 }
