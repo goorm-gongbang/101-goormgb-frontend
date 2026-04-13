@@ -4,6 +4,8 @@ import {
   getInitialClubs,
 } from "@/lib/services/order-core.server";
 
+export const dynamic = "force-dynamic";
+
 function getTodayISO() {
   const parts = new Intl.DateTimeFormat("en-CA", {
     timeZone: "Asia/Seoul",
