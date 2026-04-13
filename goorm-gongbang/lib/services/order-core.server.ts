@@ -3,12 +3,6 @@ import "server-only";
 import { API_BASE_URL } from "@/lib/api/config";
 import type { ClubsData, MatchesData } from "@/lib/types";
 
-type ServerFetchInit = RequestInit & {
-  next?: {
-    revalidate?: number | false;
-  };
-};
-
 /* 경기 목록 조회 - 서버 초기 렌더용 */
 export const getInitialMatches = async (date: string) => {
   try {
@@ -31,13 +25,8 @@ export const getInitialMatches = async (date: string) => {
 /* 구단 목록 조회 - 서버 초기 렌더용 */
 export const getInitialClubs = async () => {
   try {
-    const res = await fetch(`${API_BASE_URL}/order/clubs`, {
-      next: { revalidate: 3600 },
-    } as ServerFetchInit);
-    console.log("getInitialClubs: ", res)
+    const res = await fetch(`${API_BASE_URL}/order/clubs`);
     const json = await res.json().catch(() => null);
-
-    console.log("getInitialClubsjson: ", json)
 
     if (!res.ok) {
       throw new Error(json?.message ?? `구단 목록 조회 실패 (${res.status})`);
