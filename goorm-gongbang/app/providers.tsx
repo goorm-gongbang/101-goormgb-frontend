@@ -17,7 +17,6 @@ import { getBotToken } from "@/lib/client/bot-token";
 export default function Providers({ children }: { children: React.ReactNode }) {
   const setAccessToken = useAuthStore((s) => s.setAccessToken);
   const setUser = useAuthStore((s) => s.setUser);
-  const bootstrapped = useAuthStore((s) => s.bootstrapped);
   const setBootstrapped = useAuthStore((s) => s.setBootstrapped);
 
   const botTokenInitialized = useRef(false);
@@ -52,8 +51,6 @@ export default function Providers({ children }: { children: React.ReactNode }) {
 
     return () => { mounted = false; };
   }, [setAccessToken, setUser, setBootstrapped]);
-
-  if (!bootstrapped) return null;
 
   return <>{children}</>;
 }
