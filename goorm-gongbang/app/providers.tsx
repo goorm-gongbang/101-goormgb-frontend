@@ -9,10 +9,11 @@
 
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAuthStore } from "@/stores/authStore";
 import { refreshAccessToken, getMe } from "@/lib/services";
 import { getBotToken } from "@/lib/client/bot-token";
+import { usePathname, useRouter } from "next/navigation";
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   const setAccessToken = useAuthStore((s) => s.setAccessToken);
@@ -20,6 +21,20 @@ export default function Providers({ children }: { children: React.ReactNode }) {
   const setBootstrapped = useAuthStore((s) => s.setBootstrapped);
 
   const botTokenInitialized = useRef(false);
+
+  const router = useRouter();
+  const pathname = usePathname();
+
+  const [onboardingRequired, setOnboardingRequired] = useState<boolean | null>(null);
+  const bootstrapped = useAuthStore((s) => s.bootstrapped);
+
+  function isOnboardingPath(pathname: string) {
+    return pathname === "/onboarding" || pathname.startsWith("/onboarding/");
+  }
+
+  function isAuthPath(pathname: string) {
+    return pathname === "/login" || pathname.startsWith("/kakao/callback");
+  }
 
   // [X-Bot-Token] 사전 생성 (1회만)
   useEffect(() => {
@@ -41,9 +56,15 @@ export default function Providers({ children }: { children: React.ReactNode }) {
       if (token) {
         try {
           const user = await getMe();
-          if (mounted) setUser(user ?? null);
+          if (mounted) {
+            setUser(user ?? null);
+            setOnboardingRequired(Boolean(user?.onboardingRequired));
+          }
         } catch {
-          if (mounted) setUser(null); // 토큰은 있는데 me가 실패하면 세션 문제 가능 → 정리
+          if (mounted) {
+            setUser(null);
+            setOnboardingRequired(null);
+          } // 토큰은 있는데 me가 실패하면 세션 문제 가능 → 정리
         }
       }
       if (mounted) setBootstrapped(true); // [3] 부트스트랩 완료 (초기 절차 끝)
@@ -51,6 +72,22 @@ export default function Providers({ children }: { children: React.ReactNode }) {
 
     return () => { mounted = false; };
   }, [setAccessToken, setUser, setBootstrapped]);
+
+  useEffect(() => {
+    if (!bootstrapped) return;
+    if (onboardingRequired === null) return;
+    if (isAuthPath(pathname)) return;
+
+    if (onboardingRequired && !isOnboardingPath(pathname)) {
+      router.replace("/onboarding/intro");
+      return;
+    }
+
+    if (!onboardingRequired && isOnboardingPath(pathname)) {
+      router.replace("/");
+    }
+  }, [bootstrapped, onboardingRequired, pathname, router]);
+
 
   return <>{children}</>;
 }
