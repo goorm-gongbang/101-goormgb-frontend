@@ -19,11 +19,6 @@ function getSafeRedirectPath(next: string | null) {
   return next;
 }
 
-function maskToken(token: string | undefined) {
-  if (!token) return null;
-  return `${token.slice(0, 8)}...(${token.length})`;
-}
-
 export default function KakaoCallbackPage() {
   const router = useRouter();
   const sp = useSearchParams();

@@ -123,6 +123,42 @@ function priceToPayload(p: PricePreference | null): {
   }
 }
 
+// 다시 페이지에 들어오면 이전 선택값이 local state에 삽입
+const R_SEAT_POSITION_MAP = Object.fromEntries(
+  Object.entries(SEAT_POSITION_MAP).map(([label, value]) => [value, label]),
+) as Record<SeatPositionPref, ViewTypePreference>;
+
+const R_ENV_MAP = Object.fromEntries(
+  Object.entries(ENV_MAP).map(([label, value]) => [value, label]),
+) as Record<EnvironmentPref, EnvPreference>;
+
+const R_MOOD_MAP = Object.fromEntries(
+  Object.entries(MOOD_MAP).map(([label, value]) => [value, label]),
+) as Record<MoodPref, MoodPreference>;
+
+const R_OBSTRUCTION_MAP = Object.fromEntries(
+  Object.entries(OBSTRUCTION_MAP).map(([label, value]) => [value, label]),
+) as Record<ObstructionSensitivity, DistPreference>;
+
+// priceMode, priceMin, priceMax를 다시 화면 라벨로 바꾸는 함수
+function pricePayloadToLabel(
+  priceMode: PriceMode,
+  priceMin: number | null,
+  priceMax: number | null,
+): PricePreference | null {
+  return (
+    priceOptions.find((option) => {
+      const payload = priceToPayload(option);
+
+      return (
+        payload.priceMode === priceMode &&
+        payload.priceMin === priceMin &&
+        payload.priceMax === priceMax
+      );
+    }) ?? priceOptions[priceOptions.length - 1] ?? null
+  );
+}
+
 export default function SeatStyleOnboardingOptionPage() {
   const router = useRouter();
   const accessToken = useAuthStore((s) => s.accessToken);
@@ -134,13 +170,28 @@ export default function SeatStyleOnboardingOptionPage() {
   const viewpoints = useOnboardingPrefStore((s) => s.viewpoints);
   const optionDraft = useOnboardingPrefStore((s) => s.optionDraft);
   const setMarketingAgreed = useOnboardingPrefStore((s) => s.setMarketingAgreed);
+  const setOptionDraft = useOnboardingPrefStore((s) => s.setOptionDraft);
   const reset = useOnboardingPrefStore((s) => s.reset);
 
-  const [viewType, setViewType] = useState<ViewTypePreference | null>(null);
-  const [env, setEnv] = useState<EnvPreference | null>(null);
-  const [mood, setMood] = useState<MoodPreference | null>(null);
-  const [dist, setDist] = useState<DistPreference | null>(null);
-  const [price, setPrice] = useState<PricePreference | null>(null);
+  const [viewType, setViewType] = useState<ViewTypePreference | null>(
+    () => R_SEAT_POSITION_MAP[optionDraft.seatPositionPref] ?? null,
+  );
+  const [env, setEnv] = useState<EnvPreference | null>(
+    () => R_ENV_MAP[optionDraft.environmentPref] ?? null,
+  );
+  const [mood, setMood] = useState<MoodPreference | null>(
+    () => R_MOOD_MAP[optionDraft.moodPref] ?? null,
+  );
+  const [dist, setDist] = useState<DistPreference | null>(
+    () => R_OBSTRUCTION_MAP[optionDraft.obstructionSensitivity] ?? null,
+  );
+  const [price, setPrice] = useState<PricePreference | null>(() =>
+    pricePayloadToLabel(
+      optionDraft.priceMode,
+      optionDraft.priceMin,
+      optionDraft.priceMax,
+    ),
+  );
   const [isFinishing, setIsFinishing] = useState(false);
 
   const [consentRequired, setConsentRequired] = useState(false);
@@ -166,7 +217,25 @@ export default function SeatStyleOnboardingOptionPage() {
     consentRequired,
   ]);
 
-  const handlePrev = () => router.back();
+  const getOptionDraftPatch = () => {
+    const pricePatch = priceToPayload(price);
+
+    return {
+      seatPositionPref: viewType ? SEAT_POSITION_MAP[viewType] : "ANY",
+      environmentPref: env ? ENV_MAP[env] : "ANY",
+      moodPref: mood ? MOOD_MAP[mood] : "ANY",
+      obstructionSensitivity: dist ? OBSTRUCTION_MAP[dist] : "ANY",
+      priceMode: pricePatch.priceMode,
+      priceMin: pricePatch.priceMin,
+      priceMax: pricePatch.priceMax,
+    };
+  };
+
+  const handlePrev = () => {
+    setOptionDraft(getOptionDraftPatch()); // 2단계 선택값을 store에 저장
+    setMarketingAgreed(Boolean(consentMarketing)); // 2단계 선택값을 store에 저장 (체크 항목)
+    router.back();
+  };
 
   const handleNext = async () => {
     if (
@@ -216,6 +285,7 @@ export default function SeatStyleOnboardingOptionPage() {
     try {
       setIsFinishing(true);
       setMarketingAgreed(Boolean(consentMarketing));
+      setOptionDraft(getOptionDraftPatch());
 
       await saveOnboardingPreferences(body);
 
