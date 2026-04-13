@@ -19,6 +19,11 @@ function getSafeRedirectPath(next: string | null) {
   return next;
 }
 
+function maskToken(token: string | undefined) {
+  if (!token) return null;
+  return `${token.slice(0, 8)}...(${token.length})`;
+}
+
 export default function KakaoCallbackPage() {
   const router = useRouter();
   const sp = useSearchParams();
@@ -29,6 +34,7 @@ export default function KakaoCallbackPage() {
 
   useEffect(() => {
     const authorizationCode = sp.get("code");
+    console.log("[KakaoCallback] authorizationCode exists:", !!authorizationCode);
 
     if (!authorizationCode) {
       toast.error("카카오 로그인 검증 실패");
@@ -37,16 +43,24 @@ export default function KakaoCallbackPage() {
     }
 
     sessionStorage.removeItem("kakao_oauth_state");
+    console.log("[KakaoCallback] kakao_oauth_state removed");
 
     let cancelled = false;
 
     (async () => {
       try {
         const data = await kakaoLogin({ authorizationCode });
+        console.log("[KakaoCallback] kakaoLogin response:", {
+          accessToken: maskToken(data?.accessToken),
+          onboardingRequired: data?.onboardingRequired,
+          hasUser: !!data?.user,
+          user: data?.user,
+        });
 
         if (cancelled) return;
 
         const accessToken = data?.accessToken;
+        console.log("[KakaoCallback] accessToken exists:", !!accessToken);
 
         if (!accessToken) {
           toast.error("accessToken이 응답에 없습니다.");
@@ -55,35 +69,53 @@ export default function KakaoCallbackPage() {
         }
 
         setAccessToken(accessToken);
+        console.log("[KakaoCallback] accessToken saved:", maskToken(accessToken));
 
         if (data?.user) {
           setUser({
             id: String(data.user.userId),
             status: data.user.status,
           });
+          console.log("[KakaoCallback] user saved from kakaoLogin:", {
+            id: String(data.user.userId),
+            status: data.user.status,
+          });
         } else {
           try {
+            console.log("[KakaoCallback] user missing. getMe start");
             const me = await getMe();
 
             if (cancelled) return;
 
             setUser(me ?? null);
+            console.log("[KakaoCallback] user saved from getMe:", me);
           } catch {
             if (cancelled) return;
 
             setUser(null);
+            console.log("[KakaoCallback] getMe failed. user saved as null");
           }
         }
 
         setBootstrapped(true);
+        console.log("[KakaoCallback] bootstrapped saved as true");
+        console.log("[KakaoCallback] auth store snapshot:", {
+          accessToken: maskToken(useAuthStore.getState().accessToken ?? undefined),
+          user: useAuthStore.getState().user,
+          bootstrapped: useAuthStore.getState().bootstrapped,
+        });
 
         if (data?.onboardingRequired) {
+          console.log("[KakaoCallback] redirect:", "/onboarding/intro");
           router.replace("/onboarding/intro");
         } else {
           const next = sessionStorage.getItem("kakao_redirect_next");
           sessionStorage.removeItem("kakao_redirect_next");
+          const redirectPath = getSafeRedirectPath(next);
+          console.log("[KakaoCallback] kakao_redirect_next:", next);
+          console.log("[KakaoCallback] redirect:", redirectPath);
 
-          router.replace(getSafeRedirectPath(next));
+          router.replace(redirectPath);
         }
 
         toast.success("로그인 성공");
@@ -91,8 +123,13 @@ export default function KakaoCallbackPage() {
         if (cancelled) return;
 
         if (e instanceof ApiError) {
+          console.log("[KakaoCallback] ApiError:", {
+            status: e.status,
+            message: e.message,
+          });
           toast.error(e.message);
         } else {
+          console.log("[KakaoCallback] unknown error:", e);
           toast.error("로그인 처리 중 오류가 발생했습니다.");
         }
 
