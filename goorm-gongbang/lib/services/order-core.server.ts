@@ -34,7 +34,10 @@ export const getInitialClubs = async () => {
     const res = await fetch(`${API_BASE_URL}/order/clubs`, {
       next: { revalidate: 3600 },
     } as ServerFetchInit);
+    console.log("getInitialClubs: ", res)
     const json = await res.json().catch(() => null);
+
+    console.log("getInitialClubsjson: ", json)
 
     if (!res.ok) {
       throw new Error(json?.message ?? `구단 목록 조회 실패 (${res.status})`);
