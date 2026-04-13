@@ -53,47 +53,57 @@ function TeamLogoClub({
   );
 }
 
-function MatchCardSkeleton({ elevated }: { elevated?: boolean }) {
+function MatchCardSkeleton() {
   return (
     <div
       className={cn(
-        "w-full max-w-[1074px] rounded-2xl bg-[var(--foundation-neutral-white)]",
-        elevated
-          ? "outline outline-1 outline-offset-[-1px] outline-[var(--foundation-neutral-880)] shadow-sm"
-          : "outline outline-1 outline-offset-[-1px] outline-[var(--foundation-neutral-880)]",
-        "px-6 py-5",
+        "w-full max-w-[1074px] h-28 rounded-2xl bg-[var(--foundation-neutral-white)]",
+        "outline outline-1 outline-offset-[-1px] outline-[var(--foundation-neutral-900)]",
+        "px-4 sm:px-6 lg:px-9",
+        "flex items-center",
       )}
     >
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <Skeleton className="h-5 w-20 rounded-md" />
-          <Skeleton className="h-5 w-24 rounded-md" />
-        </div>
-        <Skeleton className="h-6 w-24 rounded-full" />
-      </div>
+      <div className="w-full flex items-center justify-between gap-3 sm:gap-4 md:gap-6 lg:gap-8 min-w-0">
+        <div className="flex items-center gap-4 sm:gap-6 md:gap-8 lg:gap-10 min-w-0">
+          <div className="flex items-center gap-4 sm:gap-6 md:gap-8 min-w-0">
+            <div className="flex w-20 shrink-0 flex-col gap-2">
+              <Skeleton className="h-8 w-20 rounded-md" />
+              <Skeleton className="h-4 w-16 rounded-md" />
+            </div>
 
-      <div className="mt-3 flex flex-col gap-2">
-        <Skeleton className="h-5 w-[60%] rounded-md" />
-        <Skeleton className="h-4 w-[45%] rounded-md" />
-      </div>
+            <div className="hidden sm:flex w-32 sm:w-40 md:w-48 lg:w-56 flex-col gap-2">
+              <Skeleton className="h-6 w-[70%] rounded-md" />
+              <Skeleton className="h-4 w-[55%] rounded-md" />
+            </div>
+          </div>
 
-      <div className="mt-5 flex items-center justify-between gap-6">
-        <div className="flex items-center gap-3 min-w-0">
-          <Skeleton className="h-10 w-10 rounded-xl" />
-          <div className="flex flex-col gap-2 min-w-0">
-            <Skeleton className="h-4 w-28 rounded-md" />
-            <Skeleton className="h-4 w-32 rounded-md" />
+          <div className="h-28 flex items-center gap-3 md:gap-4 min-w-0">
+            <div className="hidden sm:flex w-20 sm:w-24 md:w-28 lg:w-32 flex-col items-end gap-2">
+              <Skeleton className="h-5 w-[80%] rounded-md" />
+              <Skeleton className="h-4 w-[65%] rounded-md" />
+            </div>
+
+            <div className="h-28 w-[102px] shrink-0 px-[3.13px] py-6 flex items-center justify-center">
+              <Skeleton className="h-20 w-24 rounded-xl" />
+            </div>
+
+            <Skeleton className="h-4 w-5 shrink-0 rounded-md" />
+
+            <div className="h-28 w-[102px] shrink-0 px-[3.13px] py-9 flex items-center justify-center">
+              <Skeleton className="h-14 w-24 rounded-xl" />
+            </div>
+
+            <div className="hidden sm:flex w-20 sm:w-24 md:w-28 lg:w-32 flex-col gap-2">
+              <Skeleton className="h-5 w-[80%] rounded-md" />
+              <Skeleton className="h-4 w-[65%] rounded-md" />
+            </div>
+
+            <Skeleton className="h-6 w-20 shrink-0 rounded-full" />
           </div>
         </div>
 
-        <Skeleton className="h-6 w-10 rounded-md" />
-
-        <div className="flex items-center gap-3 min-w-0 justify-end">
-          <div className="flex flex-col gap-2 items-end min-w-0">
-            <Skeleton className="h-4 w-28 rounded-md" />
-            <Skeleton className="h-4 w-32 rounded-md" />
-          </div>
-          <Skeleton className="h-10 w-10 rounded-xl" />
+        <div className="w-9 h-12 flex items-center justify-center shrink-0">
+          <Skeleton className="h-10 w-5 rounded-md" />
         </div>
       </div>
     </div>
@@ -102,14 +112,18 @@ function MatchCardSkeleton({ elevated }: { elevated?: boolean }) {
 
 function TeamCardSkeleton() {
   return (
-    <div className="w-full rounded-2xl px-6 py-5 outline outline-1 outline-offset-[-1px] outline-[var(--foundation-neutral-880)]">
-      <div className="flex items-center gap-4">
-        <Skeleton className="h-24 w-14 rounded-xl" />
-        <div className="flex flex-col gap-3">
-          <Skeleton className="h-5 w-32 rounded-md" />
-          <Skeleton className="h-4 w-24 rounded-md" />
+    <div className="relative self-stretch rounded-2xl px-4 py-3 outline outline-1 outline-offset-[-1px] outline-[var(--foundation-neutral-880)]/50 inline-flex flex-col justify-start items-start gap-1.5">
+      <div className="w-full h-32 px-1 py-2.5 bg-[var(--background-grey)] flex flex-col justify-center items-center gap-1.5 overflow-hidden">
+        <Skeleton className="h-24 w-24 rounded-xl" />
+      </div>
+
+      <div className="self-stretch flex flex-col justify-center items-center">
+        <div className="self-stretch inline-flex justify-center items-center">
+          <Skeleton className="mb-2 h-5 w-24 rounded-md" />
         </div>
       </div>
+
+      <Skeleton className="self-stretch h-8 min-w-14 rounded-md" />
     </div>
   );
 }
@@ -138,8 +152,8 @@ export default function Home() {
     null,
   );
   const [teamsPayload, setTeamsPayload] = useState<ClubsData | null>(null);
-  const [loadingMatches, setLoadingMatches] = useState(false);
-  const [loadingTeams, setLoadingTeams] = useState(false);
+  const [loadingMatches, setLoadingMatches] = useState(true);
+  const [loadingTeams, setLoadingTeams] = useState(true);
 
   useEffect(() => {
     setSelectedDate(getTodayISOInKST());
@@ -249,7 +263,7 @@ export default function Home() {
                       }}
                     />
                   ) : (
-                    <div className="h-[120px] w-full" />
+                    <div className="h-[156px] w-full" />
                   )}
                 </div>
               </div>
@@ -266,7 +280,7 @@ export default function Home() {
                 {loadingMatches ? (
                   <div className="w-full flex flex-col items-center gap-3">
                     {Array.from({ length: 5 }).map((_, i) => (
-                      <MatchCardSkeleton key={i} elevated={i === 0} />
+                      <MatchCardSkeleton key={i} />
                     ))}
                   </div>
                 ) : matchCards.length === 0 ? (
@@ -372,26 +386,26 @@ export default function Home() {
                   >
                     {loadingTeams
                       ? Array.from({ length: 10 }).map((_, i) => (
-                          <TeamCardSkeleton key={i} />
-                        ))
+                        <TeamCardSkeleton key={i} />
+                      ))
                       : clubs.map((t, idx) => {
-                          const isAboveFold = idx < 4;
+                        const isAboveFold = idx < 4;
 
-                          return (
-                            <TeamInfoCard
-                              key={t.clubId}
-                              dataLogo={t.koName}
-                              teamName={t.koName}
-                              logo={
-                                <TeamLogoClub
-                                  club={t}
-                                  priorityLoad={isAboveFold}
-                                />
-                              }
-                              onClick={() => router.push(`/clubs/${t.clubId}`)}
-                            />
-                          );
-                        })}
+                        return (
+                          <TeamInfoCard
+                            key={t.clubId}
+                            dataLogo={t.koName}
+                            teamName={t.koName}
+                            logo={
+                              <TeamLogoClub
+                                club={t}
+                                priorityLoad={isAboveFold}
+                              />
+                            }
+                            onClick={() => router.push(`/clubs/${t.clubId}`)}
+                          />
+                        );
+                      })}
                   </div>
                 </div>
               </div>
