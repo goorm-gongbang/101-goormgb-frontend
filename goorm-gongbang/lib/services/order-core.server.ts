@@ -9,31 +9,40 @@ type ServerFetchInit = RequestInit & {
   };
 };
 
-async function readPublicApiData<T>(
-  input: string,
-  init?: ServerFetchInit,
-): Promise<T | null> {
+/* 경기 목록 조회 - 서버 초기 렌더용 */
+export const getInitialMatches = async (date: string) => {
   try {
-    const res = await fetch(input, init);
+    const res = await fetch(`${API_BASE_URL}/order/matches?date=${date}`, {
+      cache: "no-store",
+    });
     const json = await res.json().catch(() => null);
 
-    if (!res.ok) return null;
-    return json?.data ?? json ?? null;
-  } catch {
-    return null;
-  }
-}
+    if (!res.ok) {
+      throw new Error(json?.message ?? `경기 목록 조회 실패 (${res.status})`);
+    }
 
-export const getInitialMatches = (date: string) => {
-  return readPublicApiData<MatchesData>(
-    `${API_BASE_URL}/order/matches?date=${date}`,
-    { cache: "no-store" },
-  );
+    return (json?.data ?? json ?? null) as MatchesData | null;
+  } catch (error) {
+    console.error("경기 목록 조회 실패:", error);
+    throw error;
+  }
 };
 
-export const getInitialClubs = () => {
-  return readPublicApiData<ClubsData>(
-    `${API_BASE_URL}/order/clubs`,
-    { next: { revalidate: 3600 } },
-  );
+/* 구단 목록 조회 - 서버 초기 렌더용 */
+export const getInitialClubs = async () => {
+  try {
+    const res = await fetch(`${API_BASE_URL}/order/clubs`, {
+      next: { revalidate: 3600 },
+    } as ServerFetchInit);
+    const json = await res.json().catch(() => null);
+
+    if (!res.ok) {
+      throw new Error(json?.message ?? `구단 목록 조회 실패 (${res.status})`);
+    }
+
+    return (json?.data ?? json ?? null) as ClubsData | null;
+  } catch (error) {
+    console.error("구단 목록 조회 실패:", error);
+    throw error;
+  }
 };
