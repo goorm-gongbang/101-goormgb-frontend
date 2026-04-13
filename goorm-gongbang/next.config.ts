@@ -18,6 +18,8 @@ const nextConfig = {
 
   // 외부 이미지 도메인 허용 (S3 클럽 로고)
   images: {
+    qualities: [25, 30, 35, 45, 60, 75],
+    minimumCacheTTL: 60 * 60 * 24 * 30,
     remotePatterns: [
       {
         protocol: "https",

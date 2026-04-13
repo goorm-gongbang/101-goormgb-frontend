@@ -298,15 +298,28 @@ export default function MatchDetailSectionResponsive({
       </div>
     );
   }
-  if (loading) {
-    return (
-      <div className="grid min-h-screen place-items-center">
-        <div className="flex flex-col items-center gap-3">
-          <Spinner className="h-6 w-6" />
-        </div>
+  if (loading || !data) {
+  return (
+    <div className="relative w-full">
+      <div className="absolute inset-0 z-10 grid min-h-screen place-items-center">
+        <Spinner className="h-6 w-6" />
       </div>
-    );
-  }
+
+      <section className="relative w-full bg-[var(--background-grey)] overflow-hidden">
+        <div className="h-[420px] sm:h-96" />
+      </section>
+
+      <section className="mx-auto w-full max-w-[1440px] px-4 sm:px-6 lg:px-28 py-8 lg:py-12">
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,720px)_minmax(0,360px)] gap-6 lg:gap-10 items-start">
+          <div className="min-h-[70vh]" />
+          <aside className="hidden lg:block min-h-[360px]" />
+        </div>
+      </section>
+    </div>
+  );
+}
+
+
   if (error) {
     return (
       <div className="p-6 text-sm text-[var(--foundation-neutral-720)]">
@@ -314,7 +327,6 @@ export default function MatchDetailSectionResponsive({
       </div>
     );
   }
-  if (!data) return null;
 
   /** =========================
    *  API -> UI Mapping
@@ -383,13 +395,18 @@ export default function MatchDetailSectionResponsive({
     <div className="w-full">
       <section className="relative w-full bg-[var(--background-grey)] overflow-hidden">
         {/* background image */}
-        <Image
-          className="absolute inset-x-0 -top-[300px] sm:-top-[380px] md:-top-[455px] w-full h-[900px] sm:h-[997px] object-cover blur-[2px]"
-          src={heroBgImageUrl}
-          fill
-          priority
-          alt="background"
-        />
+        <div className="absolute inset-x-0 -top-[300px] sm:-top-[380px] md:-top-[455px] h-[900px] sm:h-[997px] w-full">
+          <Image
+            src={heroBgImageUrl}
+            fill
+            sizes="100vw"
+            alt=""
+            loading="eager"
+            fetchPriority="high"
+            quality={25}
+            className="object-cover blur-[2px]"
+          />
+        </div>
         <div className="absolute inset-0 opacity-30 bg-black blur-[2px]" />
 
         {/* content container */}
@@ -422,11 +439,17 @@ export default function MatchDetailSectionResponsive({
                         <div className="flex items-center gap-3 sm:gap-10 md:gap-20 lg:gap-30 min-w-0">
                           {/* Logo */}
                           <div className="shrink-0 mr-1 sm:mr-2 -translate-y-0 sm:-translate-y-0 md:-translate-y-15">
-                            <img
-                              className="w-22 h-22 sm:w-30 sm:h-30 md:w-40 md:h-40 object-contain"
-                              src={homeLogoUrl}
-                              alt="home logo"
-                            />
+                            <div className="relative w-22 h-22 sm:w-30 sm:h-30 md:w-40 md:h-40">
+                              <Image
+                                src={homeLogoUrl}
+                                alt="home logo"
+                                fill
+                                sizes="(min-width: 768px) 160px, (min-width: 640px) 120px, 88px"
+                                className="object-contain"
+                                loading="eager"
+                                fetchPriority="high"
+                              />
+                            </div>
                           </div>
 
                           {/* Text */}
@@ -470,11 +493,17 @@ export default function MatchDetailSectionResponsive({
 
                           {/* Logo */}
                           <div className="shrink-0 ml-1 sm:ml-2 -translate-y-0 sm:-translate-y-0 md:-translate-y-15">
-                            <img
-                              className="w-22 h-22 sm:w-30 sm:h-30 md:w-40 md:h-40 object-contain"
-                              src={awayLogoUrl}
-                              alt="away logo"
-                            />
+                            <div className="relative w-22 h-22 sm:w-30 sm:h-30 md:w-40 md:h-40">
+                              <Image
+                                src={awayLogoUrl}
+                                alt="away logo"
+                                fill
+                                sizes="(min-width: 768px) 160px, (min-width: 640px) 120px, 88px"
+                                className="object-contain"
+                                loading="eager"
+                                fetchPriority="high"
+                              />
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -567,11 +596,10 @@ export default function MatchDetailSectionResponsive({
                             );
                           })()}
                         <div
-                          className={`text-sm font-semibold font-['Pretendard'] leading-5 ${
-                            saleBadgeText === "판매 예정"
+                          className={`text-sm font-semibold font-['Pretendard'] leading-5 ${saleBadgeText === "판매 예정"
                               ? "text-[var(--foundation-blue-500)]"
                               : "text-[var(--foundation-red-500)]"
-                          }`}
+                            }`}
                         >
                           {dDayText}
                         </div>
@@ -675,7 +703,7 @@ export default function MatchDetailSectionResponsive({
         <TelemetryProvider matchId={matchId} autoStart={false}>
           <VQAChallenge
             mode="practice"
-            onSuccess={() => {}}
+            onSuccess={() => { }}
             onCancel={() => setIsPracticeVqaOpen(false)}
           />
         </TelemetryProvider>

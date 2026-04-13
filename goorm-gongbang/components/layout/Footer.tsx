@@ -10,13 +10,15 @@ export function Footer() {
                     <div className="flex flex-1 flex-col gap-8 lg:flex-row lg:items-start lg:gap-9">
                         <div className="opacity-90 flex items-end">
                             <div className="flex h-28 w-40 items-center justify-start p-2">
-                                <Image
-                                    src="/logo.png"
-                                    alt="logo"
-                                    width={144}
-                                    height={56}
-                                    className="h-auto w-auto max-w-full"
-                                />
+                                <div className="relative h-24 w-36">
+                                    <Image
+                                        src="/logo.png"
+                                        alt="logo"
+                                        fill
+                                        sizes="144px"
+                                        className="object-contain"
+                                    />
+                                </div>
                             </div>
                         </div>
 

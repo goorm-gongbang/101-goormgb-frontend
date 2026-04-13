@@ -53,9 +53,14 @@ export type {
 };
 
 /* 경기 목록 조회 */
-export const getMatches = (date?: string) => {
-  const params = date ? `?date=${date}` : "";
-  return pub.get<MatchesData>(`${API_BASE_URL}/order/matches${params}`);
+export const getMatches = async (date?: string) => {
+  try {
+    const params = date ? `?date=${date}` : "";
+    return await pub.get<MatchesData>(`${API_BASE_URL}/order/matches${params}`);
+  } catch (error) {
+    console.error("경기 목록 조회 실패:", error);
+    throw error;
+  }
 };
 
 /* 경기 상세 조회 */
@@ -63,7 +68,14 @@ export const getMatchById = (matchId: string | number) =>
   pub.get<MatchDetail>(`${API_BASE_URL}/order/matches/${matchId}`);
 
 /* 구단 목록 조회 */
-export const getClubs = () => pub.get<ClubsData>(`${API_BASE_URL}/order/clubs`);
+export const getClubs = async () => {
+  try {
+    return await pub.get<ClubsData>(`${API_BASE_URL}/order/clubs`);
+  } catch (error) {
+    console.error("구단 목록 조회 실패:", error);
+    throw error;
+  }
+};
 
 /* 구단 상세 조회 */
 export const getClubById = (clubId: string | number) =>
