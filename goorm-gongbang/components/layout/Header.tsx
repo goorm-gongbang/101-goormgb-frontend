@@ -6,6 +6,7 @@ import { User, Ticket } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/authStore";
 import { PrimaryButton } from "@/components/common/Button";
+import Image from "next/image";
 
 type Props = {
   className?: string;
@@ -42,11 +43,16 @@ export function Header({ className, onMyInfoClick, onMyTicketClick }: Props) {
         className="cursor-pointer self-stretch flex justify-start items-center"
       >
         <div className="p-2 flex items-center">
-          <div className="w-16 h-10 overflow-hidden flex items-center">
-            <img
+          <div className="w-16 h-10 overflow-hidden flex items-center relative">
+            <Image
               src="/logo.png"
               alt="logo"
-              className="w-full h-full object-contain"
+              fill
+              sizes="64px"
+              loading="eager"
+              fetchPriority="high"
+              className="object-contain"
+              quality={60}
             />
           </div>
         </div>
