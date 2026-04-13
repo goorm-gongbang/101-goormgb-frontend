@@ -6,7 +6,6 @@ import { ChevronLeft, RotateCw } from "lucide-react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { ApiError } from "@/lib/api";
-import { CDN_CLUBS_BASE_URL } from "@/lib/api/config";
 import { PrimaryButton } from "@/components/common/Button";
 import { BlockSeatDetailView } from "@/components/common/BlockSeatDetailView";
 import { RecommendExitModal } from "@/components/common/RecommendExitModal";
@@ -210,6 +209,8 @@ function RecommendPageContent({ matchId }: { matchId: number | null }) {
   const [sectionBlocksLoading, setSectionBlocksLoading] = useState(false);
   const [activeBlockId, setActiveBlockId] = useState<number | null>(null);
   const [selectedSeatIds, setSelectedSeatIds] = useState<number[]>([]);
+  const [isProtectedSeatAccessBlocked, setIsProtectedSeatAccessBlocked] = useState(false);
+  const isProtectedSeatAccessBlockedRef = useRef(false);
 
   const [isExitModalOpen, setIsExitModalOpen] = useState(false);
   const [isSoldOutModalOpen, setIsSoldOutModalOpen] = useState(false);
@@ -220,7 +221,6 @@ function RecommendPageContent({ matchId }: { matchId: number | null }) {
   const homeClub = matchInfo?.homeClub ?? null;
   const awayClub = matchInfo?.awayClub ?? null;
   const stadiumName = matchInfo?.stadium?.koName ?? "";
-  const homeLogoImg = homeClub?.logoImg ?? "";
 
   const MAX_SELECTABLE_SEATS = 8;
   const [isSeatLimitModalOpen, setIsSeatLimitModalOpen] = useState(false);
@@ -380,14 +380,36 @@ function RecommendPageContent({ matchId }: { matchId: number | null }) {
       color: getSeatColor(block.sectionName),
     }));
 
-  const resetManualSeatSelection = () => {
+  const updateProtectedSeatAccessBlocked = useCallback((blocked: boolean) => {
+    isProtectedSeatAccessBlockedRef.current = blocked;
+    setIsProtectedSeatAccessBlocked(blocked);
+  }, []);
+
+  const resetManualSeatSelection = useCallback(() => {
     setHoveredSeatBlocks([]);
     setSelectedSeatListItem(null);
     setSelectedSeatBlocks([]);
     setSectionBlocks([]);
     setActiveBlockId(null);
     setSelectedSeatIds([]);
-  };
+  }, []);
+
+  const resetSeatAccessState = useCallback(() => {
+    setSeatEntry(null);
+    setRecommendItems([]);
+    setPreferredRecommendBlocks([]);
+    setSelectedRecommendId(null);
+    setHoveredRecommendBlock(null);
+    setSeatGroupsEntry(null);
+    setSeatSections([]);
+    resetManualSeatSelection();
+  }, [resetManualSeatSelection]);
+
+  const blockProtectedSeatAccess = useCallback(() => {
+    isVqaVerifiedRef.current = false;
+    updateProtectedSeatAccessBlocked(true);
+    resetSeatAccessState();
+  }, [resetSeatAccessState, updateProtectedSeatAccessBlocked]);
 
   const handleBack = () => setIsExitModalOpen(true);
 
@@ -405,8 +427,11 @@ function RecommendPageContent({ matchId }: { matchId: number | null }) {
     vqaDeferredRef.current = null;
     setVqaPrompt(null);
     isVqaVerifiedRef.current = passed;
+    if (passed) {
+      updateProtectedSeatAccessBlocked(false);
+    }
     pending?.resolve(passed);
-  }, []);
+  }, [updateProtectedSeatAccessBlocked]);
 
   const requestVqaGate = useCallback(
     (
@@ -462,18 +487,18 @@ function RecommendPageContent({ matchId }: { matchId: number | null }) {
             throw error;
           }
 
-          isVqaVerifiedRef.current = false;
+          blockProtectedSeatAccess();
 
           const retryVerified = await requestVqaGate("fallback", requestName, true);
           if (!retryVerified) {
-            throw new VqaChallengeCancelledError();
+            throw new ProtectedRequestCancelledError();
           }
         }
       }
 
       throw new Error("unreachable");
     },
-    [requestVqaGate],
+    [blockProtectedSeatAccess, requestVqaGate],
   );
 
   const handleSelectSeatListItem = async (item: SeatListItem) => {
@@ -491,10 +516,13 @@ function RecommendPageContent({ matchId }: { matchId: number | null }) {
         `GET /seat/matches/${matchId}/sections/${item.sectionId}/blocks`,
         () => getSectionBlocks(matchId, item.sectionId),
       );
+      if (isProtectedSeatAccessBlockedRef.current) {
+        return;
+      }
       setSectionBlocks(response.blocks);
       setActiveBlockId(response.blocks[0]?.blockId ?? null);
     } catch (e) {
-      if (e instanceof VqaChallengeCancelledError) {
+      if (e instanceof VqaChallengeCancelledError || e instanceof ProtectedRequestCancelledError) {
         return;
       }
 
@@ -806,7 +834,7 @@ function RecommendPageContent({ matchId }: { matchId: number | null }) {
     };
 
     void restoreQueue();
-  }, [applyQueueState, handleQueueEnd, matchId, queueRestoreKey]);
+  }, [applyQueueState, handleQueueEnd, matchId, queueRestoreKey, router]);
 
   useEffect(() => {
     if (!queueRestoreKey) return;
@@ -882,6 +910,9 @@ function RecommendPageContent({ matchId }: { matchId: number | null }) {
       `GET /seat/matches/${matchId}/recommendations/seat-entry`,
       () => getRecommendationSeatEntry(matchId),
     );
+    if (isProtectedSeatAccessBlockedRef.current) {
+      return;
+    }
 
     setSeatEntry(seatEntryResponse);
 
@@ -893,6 +924,9 @@ function RecommendPageContent({ matchId }: { matchId: number | null }) {
       `GET /seat/matches/${matchId}/recommendations/blocks`,
       () => getRecommendationBlocks(matchId),
     );
+    if (isProtectedSeatAccessBlockedRef.current) {
+      return;
+    }
 
     setRecommendItems(toRecommendItems(blockRecommendationResponse));
   }, [executeProtectedRequest, matchId]);
@@ -918,6 +952,9 @@ function RecommendPageContent({ matchId }: { matchId: number | null }) {
           `GET /seat/matches/${matchId}/seat-groups`,
           () => getSeatGroupsEntry(matchId),
         );
+        if (isProtectedSeatAccessBlockedRef.current) {
+          return;
+        }
 
         setSeatGroupsEntry(seatGroupsResponse);
         setSeatSections(toSeatSections(seatGroupsResponse));
@@ -960,6 +997,7 @@ function RecommendPageContent({ matchId }: { matchId: number | null }) {
     }
   }, [
     executeProtectedRequest,
+    logout,
     isPreferredRecommendOn,
     loadRecommendedSeats,
     matchId,
@@ -1069,7 +1107,26 @@ function RecommendPageContent({ matchId }: { matchId: number | null }) {
               </div>
             </div>
 
-            {isPreferredRecommendOn ? (
+            {isProtectedSeatAccessBlocked ? (
+              <div className="flex w-full flex-col items-start gap-4 self-stretch">
+                <div className="w-full rounded-2xl bg-[var(--background-white)] p-6 text-center outline outline-1 outline-offset-[-1px] outline-[var(--stroke-interactive-neutral-default)]">
+                  <div className="text-base font-semibold leading-6 text-[var(--foundation-neutral-240)]">
+                    보안 인증 후 좌석 정보를 확인할 수 있어요
+                  </div>
+                  <div className="mt-2 text-sm font-medium leading-5 text-[var(--text-info-n600)]">
+                    추천 구역에서 보안 인증이 다시 필요하다고 판단되어, 좌석 조회가 잠시 잠겼습니다.
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => void loadSeatAccess()}
+                    disabled={loading || assigning}
+                    className="mt-4 inline-flex h-10 items-center justify-center rounded-lg bg-[var(--foundation-neutral-980)] px-4 text-sm font-semibold text-[var(--foundation-neutral-240)] outline outline-1 outline-offset-[-1px] outline-[var(--stroke-interactive-neutral-default)] disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    보안 인증 다시 시도
+                  </button>
+                </div>
+              </div>
+            ) : isPreferredRecommendOn ? (
               <div className="flex w-full flex-1 flex-col items-start gap-4">
                 <div className="flex w-full flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex flex-1 flex-col items-start gap-3">
@@ -1382,12 +1439,6 @@ function formatMatchAt(matchAt?: string) {
     minute: "2-digit",
     hour12: false,
   }).format(new Date(matchAt));
-}
-
-function resolveLogoSrc(input: string) {
-  if (/^https?:\/\//i.test(input)) return input;
-  if (!CDN_CLUBS_BASE_URL) return input;
-  return new URL(input.replace(/^\//, ""), CDN_CLUBS_BASE_URL).toString();
 }
 
 function findSeatDetail(
