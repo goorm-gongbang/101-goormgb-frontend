@@ -114,18 +114,26 @@ function TeamCardSkeleton() {
   );
 }
 
+function getTodayISOInKST() {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Seoul",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
+
+  const year = parts.find((part) => part.type === "year")?.value;
+  const month = parts.find((part) => part.type === "month")?.value;
+  const day = parts.find((part) => part.type === "day")?.value;
+
+  return `${year}-${month}-${day}`;
+}
+
 export default function Home() {
   const router = useRouter();
   const { onMatchClick } = useMatchTracking();
-  const todayISO = useMemo(() => {
-    const d = new Date();
-    const yyyy = d.getFullYear();
-    const mm = String(d.getMonth() + 1).padStart(2, "0");
-    const dd = String(d.getDate()).padStart(2, "0");
-    return `${yyyy}-${mm}-${dd}`;
-  }, []);
 
-  const [selectedDate, setSelectedDate] = useState<string>(todayISO);
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [matchesPayload, setMatchesPayload] = useState<MatchesData | null>(
     null,
   );
@@ -134,6 +142,12 @@ export default function Home() {
   const [loadingTeams, setLoadingTeams] = useState(false);
 
   useEffect(() => {
+    setSelectedDate(getTodayISOInKST());
+  }, []);
+
+  useEffect(() => {
+    if (!selectedDate) return;
+
     let cancelled = false;
     setLoadingMatches(true);
 
@@ -190,6 +204,8 @@ export default function Home() {
   }, []);
 
   const countText = useMemo(() => {
+    if (!selectedDate) return "0월 00일은 총 0개의 경기가 있습니다.";
+
     const dateLabel = formatKST(selectedDate, {
       month: "long",
       day: "numeric",
@@ -223,14 +239,18 @@ export default function Home() {
             <div className="w-full flex flex-col items-center gap-4">
               <div className="w-full flex flex-col items-center gap-3">
                 <div className="w-full max-w-[1088px] flex flex-col items-center gap-3">
-                  <TodayInitSelectableDateStrip
-                    onChange={(date) => {
-                      const yyyy = date.getFullYear();
-                      const mm = String(date.getMonth() + 1).padStart(2, "0");
-                      const dd = String(date.getDate()).padStart(2, "0");
-                      setSelectedDate(`${yyyy}-${mm}-${dd}`);
-                    }}
-                  />
+                  {selectedDate ? (
+                    <TodayInitSelectableDateStrip
+                      onChange={(date) => {
+                        const yyyy = date.getFullYear();
+                        const mm = String(date.getMonth() + 1).padStart(2, "0");
+                        const dd = String(date.getDate()).padStart(2, "0");
+                        setSelectedDate(`${yyyy}-${mm}-${dd}`);
+                      }}
+                    />
+                  ) : (
+                    <div className="h-[120px] w-full" />
+                  )}
                 </div>
               </div>
 
