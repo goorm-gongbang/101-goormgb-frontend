@@ -8,6 +8,7 @@ import { persist } from "zustand/middleware";
 type User = {
   id: string;
   status: string;
+  onboardingRequired?: boolean;
 };
 
 type AuthState = {

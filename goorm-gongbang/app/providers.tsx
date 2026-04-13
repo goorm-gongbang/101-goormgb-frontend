@@ -10,7 +10,7 @@
 
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/authStore";
 import { refreshAccessToken, getMe } from "@/lib/services";
@@ -32,10 +32,8 @@ export default function Providers({ children }: { children: React.ReactNode }) {
   const setUser = useAuthStore((s) => s.setUser);
   const setBootstrapped = useAuthStore((s) => s.setBootstrapped);
   const bootstrapped = useAuthStore((s) => s.bootstrapped);
-
-  const [onboardingRequired, setOnboardingRequired] = useState<boolean | null>(
-    null,
-  );
+  const user = useAuthStore((s) => s.user);
+  const onboardingRequired = user?.onboardingRequired === true;
 
   const botTokenInitialized = useRef(false);
 
@@ -64,17 +62,14 @@ export default function Providers({ children }: { children: React.ReactNode }) {
           if (!mounted) return;
 
           setUser(user ?? null);
-          setOnboardingRequired(user?.onboardingRequired === true);
         } catch {
           if (!mounted) return;
 
           setUser(null);
-          setOnboardingRequired(null);
         }
       } else {
         setAccessToken(null);
         setUser(null);
-        setOnboardingRequired(null);
       }
 
       if (mounted) {
@@ -89,8 +84,8 @@ export default function Providers({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!bootstrapped) return;
-    if (onboardingRequired === null) return;
     if (isAuthPath(pathname)) return;
+    if (!user) return;
 
     if (onboardingRequired && !isOnboardingPath(pathname)) {
       router.replace("/onboarding/intro");
@@ -100,7 +95,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
     if (!onboardingRequired && isOnboardingPath(pathname)) {
       router.replace("/");
     }
-  }, [bootstrapped, onboardingRequired, pathname, router]);
+  }, [bootstrapped, user, onboardingRequired, pathname, router]);
 
   return <>{children}</>;
 }

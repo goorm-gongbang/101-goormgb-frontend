@@ -59,6 +59,7 @@ export default function KakaoCallbackPage() {
           setUser({
             id: String(data.user.userId),
             status: data.user.status,
+            onboardingRequired: data?.onboardingRequired === true,
           });
 
         } else {

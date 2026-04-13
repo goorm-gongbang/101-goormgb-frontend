@@ -162,6 +162,8 @@ function pricePayloadToLabel(
 export default function SeatStyleOnboardingOptionPage() {
   const router = useRouter();
   const accessToken = useAuthStore((s) => s.accessToken);
+  const user = useAuthStore((s) => s.user);
+  const setUser = useAuthStore((s) => s.setUser);
 
   const marketingAgreed = useOnboardingPrefStore((s) => s.marketingAgreed);
   const favoriteClubId = useOnboardingPrefStore((s) => s.favoriteClubId);
@@ -288,6 +290,9 @@ export default function SeatStyleOnboardingOptionPage() {
       setOptionDraft(getOptionDraftPatch());
 
       await saveOnboardingPreferences(body);
+      if (user) {
+        setUser({ ...user, onboardingRequired: false });
+      }
 
       router.replace("/");
       setTimeout(() => reset(), 0);
