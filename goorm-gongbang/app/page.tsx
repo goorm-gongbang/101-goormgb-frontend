@@ -1,8 +1,8 @@
 import HomeClient from "./HomeClient";
 import {
-  getMatches,
-  getClubs,
-} from "@/lib/services/order-core.service";
+  getInitialMatches,
+  getInitialClubs,
+} from "@/lib/services/order-core.server";
 
 function getTodayISO() {
   const parts = new Intl.DateTimeFormat("en-CA", {
@@ -23,8 +23,8 @@ export default async function Home() {
   const todayISO = getTodayISO();
 
   const [matchesPayload, teamsPayload] = await Promise.all([
-    getMatches(todayISO),
-    getClubs(),
+    getInitialMatches(todayISO),
+    getInitialClubs(),
   ]);
 
   return (
