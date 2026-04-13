@@ -9,8 +9,9 @@ export const getInitialMatches = async (date: string) => {
     const res = await fetch(`${API_BASE_URL}/order/matches?date=${date}`, {
       cache: "no-store",
     });
+    console.log("getInitialMatchesres:", res);
     const json = await res.json().catch(() => null);
-
+    console.log("getInitialMatchesresjson:", json);
     if (!res.ok) {
       throw new Error(json?.message ?? `경기 목록 조회 실패 (${res.status})`);
     }
@@ -28,7 +29,9 @@ export const getInitialClubs = async () => {
     const res = await fetch(`${API_BASE_URL}/order/clubs`, {
         cache: "no-store",
     });
+    console.log("getInitialClubsres:", res);
     const json = await res.json().catch(() => null);
+    console.log("getInitialClubsjson:", json);
 
     if (!res.ok) {
       throw new Error(json?.message ?? `구단 목록 조회 실패 (${res.status})`);
