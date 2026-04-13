@@ -136,6 +136,18 @@ export default function HomeClient({
   const loadingTeams = false;
 
   useEffect(() => {
+    if (process.env.NODE_ENV !== "development") return;
+
+    console.log("[HomeClient] initialDate:", initialDate);
+    console.log("[HomeClient] initialMatchesPayload:", initialMatchesPayload);
+    console.log("[HomeClient] initialTeamsPayload:", initialTeamsPayload);
+    console.log(
+      "[HomeClient] initial clubs count:",
+      initialTeamsPayload?.clubs?.length ?? 0,
+    );
+  }, [initialDate, initialMatchesPayload, initialTeamsPayload]);
+
+  useEffect(() => {
     if (selectedDate === initialDate) {
       setMatchesPayload(initialMatchesPayload);
       setLoadingMatches(false);

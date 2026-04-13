@@ -25,7 +25,9 @@ export const getInitialMatches = async (date: string) => {
 /* 구단 목록 조회 - 서버 초기 렌더용 */
 export const getInitialClubs = async () => {
   try {
-    const res = await fetch(`${API_BASE_URL}/order/clubs`);
+    const res = await fetch(`${API_BASE_URL}/order/clubs`, {
+        cache: "no-store",
+    });
     const json = await res.json().catch(() => null);
 
     if (!res.ok) {
