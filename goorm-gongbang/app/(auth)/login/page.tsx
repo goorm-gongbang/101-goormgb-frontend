@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuthStore } from "@/stores/authStore";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { KakaoButton } from "@/components/login/KakaoButton";
@@ -19,18 +19,27 @@ export default function LoginPage() {
   const setAccessToken = useAuthStore((s) => s.setAccessToken);
   const { accessToken, user, bootstrapped } = useAuthStore();
   const [hideLogin, setHideLogin] = useState(true);
+  const isLoggedIn = bootstrapped && !!accessToken && !!user;
 
-  const getSafeRedirectPath = () => {
-    const next = searchParams.get("next");
+  const getSafeRedirectPath = useCallback(
+    (next = searchParams.get("next")) => {
+      if (!next) return "/";
 
-    if (!next) return "/";
+      if (!next.startsWith("/")) return "/";
+      if (next.startsWith("//")) return "/";
+      if (next.startsWith("/login")) return "/";
+      if (next.startsWith("/kakao/callback")) return "/";
 
-    if (!next.startsWith("/")) return "/";
-    if (next.startsWith("//")) return "/";
+      return next;
+    },
+    [searchParams],
+  );
 
-    return next;
-  };
+  useEffect(() => {
+    if (!isLoggedIn) return;
 
+    router.replace(getSafeRedirectPath());
+  }, [isLoggedIn, router, getSafeRedirectPath]);
 
   useEffect(() => {
     const NEXT_PUBLIC_ENV = process.env.NEXT_PUBLIC_ENV ?? "";
@@ -111,7 +120,8 @@ export default function LoginPage() {
       }
 
       const next = searchParams.get("next");
-      if (next) sessionStorage.setItem("kakao_redirect_next", next);
+      const safeNext = getSafeRedirectPath(next);
+      if (safeNext !== "/") sessionStorage.setItem("kakao_redirect_next", safeNext);
 
       window.location.href = loginUrl;
     } catch (e) {
