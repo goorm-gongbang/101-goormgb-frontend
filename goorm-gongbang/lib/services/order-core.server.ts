@@ -24,7 +24,7 @@ export const getInitialMatches = async (date: string) => {
     return (json?.data ?? json ?? null) as MatchesData | null;
   } catch (error) {
     console.error("경기 목록 조회 실패:", error);
-    throw error;
+    return null;
   }
 };
 
@@ -43,6 +43,6 @@ export const getInitialClubs = async () => {
     return (json?.data ?? json ?? null) as ClubsData | null;
   } catch (error) {
     console.error("구단 목록 조회 실패:", error);
-    throw error;
+    return null;
   }
 };
