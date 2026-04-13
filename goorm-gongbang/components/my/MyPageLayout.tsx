@@ -84,13 +84,6 @@ export function MyPageLayout({ children }: Props) {
     const [profileData, setProfileData] = useState<MyPageProfileData | null>(null);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
 
-    // Guard
-    useEffect(() => {
-        if (bootstrapped && !isLoggedIn) {
-            router.replace("/login");
-        }
-    }, [bootstrapped, isLoggedIn, router]);
-
     useEffect(() => {
         if (isLoggedIn) {
             getMyPageProfile().then(setProfileData).catch(() => {});

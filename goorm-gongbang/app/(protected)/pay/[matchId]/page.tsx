@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import { toast } from "sonner";
 import { useState, useEffect, useMemo } from "react";
 import { ChevronLeft, Minus, Plus } from "lucide-react";
@@ -505,7 +505,7 @@ export default function Page() {
 
                                     <div className="min-w-0 flex items-center gap-2">
                                         <div className="min-w-0 text-[var(--foundation-neutral-400)] text-sm sm:text-base font-medium leading-5 sm:leading-6 truncate">
-                                            {match?.stadium.koName}
+                                            {match?.stadium.koName ?? "-"}
                                         </div>
                                     </div>
                                 </div>
