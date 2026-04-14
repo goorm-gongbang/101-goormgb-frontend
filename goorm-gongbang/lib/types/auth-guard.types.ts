@@ -41,6 +41,7 @@ export type User = {
   status: string;
   email?: string;
   nickname?: string;
+  onboardingRequired?: boolean;
 };
 
 /** 내 정보 응답 */

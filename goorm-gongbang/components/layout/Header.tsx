@@ -59,8 +59,9 @@ export function Header({ className, onMyInfoClick, onMyTicketClick }: Props) {
       </div>
 
       {/* Right area */}
-      {!isLoggedIn ? (
-        // 로그인 버튼 상태
+      {!bootstrapped ? (
+        <div className="h-8 w-20" />
+      ) : !isLoggedIn ? (
         <PrimaryButton
           type="button"
           size="sm"
@@ -71,7 +72,6 @@ export function Header({ className, onMyInfoClick, onMyTicketClick }: Props) {
           로그인
         </PrimaryButton>
       ) : (
-        // 로그인 후 메뉴 상태
         <div className="flex justify-start items-center gap-8">
           <button
             type="button"

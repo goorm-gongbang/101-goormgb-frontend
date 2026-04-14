@@ -36,8 +36,13 @@ export const logout = () =>
 /* 토큰 Refresh */
 export async function refreshAccessToken(): Promise<string | null> {
   try {
-    const data = await pub.post<RefreshResponse>(`${API_BASE_URL}/auth/token/refresh`);
-    return data?.data?.accessToken ?? null;
+    const data = await pub.post<RefreshResponse["data"] | RefreshResponse>(
+      `${API_BASE_URL}/auth/token/refresh`,
+    );
+
+    return data && "accessToken" in data
+      ? data.accessToken
+      : data?.data?.accessToken ?? null;
   } catch (e) {
     if (e instanceof ApiError) return null;
     throw e;
