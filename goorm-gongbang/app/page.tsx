@@ -14,74 +14,96 @@ import { SaleStatus, Club, MatchesData, ClubsData } from "@/lib/types";
 import { ApiError } from "@/lib/api";
 import { formatKST } from "@/lib/datetime";
 
-/* ===========================
-   UTIL
-=========================== */
-const DOW_KO = ["일", "월", "화", "수", "목", "금", "토"] as const;
-
 function toMatchCardVariant(saleState?: SaleStatus) {
-  // MatchCard variant: comingSoon / soldOut / undefined
   if (saleState === "UPCOMING") return "comingSoon" as const;
   if (saleState === "SOLD_OUT") return "soldOut" as const;
   if (saleState === "ENDED") return "ended" as const;
   return undefined;
 }
 
-function TeamLogo({ club }: { club: Club }) {
-  return <IconPreview logoImg={club.logoImg} size="md" />;
+function TeamLogo({
+  club,
+  priorityLoad = false,
+}: {
+  club: Club;
+  priorityLoad?: boolean;
+}) {
+  return (
+    <IconPreview
+      logoImg={club.logoImg}
+      size="md"
+      priorityLoad={priorityLoad}
+    />
+  );
 }
 
-function TeamLogoClub({ club }: { club: Club }) {
-  return <IconPreview logoImg={club.logoImg} size="md_2" />;
+function TeamLogoClub({
+  club,
+  priorityLoad = false,
+}: {
+  club: Club;
+  priorityLoad?: boolean;
+}) {
+  return (
+    <IconPreview
+      logoImg={club.logoImg}
+      size="md_2"
+      priorityLoad={priorityLoad}
+    />
+  );
 }
 
-function MatchCardSkeleton({ elevated }: { elevated?: boolean }) {
+function MatchCardSkeleton() {
   return (
     <div
       className={cn(
-        "w-full max-w-[1074px] rounded-2xl bg-[var(--foundation-neutral-white)]",
-        elevated
-          ? "outline outline-1 outline-offset-[-1px] outline-[var(--foundation-neutral-880)] shadow-sm"
-          : "outline outline-1 outline-offset-[-1px] outline-[var(--foundation-neutral-880)]",
-        "px-6 py-5",
+        "w-full max-w-[1074px] h-28 rounded-2xl bg-[var(--foundation-neutral-white)]",
+        "outline outline-1 outline-offset-[-1px] outline-[var(--foundation-neutral-900)]",
+        "px-4 sm:px-6 lg:px-9",
+        "flex items-center",
       )}
     >
-      {/* 상단: 날짜/시간 + 상태 뱃지 자리 */}
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <Skeleton className="h-5 w-20 rounded-md" /> {/* 3월 28일 */}
-          <Skeleton className="h-5 w-24 rounded-md" /> {/* 토 · 14:00 */}
-        </div>
-        <Skeleton className="h-6 w-24 rounded-full" /> {/* Coming Soon 등 */}
-      </div>
+      <div className="w-full flex items-center justify-between gap-3 sm:gap-4 md:gap-6 lg:gap-8 min-w-0">
+        <div className="flex items-center gap-4 sm:gap-6 md:gap-8 lg:gap-10 min-w-0">
+          <div className="flex items-center gap-4 sm:gap-6 md:gap-8 min-w-0">
+            <div className="flex w-20 shrink-0 flex-col gap-2">
+              <Skeleton className="h-8 w-20 rounded-md" />
+              <Skeleton className="h-4 w-16 rounded-md" />
+            </div>
 
-      {/* 중단: 구장명 */}
-      <div className="mt-3 flex flex-col gap-2">
-        <Skeleton className="h-5 w-[60%] rounded-md" />
-        <Skeleton className="h-4 w-[45%] rounded-md" />
-      </div>
+            <div className="hidden sm:flex w-32 sm:w-40 md:w-48 lg:w-56 flex-col gap-2">
+              <Skeleton className="h-6 w-[70%] rounded-md" />
+              <Skeleton className="h-4 w-[55%] rounded-md" />
+            </div>
+          </div>
 
-      {/* 하단: 원정/홈 팀 */}
-      <div className="mt-5 flex items-center justify-between gap-6">
-        {/* away */}
-        <div className="flex items-center gap-3 min-w-0">
-          <Skeleton className="h-10 w-10 rounded-xl" /> {/* 로고 */}
-          <div className="flex flex-col gap-2 min-w-0">
-            <Skeleton className="h-4 w-28 rounded-md" />
-            <Skeleton className="h-4 w-32 rounded-md" />
+          <div className="h-28 flex items-center gap-3 md:gap-4 min-w-0">
+            <div className="hidden sm:flex w-20 sm:w-24 md:w-28 lg:w-32 flex-col items-end gap-2">
+              <Skeleton className="h-5 w-[80%] rounded-md" />
+              <Skeleton className="h-4 w-[65%] rounded-md" />
+            </div>
+
+            <div className="h-28 w-[102px] shrink-0 px-[3.13px] py-6 flex items-center justify-center">
+              <Skeleton className="h-20 w-24 rounded-xl" />
+            </div>
+
+            <Skeleton className="h-4 w-5 shrink-0 rounded-md" />
+
+            <div className="h-28 w-[102px] shrink-0 px-[3.13px] py-9 flex items-center justify-center">
+              <Skeleton className="h-14 w-24 rounded-xl" />
+            </div>
+
+            <div className="hidden sm:flex w-20 sm:w-24 md:w-28 lg:w-32 flex-col gap-2">
+              <Skeleton className="h-5 w-[80%] rounded-md" />
+              <Skeleton className="h-4 w-[65%] rounded-md" />
+            </div>
+
+            <Skeleton className="h-6 w-20 shrink-0 rounded-full" />
           </div>
         </div>
 
-        {/* vs */}
-        <Skeleton className="h-6 w-10 rounded-md" />
-
-        {/* home */}
-        <div className="flex items-center gap-3 min-w-0 justify-end">
-          <div className="flex flex-col gap-2 items-end min-w-0">
-            <Skeleton className="h-4 w-28 rounded-md" />
-            <Skeleton className="h-4 w-32 rounded-md" />
-          </div>
-          <Skeleton className="h-10 w-10 rounded-xl" /> {/* 로고 */}
+        <div className="w-9 h-12 flex items-center justify-center shrink-0">
+          <Skeleton className="h-10 w-5 rounded-md" />
         </div>
       </div>
     </div>
@@ -90,40 +112,56 @@ function MatchCardSkeleton({ elevated }: { elevated?: boolean }) {
 
 function TeamCardSkeleton() {
   return (
-    <div className="w-full rounded-2xl px-6 py-5 outline outline-1 outline-offset-[-1px] outline-[var(--foundation-neutral-880)]">
-      <div className="flex items-center gap-4">
-        <Skeleton className="h-24 w-14 rounded-xl" />
-        <div className="flex flex-col gap-3">
-          <Skeleton className="h-5 w-32 rounded-md" />
-          <Skeleton className="h-4 w-24 rounded-md" />
+    <div className="relative self-stretch rounded-2xl px-4 py-3 outline outline-1 outline-offset-[-1px] outline-[var(--foundation-neutral-880)]/50 inline-flex flex-col justify-start items-start gap-1.5">
+      <div className="w-full h-32 px-1 py-2.5 bg-[var(--background-grey)] flex flex-col justify-center items-center gap-1.5 overflow-hidden">
+        <Skeleton className="h-24 w-24 rounded-xl" />
+      </div>
+
+      <div className="self-stretch flex flex-col justify-center items-center">
+        <div className="self-stretch inline-flex justify-center items-center">
+          <Skeleton className="mb-2 h-5 w-24 rounded-md" />
         </div>
       </div>
+
+      <Skeleton className="self-stretch h-8 min-w-14 rounded-md" />
     </div>
   );
 }
 
+function getTodayISOInKST() {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Seoul",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
+
+  const year = parts.find((part) => part.type === "year")?.value;
+  const month = parts.find((part) => part.type === "month")?.value;
+  const day = parts.find((part) => part.type === "day")?.value;
+
+  return `${year}-${month}-${day}`;
+}
 
 export default function Home() {
   const router = useRouter();
   const { onMatchClick } = useMatchTracking();
-  const todayISO = useMemo(() => {
-    const d = new Date();
-    const yyyy = d.getFullYear();
-    const mm = String(d.getMonth() + 1).padStart(2, "0");
-    const dd = String(d.getDate()).padStart(2, "0");
-    return `${yyyy}-${mm}-${dd}`;
-  }, []);
 
-  const [selectedDate, setSelectedDate] = useState<string>(todayISO); // 날짜(달력)
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [matchesPayload, setMatchesPayload] = useState<MatchesData | null>(
     null,
-  ); // 경기 일정
-  const [teamsPayload, setTeamsPayload] = useState<ClubsData | null>(null); // 팀 리스트
-  const [loadingMatches, setLoadingMatches] = useState(false); // 로딩(spinner) - 경기 일정
-  const [loadingTeams, setLoadingTeams] = useState(false); // 로딩(spinner) - 팀 리스트
+  );
+  const [teamsPayload, setTeamsPayload] = useState<ClubsData | null>(null);
+  const [loadingMatches, setLoadingMatches] = useState(true);
+  const [loadingTeams, setLoadingTeams] = useState(true);
 
-  /* 경기 일정 - 날짜 변경 될 때마다 재 요청 */
   useEffect(() => {
+    setSelectedDate(getTodayISOInKST());
+  }, []);
+
+  useEffect(() => {
+    if (!selectedDate) return;
+
     let cancelled = false;
     setLoadingMatches(true);
 
@@ -137,6 +175,8 @@ export default function Home() {
         if (cancelled) return;
         if (e instanceof ApiError) {
           console.error("경기 목록 조회 실패:", e.message);
+        } else {
+          console.error("경기 목록 조회 실패:", e);
         }
         setMatchesPayload(null);
       } finally {
@@ -149,7 +189,6 @@ export default function Home() {
     };
   }, [selectedDate]);
 
-  /* 팀 리스트 요청 - 1회 요청 */
   useEffect(() => {
     let cancelled = false;
     setLoadingTeams(true);
@@ -157,13 +196,15 @@ export default function Home() {
     (async () => {
       try {
         const data = await getClubs();
-
         if (cancelled) return;
+
         setTeamsPayload(data ?? null);
       } catch (e) {
         if (cancelled) return;
         if (e instanceof ApiError) {
           console.error("구단 목록 조회 실패:", e.message);
+        } else {
+          console.error("구단 목록 조회 실패:", e);
         }
         setTeamsPayload(null);
       } finally {
@@ -176,28 +217,28 @@ export default function Home() {
     };
   }, []);
 
-  /* 3월 28일은 총 5개의 경기가 있습니다. */
   const countText = useMemo(() => {
+    if (!selectedDate) return "0월 00일은 총 0개의 경기가 있습니다.";
+
     const dateLabel = formatKST(selectedDate, {
       month: "long",
       day: "numeric",
       year: undefined,
       hour: undefined,
       minute: undefined,
-    }); // 날짜
-    const count = matchesPayload?.matchCount ?? 0; // 개수
+    });
+    const count = matchesPayload?.matchCount ?? 0;
     return `${dateLabel}은 총 ${count}개의 경기가 있습니다.`;
   }, [selectedDate, matchesPayload]);
 
-  const matchCards = matchesPayload?.matches ?? []; // 경기 일정
-  const clubs = teamsPayload?.clubs ?? []; // 팀 리스트
+  const matchCards = matchesPayload?.matches ?? [];
+  const clubs = teamsPayload?.clubs ?? [];
 
   return (
     <div className="px-4 sm:px-6 md:px-10 lg:px-16 xl:px-24 2xl:px-[120px]">
       <main className="w-full">
         <div className="w-full max-w-[1440px] mx-auto flex flex-col gap-12">
           <section className="w-full flex flex-col gap-1">
-            {/* 섹션 타이틀 */}
             <div className="w-full flex justify-center">
               <div className="w-full max-w-[1088px] h-20 py-2.5 flex flex-col justify-center items-start">
                 <div className="w-full text-left text-[var(--foundation-primary-500)] text-xs font-semibold font-['Pretendard'] leading-4">
@@ -209,22 +250,24 @@ export default function Home() {
               </div>
             </div>
 
-            {/* 달력 + count + cards */}
             <div className="w-full flex flex-col items-center gap-4">
               <div className="w-full flex flex-col items-center gap-3">
                 <div className="w-full max-w-[1088px] flex flex-col items-center gap-3">
-                  <TodayInitSelectableDateStrip
-                    onChange={(date) => {
-                      const yyyy = date.getFullYear();
-                      const mm = String(date.getMonth() + 1).padStart(2, "0");
-                      const dd = String(date.getDate()).padStart(2, "0");
-                      setSelectedDate(`${yyyy}-${mm}-${dd}`);
-                    }}
-                  />
+                  {selectedDate ? (
+                    <TodayInitSelectableDateStrip
+                      onChange={(date) => {
+                        const yyyy = date.getFullYear();
+                        const mm = String(date.getMonth() + 1).padStart(2, "0");
+                        const dd = String(date.getDate()).padStart(2, "0");
+                        setSelectedDate(`${yyyy}-${mm}-${dd}`);
+                      }}
+                    />
+                  ) : (
+                    <div className="h-[156px] w-full" />
+                  )}
                 </div>
               </div>
 
-              {/* count text */}
               <div className="w-full max-w-[1088px]">
                 <div className="w-full text-left text-[var(--foundation-primary-500)] text-sm font-medium font-['Pretendard'] leading-5">
                   {loadingMatches
@@ -233,12 +276,11 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* MatchCard list */}
               <div className="w-full flex flex-col items-center gap-3 min-h-[608px]">
                 {loadingMatches ? (
                   <div className="w-full flex flex-col items-center gap-3">
                     {Array.from({ length: 5 }).map((_, i) => (
-                      <MatchCardSkeleton key={i} elevated={i === 0} />
+                      <MatchCardSkeleton key={i} />
                     ))}
                   </div>
                 ) : matchCards.length === 0 ? (
@@ -267,8 +309,9 @@ export default function Home() {
                       },
                     )}`;
 
-                    const variant = toMatchCardVariant(m.saleStatus); // comming soon, soild out, ended
+                    const variant = toMatchCardVariant(m.saleStatus);
                     const isClickable = m.saleStatus !== "ENDED";
+                    const isAboveFold = idx < 2;
 
                     return (
                       <button
@@ -283,22 +326,32 @@ export default function Home() {
                       >
                         <MatchCard
                           elevated={idx === 0}
-                          variant={variant} // on_sale, upcoming, sold_out, ended
-                          dateText={dateText} // 3월 28일
-                          timeText={timeText} // 토 · 14 : 00
-                          stadiumKo={m.stadium.koName} // 대구 삼성 라이온즈 파크
-                          stadiumEn={m.stadium.enName} // Daegu Samsung Lions Park
+                          variant={variant}
+                          dateText={dateText}
+                          timeText={timeText}
+                          stadiumKo={m.stadium.koName}
+                          stadiumEn={m.stadium.enName}
                           away={{
-                            ko: m.awayClub.koName, // SSG 랜더스
-                            en: m.awayClub.enName, // SSG LANDERS
-                            dataLogo: m.awayClub.koName, // SSG
-                            logo: <TeamLogo club={m.awayClub} />, // logoImg
+                            ko: m.awayClub.koName,
+                            en: m.awayClub.enName,
+                            dataLogo: m.awayClub.koName,
+                            logo: (
+                              <TeamLogo
+                                club={m.awayClub}
+                                priorityLoad={isAboveFold}
+                              />
+                            ),
                           }}
                           home={{
-                            ko: m.homeClub.koName, // 기아 타이거즈
-                            en: m.homeClub.enName, // KIA TIGERS
-                            dataLogo: m.homeClub.koName, // 기아
-                            logo: <TeamLogo club={m.homeClub} />, // logoImg
+                            ko: m.homeClub.koName,
+                            en: m.homeClub.enName,
+                            dataLogo: m.homeClub.koName,
+                            logo: (
+                              <TeamLogo
+                                club={m.homeClub}
+                                priorityLoad={isAboveFold}
+                              />
+                            ),
                           }}
                         />
                       </button>
@@ -309,13 +362,9 @@ export default function Home() {
             </div>
           </section>
 
-          {/* ===========================
-              Team Info Section (full-bleed bg + inner padding)
-          =========================== */}
           <section className="w-screen relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] bg-[var(--background-grey)] pb-48">
             <div className="px-4 sm:px-8 md:px-12 lg:px-18 xl:px-26 2xl:px-[120px]">
               <div className="w-full max-w-[1440px] mx-auto">
-                {/* 섹션 타이틀 */}
                 <div className="w-full flex justify-center">
                   <div className="w-full max-w-[1088px] h-20 py-2.5 flex flex-col justify-center items-start">
                     <div className="w-full text-left text-[var(--foundation-primary-500)] text-xs font-semibold font-['Pretendard'] leading-4">
@@ -327,7 +376,6 @@ export default function Home() {
                   </div>
                 </div>
 
-                {/* grid */}
                 <div className="w-full flex justify-center mt-6">
                   <div
                     className={cn(
@@ -340,17 +388,24 @@ export default function Home() {
                       ? Array.from({ length: 10 }).map((_, i) => (
                         <TeamCardSkeleton key={i} />
                       ))
-                      : clubs.map((t) => (
-                        <TeamInfoCard
-                          key={t.clubId}
-                          dataLogo={t.koName} // 두산 베어스
-                          teamName={t.koName} // 두산 베어스
-                          logo={<TeamLogoClub club={t} />} // <IconPreview index={7} size="md" />
-                          onClick={() =>
-                            router.push(`/clubs/${t.clubId}`)
-                          }
-                        />
-                      ))}
+                      : clubs.map((t, idx) => {
+                        const isAboveFold = idx < 4;
+
+                        return (
+                          <TeamInfoCard
+                            key={t.clubId}
+                            dataLogo={t.koName}
+                            teamName={t.koName}
+                            logo={
+                              <TeamLogoClub
+                                club={t}
+                                priorityLoad={isAboveFold}
+                              />
+                            }
+                            onClick={() => router.push(`/clubs/${t.clubId}`)}
+                          />
+                        );
+                      })}
                   </div>
                 </div>
               </div>

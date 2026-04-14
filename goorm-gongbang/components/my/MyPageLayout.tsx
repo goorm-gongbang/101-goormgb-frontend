@@ -18,7 +18,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/authStore";
 import { cn } from "@/lib/utils";
 import { ChevronRight } from "lucide-react";
-import { getMyPageProfile } from "@/lib/services";
+import { getMyPageProfile, logout as logoutApi } from "@/lib/services";
 import type { MyPageProfileData } from "@/lib/types";
 import { DeleteAccountModal } from "./DeleteAccountModal";
 
@@ -91,9 +91,15 @@ export function MyPageLayout({ children }: Props) {
     }, [isLoggedIn]);
 
     // 로그아웃
-    const handleLogout = () => {
-        logoutStore();
-        router.replace("/");
+    const handleLogout = async () => {
+        try {
+            await logoutApi();
+        } catch (e) {
+            console.error("logout failed:", e);
+        } finally {
+            logoutStore();
+            router.replace("/");
+        }
     };
 
     // 로딩 중

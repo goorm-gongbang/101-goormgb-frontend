@@ -5,20 +5,35 @@
     1. 쿠키 기반 refresh로 access token을 복구
     2. 토큰으로 내정보(/api/me) 받아서 zustand 삽입
     3. bootstrapped 플래그로 렌더링 제어
+    4. 온보딩 필요 여부에 따라 전역 라우팅 제어
 =========================== */
 
 "use client";
 
 import { useEffect, useRef } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/authStore";
 import { refreshAccessToken, getMe } from "@/lib/services";
 import { getBotToken } from "@/lib/client/bot-token";
 
+function isOnboardingPath(pathname: string) {
+  return pathname === "/onboarding" || pathname.startsWith("/onboarding/");
+}
+
+function isAuthPath(pathname: string) {
+  return pathname === "/login" || pathname.startsWith("/kakao/callback");
+}
+
 export default function Providers({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
+  const pathname = usePathname();
+
   const setAccessToken = useAuthStore((s) => s.setAccessToken);
   const setUser = useAuthStore((s) => s.setUser);
-  const bootstrapped = useAuthStore((s) => s.bootstrapped);
   const setBootstrapped = useAuthStore((s) => s.setBootstrapped);
+  const bootstrapped = useAuthStore((s) => s.bootstrapped);
+  const user = useAuthStore((s) => s.user);
+  const onboardingRequired = user?.onboardingRequired === true;
 
   const botTokenInitialized = useRef(false);
 
@@ -34,26 +49,53 @@ export default function Providers({ children }: { children: React.ReactNode }) {
     let mounted = true;
 
     (async () => {
-      const token = await refreshAccessToken(); // [1] refresh로 accessToken 복구 (쿠키 기반)
-      if (!mounted) return;
-      if (token) setAccessToken(token); // 토큰이 있으면 store에 저장
+      const token = await refreshAccessToken();
 
-      /* [2] 유저 정보 가져오기: /api/me */
+      if (!mounted) return;
+
       if (token) {
+        setAccessToken(token);
+
         try {
           const user = await getMe();
-          if (mounted) setUser(user ?? null);
+
+          if (!mounted) return;
+
+          setUser(user ?? null);
         } catch {
-          if (mounted) setUser(null); // 토큰은 있는데 me가 실패하면 세션 문제 가능 → 정리
+          if (!mounted) return;
+
+          setUser(null);
         }
+      } else {
+        setAccessToken(null);
+        setUser(null);
       }
-      if (mounted) setBootstrapped(true); // [3] 부트스트랩 완료 (초기 절차 끝)
+
+      if (mounted) {
+        setBootstrapped(true);
+      }
     })();
 
-    return () => { mounted = false; };
+    return () => {
+      mounted = false;
+    };
   }, [setAccessToken, setUser, setBootstrapped]);
 
-  if (!bootstrapped) return null;
+  useEffect(() => {
+    if (!bootstrapped) return;
+    if (isAuthPath(pathname)) return;
+    if (!user) return;
+
+    if (onboardingRequired && !isOnboardingPath(pathname)) {
+      router.replace("/onboarding/intro");
+      return;
+    }
+
+    if (!onboardingRequired && isOnboardingPath(pathname)) {
+      router.replace("/");
+    }
+  }, [bootstrapped, user, onboardingRequired, pathname, router]);
 
   return <>{children}</>;
 }

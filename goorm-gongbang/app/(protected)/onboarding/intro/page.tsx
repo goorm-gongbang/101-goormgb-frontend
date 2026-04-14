@@ -18,19 +18,27 @@ export default function OnboardingIntroPage() {
   const user = useAuthStore((s) => s.user);
   const checkedRef = useRef(false);
 
-  const [selectedBlocks, setSelectedBlocks] = useState<number[]>([]);
+  const preferredBlockIds = useOnboardingPrefStore((s) => s.preferredBlockIds);
   const setPreferredBlockIds = useOnboardingPrefStore((s) => s.setPreferredBlockIds);
+
+  const [selectedBlocks, setSelectedBlocks] = useState<number[]>(() => preferredBlockIds ); // store에 저장된 값이 초기값
 
   const canGoNext = selectedBlocks.length >= 1 && selectedBlocks.length <= 10;
 
   const handleBlockToggle = (blockNum: number) => {
-    setSelectedBlocks((prev) =>
-      prev.includes(blockNum)
-        ? prev.filter((v) => v !== blockNum)
-        : prev.length >= 10
-          ? prev
-          : [...prev, blockNum]
-    );
+    const next = selectedBlocks.includes(blockNum)
+      ? selectedBlocks.filter((v) => v !== blockNum)
+      : selectedBlocks.length >= 10
+        ? selectedBlocks
+        : [...selectedBlocks, blockNum];
+
+    setSelectedBlocks(next); // local state 삽입
+    setPreferredBlockIds(next); // store 삽입
+  };
+
+  const handleReset = () => {
+    setSelectedBlocks([]);
+    setPreferredBlockIds([]);
   };
 
   const handleNext = () => {
@@ -140,7 +148,7 @@ export default function OnboardingIntroPage() {
                   <PreferredZoneSection
                     selectedBlocks={selectedBlocks}
                     onToggle={handleBlockToggle}
-                    onReset={() => setSelectedBlocks([])}
+                    onReset={handleReset}
                   />
                 </div>
               </section>

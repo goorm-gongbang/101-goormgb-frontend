@@ -34,6 +34,21 @@ type Props = {
   onChange?: (date: Date) => void;
 };
 
+function getTodayStartInKST() {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Seoul",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
+
+  const year = Number(parts.find((part) => part.type === "year")?.value);
+  const month = Number(parts.find((part) => part.type === "month")?.value);
+  const day = Number(parts.find((part) => part.type === "day")?.value);
+
+  return startOfDay(new Date(year, month - 1, day));
+}
+
 function useResponsiveSideCount(fixed?: number) {
   const [sc, setSc] = React.useState<number>(fixed ?? 4);
 
@@ -57,7 +72,7 @@ function useResponsiveSideCount(fixed?: number) {
 }
 
 export function TodayInitSelectableDateStrip({ className, sideCount, onChange }: Props) {
-  const today = React.useMemo(() => startOfDay(new Date()), []);
+  const today = React.useMemo(() => getTodayStartInKST(), []);
   const [selectedDate, setSelectedDate] = React.useState<Date>(today);
 
   const responsiveSideCount = useResponsiveSideCount(sideCount);

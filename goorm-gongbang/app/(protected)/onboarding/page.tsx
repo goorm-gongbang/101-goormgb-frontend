@@ -121,6 +121,23 @@ const CHEER_MAP: Record<CheerPreference, CheerProximityPref> = {
   "무관": "ANY",
 };
 
+// 서버 enum 값을 화면 라벨로 되돌리기 위한 역매핑
+const R_VIEWPOINT_MAP = Object.fromEntries(
+  Object.entries(VIEWPOINT_MAP).map(([label, value]) => [value, label]),
+) as Record<Viewpoint, ViewPreference>;
+
+const R_SEAT_HEIGHT_MAP = Object.fromEntries(
+  Object.entries(SEAT_HEIGHT_MAP).map(([label, value]) => [value, label]),
+) as Record<SeatHeight, HeightPreference>;
+
+const R_SECTION_MAP = Object.fromEntries(
+  Object.entries(SECTION_MAP).map(([label, value]) => [value, label]),
+) as Record<Section, ZonePreference>;
+
+const R_CHEER_MAP = Object.fromEntries(
+  Object.entries(CHEER_MAP).map(([label, value]) => [value, label]),
+) as Record<CheerProximityPref, CheerPreference>;
+
 export default function SeatStyleOnboardingPage() {
   const router = useRouter();
   const pathname = usePathname();
@@ -130,25 +147,41 @@ export default function SeatStyleOnboardingPage() {
   const user = useAuthStore((s) => s.user);
   const checkedRef = useRef(false);
 
-  const [view, setView] = useState<ViewPreference[]>([]);
-  const [cheer, setCheer] = useState<CheerPreference[]>([]);
-  const [height, setHeight] = useState<HeightPreference[]>([]);
-  const [zone, setZone] = useState<ZonePreference[]>([]);
-  const [isClubOpen, setIsClubOpen] = useState(false);
-  const [selectedClub, setSelectedClub] = useState<(typeof clubOptions)[number] | null>(null);
-
-  const preferredBlockIds = useOnboardingPrefStore((s) => s.preferredBlockIds);
+  const preferredBlockIds = useOnboardingPrefStore((s) => s.preferredBlockIds); // store에 저장된 값이 초기값
+  const favoriteClubId = useOnboardingPrefStore((s) => s.favoriteClubId); // store에 저장된 값이 초기값
+  const cheerProximityPref = useOnboardingPrefStore((s) => s.cheerProximityPref); // store에 저장된 값이 초기값
+  const viewpoints = useOnboardingPrefStore((s) => s.viewpoints); // store에 저장된 값이 초기값
+  const optionDraft = useOnboardingPrefStore((s) => s.optionDraft); // store에 저장된 값이 초기값
   const setFavoriteClubId = useOnboardingPrefStore((s) => s.setFavoriteClubId);
   const setCheerProximityPref = useOnboardingPrefStore((s) => s.setCheerProximityPref);
   const setViewpoints = useOnboardingPrefStore((s) => s.setViewpoints);
   const setOptionDraft = useOnboardingPrefStore((s) => s.setOptionDraft);
 
+  // 다시 페이지에 들어오면 이전 선택값이 local state에 삽입
+  const [view, setView] = useState<ViewPreference[]>(() =>
+    viewpoints.map((item) => R_VIEWPOINT_MAP[item]),
+  );
+  const [cheer, setCheer] = useState<CheerPreference[]>(() =>
+    cheerProximityPref ? [R_CHEER_MAP[cheerProximityPref]] : [],
+  );
+  const [height, setHeight] = useState<HeightPreference[]>(() => [
+    R_SEAT_HEIGHT_MAP[optionDraft.seatHeight],
+  ]);
+  const [zone, setZone] = useState<ZonePreference[]>(() => [
+    R_SECTION_MAP[optionDraft.section],
+  ]);
+  const [isClubOpen, setIsClubOpen] = useState(false);
+  const [selectedClub, setSelectedClub] = useState<
+    (typeof clubOptions)[number] | null
+  >(() =>
+    favoriteClubId !== null
+      ? clubOptions.find((club) => club.id === favoriteClubId) ?? null
+      : null,
+  );
+
   const canGoNext = useMemo(() => {
     return preferredBlockIds.length >= 1 && view.length >= 1 && Boolean(selectedClub) && cheer.length === 1;
   }, [preferredBlockIds, view, selectedClub, cheer]);
-
-  if (!bootstrapped) return null;
-  if (!accessToken || !user) return null;
 
   const handlePrev = () => router.back();
 
@@ -202,6 +235,9 @@ export default function SeatStyleOnboardingPage() {
       }
     })();
   }, [bootstrapped, accessToken, user, router, pathname, sp]);
+
+  if (!bootstrapped) return null;
+  if (!accessToken || !user) return null;
 
   return (
     <div

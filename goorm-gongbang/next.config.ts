@@ -18,6 +18,8 @@ const nextConfig = {
 
   // 외부 이미지 도메인 허용 (S3 클럽 로고)
   images: {
+    qualities: [25, 30, 35, 45, 60, 75],
+    minimumCacheTTL: 60 * 60 * 24 * 30,
     remotePatterns: [
       {
         protocol: "https",
@@ -60,6 +62,7 @@ const nextConfig = {
               "font-src 'self' https://fonts.gstatic.com",
               "img-src 'self' data: blob: https://assets.playball.one https://*.kakaocdn.net https://cdn.your-domain.com https://goormgb-assets.s3.ap-northeast-2.amazonaws.com",
               "connect-src 'self' https://api.playball.one https://api.staging.playball.one https://api.goormgb.space https://*.faro-collector.grafana.net",
+              "frame-src 'self' https://vercel.live",
               "frame-ancestors 'none'",
               "base-uri 'self'",
               "form-action 'self'",
