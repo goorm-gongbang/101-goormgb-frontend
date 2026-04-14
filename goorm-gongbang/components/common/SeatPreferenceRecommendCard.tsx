@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { Toggle } from "@/components/common/Toggle";
 import { DropDown } from "@/components/common/DropDown";
@@ -30,6 +30,43 @@ export function SeatPreferenceRecommendCard({
 }: Props) {
 
   const [isNearbySeatInfoOpen, setIsNearbySeatInfoOpen] = useState(false);
+  const nearbySeatInfoButtonRef = useRef<HTMLButtonElement | null>(null);
+  const [nearbySeatInfoPosition, setNearbySeatInfoPosition] = useState({ left: 0, top: 0, width: 520 });
+
+  const updateNearbySeatInfoPosition = useCallback(() => {
+    const button = nearbySeatInfoButtonRef.current;
+    if (!button) return;
+
+    const viewportPadding = 16;
+    const tooltipWidth = Math.min(
+      520,
+      Math.max(0, window.innerWidth - viewportPadding * 2),
+    );
+    const rect = button.getBoundingClientRect();
+    const left = Math.min(
+      Math.max(rect.left, viewportPadding),
+      window.innerWidth - tooltipWidth - viewportPadding,
+    );
+
+    setNearbySeatInfoPosition({
+      left,
+      top: rect.bottom + 8,
+      width: tooltipWidth,
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!isNearbySeatInfoOpen) return;
+
+    updateNearbySeatInfoPosition();
+    window.addEventListener("resize", updateNearbySeatInfoPosition);
+    window.addEventListener("scroll", updateNearbySeatInfoPosition, true);
+
+    return () => {
+      window.removeEventListener("resize", updateNearbySeatInfoPosition);
+      window.removeEventListener("scroll", updateNearbySeatInfoPosition, true);
+    };
+  }, [isNearbySeatInfoOpen, updateNearbySeatInfoPosition]);
 
   return (
     <div
@@ -41,7 +78,7 @@ export function SeatPreferenceRecommendCard({
       <div className="inline-flex h-8 w-full items-center justify-between">
         <div className="flex items-center justify-center gap-2">
           <div className="text-base font-semibold leading-6 text-[var(--foundation-neutral-black)] font-['Pretendard']">
-            사용자 선호 좌석 추천
+            사용자 선호 구역 추천
             <div className="text-xs font-normal leading-4 text-[var(--text-info-n600)] font-['Pretendard']">
               {enabled ? (
                 "설정한 선호 조건에 맞는 구역을 먼저 보여드려요"
@@ -82,8 +119,12 @@ export function SeatPreferenceRecommendCard({
               </div>
 
               <button
+                ref={nearbySeatInfoButtonRef}
                 type="button"
-                onMouseEnter={() => setIsNearbySeatInfoOpen(true)}
+                onMouseEnter={() => {
+                  updateNearbySeatInfoPosition();
+                  setIsNearbySeatInfoOpen(true);
+                }}
                 onMouseLeave={() => setIsNearbySeatInfoOpen(false)}
                 className="relative h-4 w-4 cursor-pointer overflow-visible"
                 aria-expanded={isNearbySeatInfoOpen}
@@ -94,7 +135,8 @@ export function SeatPreferenceRecommendCard({
                 {isNearbySeatInfoOpen && (
                   <div
                     id="nearby-seat-info"
-                    className="absolute left-0 top-full z-20 mt-2 inline-flex w-[520px] flex-col items-start gap-2 rounded-lg bg-white p-3 shadow-[2px_3px_10px_0px_rgba(0,0,0,0.10)] outline outline-1 outline-offset-[-1px] outline-[var(--stroke-interactive-neutral-default)]"
+                    style={nearbySeatInfoPosition}
+                    className="fixed z-50 inline-flex flex-col items-start gap-2 rounded-lg bg-white p-3 text-left shadow-[2px_3px_10px_0px_rgba(0,0,0,0.10)] outline outline-1 outline-offset-[-1px] outline-[var(--stroke-interactive-neutral-default)]"
                   >
                     <div className="text-sm font-semibold leading-5 text-[var(--foundation-neutral-240)] font-['Pretendard']">
                       인근 좌석 추천이란?
