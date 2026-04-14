@@ -1090,22 +1090,24 @@ function RecommendPageContent({ matchId }: { matchId: number | null }) {
           </div>
 
           <div className="flex w-full shrink-0 flex-col items-end gap-6 lg:w-[360px] xl:w-[400px] 2xl:w-[460px]">
-            <div className="w-full rounded-2xl bg-[var(--foundation-neutral-white)] px-6 py-4 outline outline-1 outline-offset-[-1px] outline-[var(--stroke-interactive-neutral-default)]">
-              <div className="flex h-8 w-full items-center justify-between">
-                <div className="text-base font-semibold leading-6 text-black">
-                  사용자 선호 구역 추천
+            {recommendationEnabled && (
+              <div className="w-full rounded-2xl bg-[var(--foundation-neutral-white)] px-6 py-4 outline outline-1 outline-offset-[-1px] outline-[var(--stroke-interactive-neutral-default)]">
+                <div className="flex h-8 w-full items-center justify-between">
+                  <div className="text-base font-semibold leading-6 text-black">
+                    사용자 선호 구역 추천
+                  </div>
+                  <Toggle
+                    checked={isPreferredRecommendOn}
+                    onCheckedChange={(next) => {
+                      setIsPreferredRecommendOn(next);
+                      setHoveredRecommendBlock(null);
+                      setHoveredSeatBlocks([]);
+                      resetManualSeatSelection();
+                    }}
+                  />
                 </div>
-                <Toggle
-                  checked={isPreferredRecommendOn}
-                  onCheckedChange={(next) => {
-                    setIsPreferredRecommendOn(next);
-                    setHoveredRecommendBlock(null);
-                    setHoveredSeatBlocks([]);
-                    resetManualSeatSelection();
-                  }}
-                />
               </div>
-            </div>
+            )}
 
             {isProtectedSeatAccessBlocked ? (
               <div className="flex w-full flex-col items-start gap-4 self-stretch">
