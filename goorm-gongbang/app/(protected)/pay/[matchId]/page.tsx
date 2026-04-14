@@ -309,6 +309,16 @@ export default function Page() {
 
     const hasMatchMeta = formatMatchAt(match?.matchAt) && matchTitle && match?.stadium.koName;
 
+    const [touched, setTouched] = useState({
+        email: false,
+        phone: false,
+        birth: false,
+    });
+    const showEmailError = touched.email && email.trim().length > 0 && !isEmailValid;
+    const showPhoneError = touched.phone && phoneDigits.length > 0 && !isPhoneValid;
+    const showBirthError = touched.birth && birthDigits.length > 0 && !isBirthValid;
+
+
     const handleSubmitPayment = async () => {
         if (!canSubmitPayment || !matchId || !createdOrderId || isCreatingOrder) return;
 
@@ -526,8 +536,8 @@ export default function Page() {
             </div>
 
             <div className="w-full flex justify-center px-4 sm:px-6 md:px-8 xl:px-12 py-8">
-                <div className="w-full max-w-[1440px] flex flex-col xl:flex-row justify-start items-start gap-8 xl:gap-14">
-                    <div className="w-full xl:min-w-[760px] xl:max-w-[1000px] xl:shrink-0 inline-flex flex-col justify-start items-start gap-8">
+                <div className="w-full max-w-[1440px] grid grid-cols-1 gap-8 xl:grid-cols-[minmax(0,1fr)_384px] xl:gap-14">
+                    <div className="min-w-0 inline-flex flex-col justify-start items-start gap-8">
                         {step === "ticket" ? (
                             <>
                                 <div className="self-stretch flex flex-col justify-start items-start gap-4">
@@ -633,13 +643,23 @@ export default function Page() {
                                                 <div className="justify-center text-[var(--foundation-neutral-240)] text-sm font-medium font-['Pretendard'] leading-5">이메일</div>
                                             </div>
 
-                                            <input
-                                                type="text"
-                                                placeholder="이메일 입력"
-                                                value={email}
-                                                onChange={(e) => setEmail(e.target.value)}
-                                                className="flex-1 h-10 px-4 py-2 bg-[var(--foundation-neutral-white)] rounded-md outline outline-1 outline-offset-[-1px] outline-[var(--foundation-neutral-900)] text-sm font-medium font-['Pretendard'] leading-5 placeholder:opacity-80"
-                                            />
+                                            <div className="flex-1">
+                                                <input
+                                                    type="text"
+                                                    placeholder="이메일 입력"
+                                                    value={email}
+                                                    onChange={(e) => setEmail(e.target.value)}
+                                                    onBlur={() => setTouched((prev) => ({ ...prev, email: true }))}
+                                                    aria-invalid={showEmailError}
+                                                    aria-describedby={showEmailError ? "email-error" : undefined}
+                                                    className="h-10 w-full px-4 py-2 bg-[var(--foundation-neutral-white)] rounded-md outline outline-1 outline-offset-[-1px] outline-[var(--foundation-neutral-900)] text-sm font-medium font-['Pretendard'] leading-5 placeholder:opacity-80 aria-invalid:outline-[var(--foundation-red-500)] aria-invalid:ring-1 aria-invalid:ring-[var(--foundation-red-500)]"
+                                                />
+                                                {showEmailError && (
+                                                    <p id="email-error" className="mt-1 text-xs font-medium leading-4 text-[var(--foundation-red-500)]">
+                                                        유효하지 않은 입력값입니다
+                                                    </p>
+                                                )}
+                                            </div>
                                         </div>
 
                                         <div className="self-stretch inline-flex justify-start items-center gap-2">
@@ -647,14 +667,26 @@ export default function Page() {
                                                 <div className="justify-center text-[var(--foundation-neutral-240)] text-sm font-medium font-['Pretendard'] leading-5">연락처</div>
                                             </div>
 
-                                            <input
-                                                type="text"
-                                                inputMode="numeric"
-                                                placeholder="연락처 입력"
-                                                value={number}
-                                                onChange={(e) => setNumber(formatPhone(e.target.value))}
-                                                className="flex-1 h-10 px-4 py-2 bg-[var(--foundation-neutral-white)] rounded-md outline outline-1 outline-offset-[-1px] outline-[var(--foundation-neutral-900)] text-sm font-medium font-['Pretendard'] leading-5 placeholder:opacity-80"
-                                            />
+                                            <div className="flex-1">
+                                                <input
+                                                    type="text"
+                                                    inputMode="numeric"
+                                                    placeholder="연락처 입력"
+                                                    value={number}
+                                                    onChange={(e) => setNumber(formatPhone(e.target.value))}
+                                                    onBlur={() => setTouched((prev) => ({ ...prev, phone: true }))}
+                                                    aria-invalid={showPhoneError}
+                                                    aria-describedby={showPhoneError ? "phone-error" : undefined}
+                                                    className="h-10 w-full px-4 py-2 bg-[var(--foundation-neutral-white)] rounded-md outline outline-1 outline-offset-[-1px] outline-[var(--foundation-neutral-900)] text-sm font-medium font-['Pretendard'] leading-5 placeholder:opacity-80 aria-invalid:outline-[var(--foundation-red-500)] aria-invalid:ring-1 aria-invalid:ring-[var(--foundation-red-500)]"
+                                                />
+
+                                                {showPhoneError && (
+                                                    <p id="phone-error" className="mt-1 text-xs font-medium leading-4 text-[var(--foundation-red-500)]">
+                                                        유효하지 않은 입력값입니다
+                                                    </p>
+                                                )}
+                                            </div>
+
                                         </div>
 
                                         <div className="self-stretch inline-flex justify-start items-center gap-2">
@@ -662,13 +694,25 @@ export default function Page() {
                                                 <div className="justify-center whitespace-nowrap text-[var(--foundation-neutral-240)] text-sm font-medium font-['Pretendard'] leading-5">생년월일</div>
                                             </div>
 
-                                            <input
-                                                type="text"
-                                                placeholder="생년월일 입력 (YYMMDD)"
-                                                value={birth}
-                                                onChange={(e) => setBirth(formatBirth6(e.target.value))}
-                                                className="flex-1 h-10 px-4 py-2 bg-[var(--foundation-neutral-white)] rounded-md outline outline-1 outline-offset-[-1px] outline-[var(--foundation-neutral-900)] text-sm font-medium font-['Pretendard'] leading-5 placeholder:opacity-80"
-                                            />
+                                            <div className="flex-1">
+                                                <input
+                                                    type="text"
+                                                    placeholder="생년월일 입력 (YYMMDD)"
+                                                    value={birth}
+                                                    onChange={(e) => setBirth(formatBirth6(e.target.value))}
+                                                    onBlur={() => setTouched((prev) => ({ ...prev, birth: true }))}
+                                                    aria-invalid={showBirthError}
+                                                    aria-describedby={showBirthError ? "birth-error" : undefined}
+                                                    className="h-10 w-full px-4 py-2 bg-[var(--foundation-neutral-white)] rounded-md outline outline-1 outline-offset-[-1px] outline-[var(--foundation-neutral-900)] text-sm font-medium font-['Pretendard'] leading-5 placeholder:opacity-80 aria-invalid:outline-[var(--foundation-red-500)] aria-invalid:ring-1 aria-invalid:ring-[var(--foundation-red-500)]"
+                                                />
+
+                                                {showBirthError && (
+                                                    <p id="birth-error" className="mt-1 text-xs font-medium leading-4 text-[var(--foundation-red-500)]">
+                                                        유효하지 않은 입력값입니다
+                                                    </p>
+                                                )}
+                                            </div>
+
                                         </div>
                                     </div>
                                 </div>
@@ -1160,7 +1204,7 @@ export default function Page() {
                             </div>
                         )}
                     </div>
-                    <div className="w-full xl:w-96 xl:shrink-0 self-stretch shadow-[0px_1px_3px_0px_rgba(0,0,0,0.05)] inline-flex flex-col justify-start items-start gap-4 overflow-hidden">
+                    <div className="min-w-0 w-full xl:w-auto xl:shrink-0 self-stretch shadow-[0px_1px_3px_0px_rgba(0,0,0,0.05)] inline-flex flex-col justify-start items-start gap-4 overflow-hidden">
                         <div className="self-stretch inline-flex justify-end items-center gap-2">
                             <div className="flex-1 justify-center text-[var(--foundation-neutral-240)] text-xl font-bold font-['Pretendard'] leading-7">MY 예매 정보</div>
                             <div className="text-right justify-center text-[var(--foundation-neutral-240)] text-sm font-medium font-['Pretendard'] leading-5">남은 결제 시간</div>
