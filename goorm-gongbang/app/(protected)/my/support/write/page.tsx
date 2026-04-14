@@ -71,7 +71,7 @@ export default function SupportWritePage() {
     }, []);
     const onlyDigits = (v: string) => v.replace(/\D/g, "");
     const phoneDigits = onlyDigits(phoneNumber);
-    const isPhoneValid = phoneNumber.length === 0 || (/^01[0-9]\d{7,8}$/.test(phoneDigits) && (phoneDigits.length === 10 || phoneDigits.length === 11));
+    const isPhoneValid = phoneNumber.length === 0 || (/^01[0-9]\d{7,8}$/.test(phoneDigits) && phoneDigits.length === 11);
     const formatPhone = (value: string) => {
         const digits = value.replace(/\D/g, "").slice(0, 11); // 숫자만, 최대 11자리
         if (digits.length < 4) return digits;
@@ -273,8 +273,16 @@ export default function SupportWritePage() {
                                     value={phoneNumber}
                                     onChange={(e) => setPhoneNumber(formatPhone(e.target.value))}
                                     placeholder="010-0000-0000"
-                                    className="h-14 rounded-[12px] border-[#E0E0E0] px-4 text-[15px] focus-visible:border-[var(--foundation-primary-500)] focus-visible:ring-0 transition-all"
+                                    className={cn(
+                                        "h-14 rounded-[12px] px-4 text-[15px] focus-visible:ring-0 transition-all",
+                                        !isPhoneValid
+                                            ? "border-red-400 focus-visible:border-red-400"
+                                            : "border-[#E0E0E0] focus-visible:border-[var(--foundation-primary-500)]"
+                                    )}
                                 />
+                                {!isPhoneValid && (
+                                    <p className="text-xs text-red-400 ml-1">010-****-**** 형식으로 입력해주세요</p>
+                                )}
                             </div>
                         </div>
                     </div>
