@@ -56,6 +56,9 @@ export default function SupportWritePage() {
     const [writerName, setWriterName] = useState("");
     const [writerEmail, setWriterEmail] = useState("");
     const [phoneNumber, setPhoneNumber] = useState("");
+    const [phoneTouched, setPhoneTouched] = useState(false);
+    const [phoneFocused, setPhoneFocused] = useState(false);
+
 
     useEffect(() => {
         const fetchUserData = async () => {
@@ -72,6 +75,7 @@ export default function SupportWritePage() {
     const onlyDigits = (v: string) => v.replace(/\D/g, "");
     const phoneDigits = onlyDigits(phoneNumber);
     const isPhoneValid = phoneNumber.length === 0 || (/^01[0-9]\d{7,8}$/.test(phoneDigits) && phoneDigits.length === 11);
+    const showPhoneError = phoneTouched && !phoneFocused && !isPhoneValid;
     const formatPhone = (value: string) => {
         const digits = value.replace(/\D/g, "").slice(0, 11); // 숫자만, 최대 11자리
         if (digits.length < 4) return digits;
@@ -269,18 +273,22 @@ export default function SupportWritePage() {
                             </div>
                             <div className="flex flex-col gap-2 md:col-span-2">
                                 <Label className="text-sm font-semibold text-[#666] ml-1">휴대폰 번호</Label>
-                                <Input
+                                <input
+                                    type="text"
+                                    inputMode="numeric"
+                                    placeholder="010-0000-0000"
                                     value={phoneNumber}
                                     onChange={(e) => setPhoneNumber(formatPhone(e.target.value))}
-                                    placeholder="010-0000-0000"
+                                    onFocus={() => { setPhoneTouched(true); setPhoneFocused(true); }}
+                                    onBlur={() => setPhoneFocused(false)}
                                     className={cn(
-                                        "h-14 rounded-[12px] px-4 text-[15px] focus-visible:ring-0 transition-all",
-                                        !isPhoneValid
-                                            ? "border-red-400 focus-visible:border-red-400"
-                                            : "border-[#E0E0E0] focus-visible:border-[var(--foundation-primary-500)]"
+                                        "h-14 w-full px-4 py-2 bg-[var(--foundation-neutral-white)] rounded-[12px] outline outline-1 outline-offset-[-1px] text-sm font-medium font-['Pretendard'] leading-5 placeholder:opacity-80",
+                                        showPhoneError
+                                            ? "outline-red-400"
+                                            : "outline-[var(--foundation-neutral-900)]"
                                     )}
                                 />
-                                {!isPhoneValid && (
+                                {showPhoneError && (
                                     <p className="text-xs text-red-400 ml-1">010-****-**** 형식으로 입력해주세요</p>
                                 )}
                             </div>
