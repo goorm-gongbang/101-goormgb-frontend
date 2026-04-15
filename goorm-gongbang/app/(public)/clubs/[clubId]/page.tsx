@@ -290,7 +290,7 @@ export default function ClubDetailPage() {
           <div className="flex flex-col justify-end h-full gap-6 sm:gap-8 flex-1 w-full lg:min-w-0 lg:ml-4 xl:ml-10 mb-2">
             <div
               className={cn(
-                " font-semibold tracking-wider text-xs sm:text-sm text-center lg:text-left",
+                "px-3 sm:px-4 font-semibold tracking-wider text-xs sm:text-sm text-center lg:text-left",
                 accentTextClass,
               )}
             >
