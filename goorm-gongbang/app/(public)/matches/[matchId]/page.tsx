@@ -20,6 +20,7 @@ import { LoginRequiredModal } from "@/components/common/LoginRequiredModal";
 import { PreferredZoneModal } from "@/components/common/PreferredZoneModal";
 import Image from "next/image";
 import { toast } from "sonner";
+import { getBotToken } from "@/lib/client/bot-token";
 import { useTelemetry } from "@/lib/telemetry";
 import { TelemetryProvider } from "@/lib/telemetry/context";
 import { VQAChallenge } from "@/lib/telemetry/components";
@@ -182,9 +183,10 @@ export default function MatchDetailSectionResponsive({
     try {
       const bookingResponse: BookingOptionsResponse = await saveBookingOptions(matchId, bookingBody);
 
-      // TODO(local-dev): Cloudflare Turnstile 미연동 상태라 로컬 통합 테스트용 dev token으로 precheck를 통과시킨다.
-      // 실제 연동 시 Turnstile 발급 토큰으로 교체 필요.
-      const precheckPassed = await precheck("ok-local-dev");
+      // 자체 X-Bot-Token (Canvas FP + HMAC) 으로 서버 2-way 검증.
+      // 과거 "ok-local-dev" 하드코딩 제거 (1차 pentest M-10).
+      const botToken = await getBotToken();
+      const precheckPassed = await precheck(botToken);
       if (!precheckPassed) {
         toast.error("보안 사전 검증에 실패했습니다. 잠시 후 다시 시도해 주세요.");
         return;
