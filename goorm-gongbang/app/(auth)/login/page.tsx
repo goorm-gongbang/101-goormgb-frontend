@@ -133,6 +133,10 @@ export default function LoginPage() {
     }
   };
 
+  if (!bootstrapped || isLoggedIn) {
+    return null;
+  }
+  
   return (
     <main className="min-h-screen bg-white">
       <div className="mx-auto flex min-h-screen w-full items-center justify-center px-4 py-10 sm:px-6">

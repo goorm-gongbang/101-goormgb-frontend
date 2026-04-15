@@ -117,7 +117,8 @@ function getPriceTextBySeatLabel(seatLabel: string) {
 }
 
 const getSeatColor = (sectionName: string): SeatRecommendItem["color"] => {
-  if (sectionName.includes("익사이팅존")) return "gray";
+  if (sectionName.includes("익사이팅존")) return "exiting";
+  if (sectionName.includes("테라존(중앙 프리미엄석)")) return "tera";
   if (sectionName.includes("블루석")) return "blue";
   if (sectionName.includes("오렌지석")) return "orange";
   if (sectionName.includes("레드석")) return "red";

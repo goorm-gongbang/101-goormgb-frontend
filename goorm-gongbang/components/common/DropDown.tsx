@@ -82,8 +82,6 @@ export function DropDown({
                     contentClassName
                 )}
             >
-                <div className="self-stretch h-px my-1 border border-[var(--foundation-neutral-880)]" />
-
                 {options.map((n) => {
                     const selected = n === safeValue;
                     return (
