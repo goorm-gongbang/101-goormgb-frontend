@@ -1,7 +1,7 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Check, Copy, ExternalLink } from "lucide-react";
+import { Check, Copy } from "lucide-react";
 import { PrimaryButton, SecondaryButton } from "@/components/common/Button";
 import { RefundPolicyModal } from "@/components/common/RefundPolicyModal";
 import { useSearchParams } from "next/navigation";
