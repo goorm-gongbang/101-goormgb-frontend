@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { SquarePen, Check } from "lucide-react";
-import Image from "next/image";
 import { getAccountInfo, updateNickname } from "@/lib/services";
 
 /* ===========================
@@ -68,12 +67,10 @@ export function ProfileEditForm() {
                     {profileImageUrl && (
                         <div className="flex items-center justify-between">
                             <span className="text-sm font-medium text-[#1A1A1A]">프로필 이미지</span>
-                            <Image
+                            <img
                                 src={profileImageUrl}
                                 alt="프로필 이미지"
-                                width={40}
-                                height={40}
-                                className="rounded-full object-cover"
+                                className="w-10 h-10 rounded-full object-cover"
                             />
                         </div>
                     )}
