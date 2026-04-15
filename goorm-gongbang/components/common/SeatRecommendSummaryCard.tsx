@@ -2,7 +2,7 @@
 
 import { cn } from "@/lib/utils";
 
-type SeatColor = "orange" | "red" | "navy" | "green" | "gray" | "purple" | "blue";
+type SeatColor = "exiting" | "tera" |  "orange" | "red" | "navy" | "green" | "gray" | "purple" | "blue";
 
 export type SeatRecommendItem = {
     id: string;
@@ -25,6 +25,10 @@ type Props = {
 };
 
 const badgeClassMap: Record<SeatColor, string> = {
+    exiting:
+        "bg-neutral-500 outline-zinc-500",
+    tera:
+        "bg-blue-700 outline-blue-500",
     orange:
         "bg-[var(--foundation-orange-500)] outline-[var(--foundation-orange-400)]",
     red:

@@ -71,7 +71,7 @@ export function SeatPreferenceRecommendCard({
   return (
     <div
       className={cn(
-        "inline-flex w-full flex-col items-start justify-start gap-4 rounded-2xl bg-[var(--foundation-neutral-white)] py-4",
+        "inline-flex w-full flex-col items-start justify-start gap-4 border-t border-[var(--foundation-neutral-900)] bg-[var(--foundation-neutral-white)] py-4",
         className,
       )}
     >

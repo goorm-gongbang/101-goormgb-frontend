@@ -1,11 +1,11 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Check, ExternalLink } from "lucide-react";
+import { Check, Copy, ExternalLink } from "lucide-react";
 import { PrimaryButton, SecondaryButton } from "@/components/common/Button";
 import { RefundPolicyModal } from "@/components/common/RefundPolicyModal";
 import { useSearchParams } from "next/navigation";
-
+import { AddressCopiedToast } from "@/components/common/match-detail/tabs/AddressCopiedToast";
 
 export default function BankAccountPage() {
     const [isRefundModalOpen, setIsRefundModalOpen] = useState(false);
@@ -29,22 +29,34 @@ export default function BankAccountPage() {
         }
     })();
 
-
-    const naverMapUrl = `https://map.naver.com/p/search/${encodeURIComponent(stadiumAddress)}`;
-
     const formatMatchAt = (value?: string) => {
         if (!value) return "-";
+
         const date = new Date(value);
-        return new Intl.DateTimeFormat("ko-KR", {
+        if (Number.isNaN(date.getTime())) return "-";
+
+        const dateText = new Intl.DateTimeFormat("ko-KR", {
             year: "numeric",
             month: "long",
             day: "numeric",
+            timeZone: "Asia/Seoul",
+        }).format(date);
+
+        const weekdayText = new Intl.DateTimeFormat("ko-KR", {
             weekday: "short",
+            timeZone: "Asia/Seoul",
+        }).format(date);
+
+        const timeText = new Intl.DateTimeFormat("ko-KR", {
             hour: "2-digit",
             minute: "2-digit",
             hour12: false,
+            timeZone: "Asia/Seoul",
         }).format(date);
+
+        return `${dateText} (${weekdayText}) ${timeText}`;
     };
+
 
     const formatCancelDeadline = (value?: string) => {
         if (!value) return "-";
@@ -78,19 +90,48 @@ export default function BankAccountPage() {
         cancelDeadline.setDate(cancelDeadline.getDate() + 1);
         cancelDeadline.setHours(23, 59, 0, 0);
 
-        return new Intl.DateTimeFormat("ko-KR", {
+        const dateText = new Intl.DateTimeFormat("ko-KR", {
             year: "numeric",
             month: "long",
             day: "numeric",
+            timeZone: "Asia/Seoul",
+        }).format(cancelDeadline);
+
+        const weekdayText = new Intl.DateTimeFormat("ko-KR", {
             weekday: "short",
+            timeZone: "Asia/Seoul",
+        }).format(cancelDeadline);
+
+        const timeText = new Intl.DateTimeFormat("ko-KR", {
             hour: "2-digit",
             minute: "2-digit",
             hour12: false,
             timeZone: "Asia/Seoul",
         }).format(cancelDeadline);
+
+        return `${dateText} (${weekdayText}) ${timeText}`;
     };
 
+
     const won = (n: number) => `${n.toLocaleString("ko-KR")} 원`;
+
+    const [showCopiedToast, setShowCopiedToast] = useState(false);
+    const handleCopy = () => {
+        if (stadiumAddress) {
+            navigator.clipboard.writeText(stadiumAddress);
+            setShowCopiedToast(true);
+        }
+    };
+
+    useEffect(() => {
+        if (!showCopiedToast) return;
+
+        const timer = setTimeout(() => {
+            setShowCopiedToast(false);
+        }, 2000);
+
+        return () => clearTimeout(timer);
+    }, [showCopiedToast]);
 
     return (
         <div className="min-h-screen bg-[var(--foundation-neutral-980)] px-4 py-8">
@@ -133,7 +174,7 @@ export default function BankAccountPage() {
                                     입금 계좌
                                 </div>
                                 <div className="flex-1 text-lg font-semibold leading-6 text-[var(--foundation-neutral-240)]">
-                                    국민 000-0000-0000-00
+                                    {searchParams.get("bank")} {searchParams.get("accountNumber")}
                                 </div>
                             </div>
 
@@ -142,7 +183,7 @@ export default function BankAccountPage() {
                                     예금주
                                 </div>
                                 <div className="flex-1 text-lg font-semibold leading-6 text-[var(--foundation-neutral-240)]">
-                                    윤정빈
+                                    {searchParams.get("holder")}
                                 </div>
                             </div>
                         </div>
@@ -164,15 +205,13 @@ export default function BankAccountPage() {
                                         {stadiumName || "-"}
                                     </div>
 
-                                    <a
-                                        href={naverMapUrl}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="mt-0.5 inline-flex items-center gap-1 text-xs leading-4 text-[var(--foundation-neutral-600)]"
+                                    <div
+                                        className="cursor-pointer mt-0.5 inline-flex items-center gap-1 text-xs leading-4 text-[var(--foundation-neutral-600)]"
+                                        onClick={handleCopy}
                                     >
                                         <span className="underline">{stadiumAddress || "-"}</span>
-                                        <ExternalLink className="h-4 w-4" strokeWidth={1.5} />
-                                    </a>
+                                        <Copy className="h-4 w-4" strokeWidth={1.5} />
+                                    </div>
                                 </div>
                             </div>
 
@@ -222,16 +261,14 @@ export default function BankAccountPage() {
                                 <div className="h-px bg-[var(--stroke-interactive-neutral-default)]" />
 
                                 <div className="flex flex-col gap-0.5">
-                                    {seatRows.map((seat) => (
-                                        <div key={seat.label} className="flex justify-between gap-4">
-                                            <div className="text-sm font-medium text-[var(--foundation-neutral-240)]">
-                                                {seat.label || "-"}
-                                            </div>
-                                            <div className="text-sm font-medium text-[var(--foundation-neutral-240)]">
-                                                1개
-                                            </div>
+                                    <div className="flex justify-between gap-4">
+                                        <div className="text-sm font-medium text-[var(--foundation-neutral-240)]">
+                                            티켓 금액
                                         </div>
-                                    ))}
+                                        <div className="text-sm font-medium text-[var(--foundation-neutral-240)]">
+                                            {won(totalAmount - fee)}
+                                        </div>
+                                    </div>
 
                                     <div className="flex justify-between">
                                         <div className="text-sm font-medium leading-5 text-[var(--foundation-neutral-240)]">
@@ -296,6 +333,7 @@ export default function BankAccountPage() {
                     </div>
                 </div>
             </div>
+            {showCopiedToast && <AddressCopiedToast />}
         </div>
     );
 }

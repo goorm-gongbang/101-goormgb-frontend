@@ -625,8 +625,8 @@ export default function Page() {
                                     </div>
 
                                     <div className="self-stretch p-4 bg-[var(--background-white)] rounded-[10px] outline outline-1 outline-offset-[-1px] outline-[var(--foundation-neutral-940)] grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                        <div className="self-stretch inline-flex justify-start items-center gap-2">
-                                            <div className="w-16 self-stretch flex justify-start items-center gap-2">
+                                        <div className="self-stretch inline-flex justify-start items-start gap-2">
+                                            <div className="w-16 h-10 flex justify-start items-center gap-2">
                                                 <div className="justify-center text-[var(--foundation-neutral-240)] text-base font-medium font-['Pretendard'] leading-6">이름</div>
                                             </div>
                                             <input
@@ -638,9 +638,11 @@ export default function Page() {
                                             />
                                         </div>
 
-                                        <div className="self-stretch inline-flex justify-start items-center gap-2">
-                                            <div className="w-16 self-stretch flex justify-start items-center gap-2">
-                                                <div className="justify-center text-[var(--foundation-neutral-240)] text-sm font-medium font-['Pretendard'] leading-5">이메일</div>
+                                        <div className="self-stretch inline-flex justify-start items-start gap-2">
+                                            <div className="w-16 h-10 flex justify-start items-center gap-2">
+                                                <div className="justify-center text-[var(--foundation-neutral-240)] text-sm font-medium font-['Pretendard'] leading-5">
+                                                    이메일
+                                                </div>
                                             </div>
 
                                             <div className="flex-1">
@@ -651,20 +653,26 @@ export default function Page() {
                                                     onChange={(e) => setEmail(e.target.value)}
                                                     onBlur={() => setTouched((prev) => ({ ...prev, email: true }))}
                                                     aria-invalid={showEmailError}
-                                                    aria-describedby={showEmailError ? "email-error" : undefined}
+                                                    aria-describedby="email-error"
                                                     className="h-10 w-full px-4 py-2 bg-[var(--foundation-neutral-white)] rounded-md outline outline-1 outline-offset-[-1px] outline-[var(--foundation-neutral-900)] text-sm font-medium font-['Pretendard'] leading-5 placeholder:opacity-80 aria-invalid:outline-[var(--foundation-red-500)] aria-invalid:ring-1 aria-invalid:ring-[var(--foundation-red-500)]"
                                                 />
-                                                {showEmailError && (
-                                                    <p id="email-error" className="mt-1 text-xs font-medium leading-4 text-[var(--foundation-red-500)]">
-                                                        유효하지 않은 입력값입니다
-                                                    </p>
-                                                )}
+
+                                                <p
+                                                    id="email-error"
+                                                    className={`mt-1 min-h-4 text-xs font-medium leading-4 text-[var(--foundation-red-500)] ${showEmailError ? "visible" : "invisible"
+                                                        }`}
+                                                >
+                                                    유효하지 않은 입력값입니다
+                                                </p>
                                             </div>
                                         </div>
 
-                                        <div className="self-stretch inline-flex justify-start items-center gap-2">
-                                            <div className="w-16 self-stretch flex justify-start items-center gap-2">
-                                                <div className="justify-center text-[var(--foundation-neutral-240)] text-sm font-medium font-['Pretendard'] leading-5">연락처</div>
+
+                                        <div className="self-stretch inline-flex justify-start items-start gap-2">
+                                            <div className="w-16 h-10 flex justify-start items-center gap-2">
+                                                <div className="justify-center text-[var(--foundation-neutral-240)] text-sm font-medium font-['Pretendard'] leading-5">
+                                                    연락처
+                                                </div>
                                             </div>
 
                                             <div className="flex-1">
@@ -676,22 +684,26 @@ export default function Page() {
                                                     onChange={(e) => setNumber(formatPhone(e.target.value))}
                                                     onBlur={() => setTouched((prev) => ({ ...prev, phone: true }))}
                                                     aria-invalid={showPhoneError}
-                                                    aria-describedby={showPhoneError ? "phone-error" : undefined}
+                                                    aria-describedby="phone-error"
                                                     className="h-10 w-full px-4 py-2 bg-[var(--foundation-neutral-white)] rounded-md outline outline-1 outline-offset-[-1px] outline-[var(--foundation-neutral-900)] text-sm font-medium font-['Pretendard'] leading-5 placeholder:opacity-80 aria-invalid:outline-[var(--foundation-red-500)] aria-invalid:ring-1 aria-invalid:ring-[var(--foundation-red-500)]"
                                                 />
 
-                                                {showPhoneError && (
-                                                    <p id="phone-error" className="mt-1 text-xs font-medium leading-4 text-[var(--foundation-red-500)]">
-                                                        유효하지 않은 입력값입니다
-                                                    </p>
-                                                )}
+                                                <p
+                                                    id="phone-error"
+                                                    className={`mt-1 min-h-4 text-xs font-medium leading-4 text-[var(--foundation-red-500)] ${showPhoneError ? "visible" : "invisible"
+                                                        }`}
+                                                >
+                                                    유효하지 않은 입력값입니다
+                                                </p>
                                             </div>
-
                                         </div>
 
-                                        <div className="self-stretch inline-flex justify-start items-center gap-2">
-                                            <div className="w-16 self-stretch flex justify-start items-center gap-2">
-                                                <div className="justify-center whitespace-nowrap text-[var(--foundation-neutral-240)] text-sm font-medium font-['Pretendard'] leading-5">생년월일</div>
+
+                                        <div className="self-stretch inline-flex justify-start items-start gap-2">
+                                            <div className="w-16 h-10 flex justify-start items-center gap-2">
+                                                <div className="justify-center whitespace-nowrap text-[var(--foundation-neutral-240)] text-sm font-medium font-['Pretendard'] leading-5">
+                                                    생년월일
+                                                </div>
                                             </div>
 
                                             <div className="flex-1">
@@ -702,18 +714,20 @@ export default function Page() {
                                                     onChange={(e) => setBirth(formatBirth6(e.target.value))}
                                                     onBlur={() => setTouched((prev) => ({ ...prev, birth: true }))}
                                                     aria-invalid={showBirthError}
-                                                    aria-describedby={showBirthError ? "birth-error" : undefined}
+                                                    aria-describedby="birth-error"
                                                     className="h-10 w-full px-4 py-2 bg-[var(--foundation-neutral-white)] rounded-md outline outline-1 outline-offset-[-1px] outline-[var(--foundation-neutral-900)] text-sm font-medium font-['Pretendard'] leading-5 placeholder:opacity-80 aria-invalid:outline-[var(--foundation-red-500)] aria-invalid:ring-1 aria-invalid:ring-[var(--foundation-red-500)]"
                                                 />
 
-                                                {showBirthError && (
-                                                    <p id="birth-error" className="mt-1 text-xs font-medium leading-4 text-[var(--foundation-red-500)]">
-                                                        유효하지 않은 입력값입니다
-                                                    </p>
-                                                )}
+                                                <p
+                                                    id="birth-error"
+                                                    className={`mt-1 min-h-4 text-xs font-medium leading-4 text-[var(--foundation-red-500)] ${showBirthError ? "visible" : "invisible"
+                                                        }`}
+                                                >
+                                                    유효하지 않은 입력값입니다
+                                                </p>
                                             </div>
-
                                         </div>
+
                                     </div>
                                 </div>
 
@@ -1204,7 +1218,7 @@ export default function Page() {
                             </div>
                         )}
                     </div>
-                    <div className="min-w-0 w-full xl:w-auto xl:shrink-0 self-stretch shadow-[0px_1px_3px_0px_rgba(0,0,0,0.05)] inline-flex flex-col justify-start items-start gap-4 overflow-hidden">
+                    <div className="min-w-0 w-full xl:w-auto xl:shrink-0 self-stretch inline-flex flex-col justify-start items-start gap-4 overflow-hidden">
                         <div className="self-stretch inline-flex justify-end items-center gap-2">
                             <div className="flex-1 justify-center text-[var(--foundation-neutral-240)] text-xl font-bold font-['Pretendard'] leading-7">MY 예매 정보</div>
                             <div className="text-right justify-center text-[var(--foundation-neutral-240)] text-sm font-medium font-['Pretendard'] leading-5">남은 결제 시간</div>
