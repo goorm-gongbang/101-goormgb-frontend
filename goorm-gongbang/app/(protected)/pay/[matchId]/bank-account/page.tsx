@@ -160,33 +160,34 @@ export default function BankAccountPage() {
                         </div>
 
                         <div className="flex flex-col gap-4 rounded-[10px] border border-[var(--foundation-primary-500)] bg-white p-6">
-                            <div className="flex items-center gap-6">
+                            <div className="grid grid-cols-[88px_1fr] items-center gap-6">
                                 <div className="text-lg font-medium leading-6 text-[var(--foundation-neutral-600)]">
                                     입금 기한
                                 </div>
-                                <div className="flex-1 text-lg font-semibold leading-6 text-[var(--foundation-neutral-240)]">
+                                <div className="text-lg font-semibold leading-6 text-[var(--foundation-neutral-240)]">
                                     {formatDepositDeadline(matchAt)}
                                 </div>
                             </div>
 
-                            <div className="flex items-center gap-6">
+                            <div className="grid grid-cols-[88px_1fr] items-center gap-6">
                                 <div className="text-lg font-medium leading-6 text-[var(--foundation-neutral-600)]">
                                     입금 계좌
                                 </div>
-                                <div className="flex-1 text-lg font-semibold leading-6 text-[var(--foundation-neutral-240)]">
+                                <div className="text-lg font-semibold leading-6 text-[var(--foundation-neutral-240)]">
                                     {searchParams.get("bank")} {searchParams.get("accountNumber")}
                                 </div>
                             </div>
 
-                            <div className="flex items-center gap-6">
-                                <div className="w-16 text-lg font-medium leading-6 text-[var(--foundation-neutral-600)]">
+                            <div className="grid grid-cols-[88px_1fr] items-center gap-6">
+                                <div className="text-lg font-medium leading-6 text-[var(--foundation-neutral-600)]">
                                     예금주
                                 </div>
-                                <div className="flex-1 text-lg font-semibold leading-6 text-[var(--foundation-neutral-240)]">
+                                <div className="text-lg font-semibold leading-6 text-[var(--foundation-neutral-240)]">
                                     {searchParams.get("holder")}
                                 </div>
                             </div>
                         </div>
+
                     </section>
 
                     <section className="flex flex-col gap-2">
