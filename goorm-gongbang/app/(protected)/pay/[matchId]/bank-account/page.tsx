@@ -174,7 +174,7 @@ export default function BankAccountPage() {
                                     입금 계좌
                                 </div>
                                 <div className="flex-1 text-lg font-semibold leading-6 text-[var(--foundation-neutral-240)]">
-                                    신한 110-123-456789
+                                    {searchParams.get("bank")} {searchParams.get("accountNumber")}
                                 </div>
                             </div>
 
@@ -183,7 +183,7 @@ export default function BankAccountPage() {
                                     예금주
                                 </div>
                                 <div className="flex-1 text-lg font-semibold leading-6 text-[var(--foundation-neutral-240)]">
-                                    주식회사 구름공방
+                                    {searchParams.get("holder")}
                                 </div>
                             </div>
                         </div>
