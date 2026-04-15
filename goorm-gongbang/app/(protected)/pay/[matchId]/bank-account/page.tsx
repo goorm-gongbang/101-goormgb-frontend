@@ -117,8 +117,10 @@ export default function BankAccountPage() {
 
     const [showCopiedToast, setShowCopiedToast] = useState(false);
     const handleCopy = () => {
-        navigator.clipboard.writeText(stadiumAddress);
-        setShowCopiedToast(true);
+        if (stadiumAddress) {
+            navigator.clipboard.writeText(stadiumAddress);
+            setShowCopiedToast(true);
+        }
     };
 
     useEffect(() => {
@@ -205,9 +207,10 @@ export default function BankAccountPage() {
 
                                     <div
                                         className="cursor-pointer mt-0.5 inline-flex items-center gap-1 text-xs leading-4 text-[var(--foundation-neutral-600)]"
+                                        onClick={handleCopy}
                                     >
                                         <span className="underline">{stadiumAddress || "-"}</span>
-                                        <Copy className="h-4 w-4" strokeWidth={1.5} onClick={handleCopy} />
+                                        <Copy className="h-4 w-4" strokeWidth={1.5} />
                                     </div>
                                 </div>
                             </div>
@@ -258,22 +261,12 @@ export default function BankAccountPage() {
                                 <div className="h-px bg-[var(--stroke-interactive-neutral-default)]" />
 
                                 <div className="flex flex-col gap-0.5">
-                                    {/* {seatRows.map((seat) => (
-                                        <div key={seat.label} className="flex justify-between gap-4">
-                                            <div className="text-sm font-medium text-[var(--foundation-neutral-240)]">
-                                                {seat.label || "-"}
-                                            </div>
-                                            <div className="text-sm font-medium text-[var(--foundation-neutral-240)]">
-                                                1개
-                                            </div>
-                                        </div>
-                                    ))} */}
                                     <div className="flex justify-between gap-4">
                                         <div className="text-sm font-medium text-[var(--foundation-neutral-240)]">
                                             티켓 금액
                                         </div>
                                         <div className="text-sm font-medium text-[var(--foundation-neutral-240)]">
-                                            {won(totalAmount - fee) || 0}
+                                            {won(totalAmount - fee)}
                                         </div>
                                     </div>
 
