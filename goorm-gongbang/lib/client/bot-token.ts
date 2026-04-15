@@ -20,6 +20,7 @@
 const SECRET = process.env.NEXT_PUBLIC_BOT_TOKEN_SECRET ?? "playball-xbot-v1";
 const TOKEN_TTL_MS = 5 * 60 * 1000; // 5분
 const TOKEN_VERSION = "1";
+let tokenPromise: Promise<string> | null = null;
 
 let cachedToken: string | null = null;
 let cachedAt = 0;
