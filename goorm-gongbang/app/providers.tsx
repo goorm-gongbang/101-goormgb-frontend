@@ -37,18 +37,17 @@ export default function Providers({ children }: { children: React.ReactNode }) {
 
   const botTokenInitialized = useRef(false);
 
-  // [X-Bot-Token] 사전 생성 (1회만)
-  useEffect(() => {
-    if (!botTokenInitialized.current) {
-      getBotToken();
-      botTokenInitialized.current = true;
-    }
-  }, []);
-
   useEffect(() => {
     let mounted = true;
 
     (async () => {
+      // [X-Bot-Token] 첫 API 호출 전에 반드시 토큰 확보 — fetch wrapper 의
+      // getBotTokenSync() 가 빈 값을 반환하여 헤더가 누락되는 레이스 방지.
+      if (!botTokenInitialized.current) {
+        await getBotToken();
+        botTokenInitialized.current = true;
+      }
+
       const token = await refreshAccessToken();
 
       if (!mounted) return;

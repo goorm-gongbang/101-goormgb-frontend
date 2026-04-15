@@ -17,13 +17,24 @@
    매크로)은 Canvas 렌더링/Web Crypto 실행 불가이므로 유효 토큰 생성 불가.
 =========================== */
 
-const SECRET = process.env.NEXT_PUBLIC_BOT_TOKEN_SECRET ?? "playball-xbot-v1";
+const SECRET = process.env.NEXT_PUBLIC_BOT_TOKEN_SECRET ?? "";
 const TOKEN_TTL_MS = 5 * 60 * 1000; // 5분
 const TOKEN_VERSION = "1";
 let tokenPromise: Promise<string> | null = null;
 
+if (typeof window !== "undefined" && !SECRET) {
+  // 프로덕션 배포 시 환경변수 미주입 조기 경보. 기본값 fallback 없음 —
+  // 번들에 공통 기본값이 박히면 환경별 분리/로테이션 의미가 사라짐.
+  console.warn(
+    "[bot-token] NEXT_PUBLIC_BOT_TOKEN_SECRET 환경변수가 설정되지 않았습니다. " +
+    "로컬 개발이 아니라면 배포 환경변수를 확인하세요.",
+  );
+}
+
 let cachedToken: string | null = null;
 let cachedAt = 0;
+// 동시 호출 시 Canvas/Crypto 중복 실행 방지용 in-flight Promise.
+let inflight: Promise<string> | null = null;
 
 /** Canvas fingerprint — 브라우저/OS/GPU 차이로 고유 해시 생성 */
 function getCanvasFingerprint(): string {
@@ -121,19 +132,31 @@ export async function getBotToken(): Promise<string> {
     return cachedToken;
   }
 
-  const ts = Math.floor(now / 1000);
-  const nonce = randomNonce();
-  const fp = await sha256Short(getCanvasFingerprint());
-  const meta = await sha256Short(getBrowserMeta());
+  // 동시 호출이 들어오면 같은 Promise 를 공유 → Canvas/Crypto 중복 방지.
+  if (inflight) {
+    return inflight;
+  }
 
-  const payload = JSON.stringify({ v: TOKEN_VERSION, ts, nonce, fp, meta });
-  const payloadB64 = base64urlEncode(payload);
-  const sig = await hmacSha256Hex(payloadB64, SECRET);
+  inflight = (async () => {
+    try {
+      const ts = Math.floor(now / 1000);
+      const nonce = randomNonce();
+      const fp = await sha256Short(getCanvasFingerprint());
+      const meta = await sha256Short(getBrowserMeta());
 
-  cachedToken = `${payloadB64}.${sig}`;
-  cachedAt = now;
+      const payload = JSON.stringify({ v: TOKEN_VERSION, ts, nonce, fp, meta });
+      const payloadB64 = base64urlEncode(payload);
+      const sig = await hmacSha256Hex(payloadB64, SECRET);
 
-  return cachedToken;
+      cachedToken = `${payloadB64}.${sig}`;
+      cachedAt = now;
+      return cachedToken;
+    } finally {
+      inflight = null;
+    }
+  })();
+
+  return inflight;
 }
 
 /**
