@@ -15,6 +15,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/authStore";
 import { refreshAccessToken, getMe } from "@/lib/services";
 import { getBotToken } from "@/lib/client/bot-token";
+import { initFaro } from "@/lib/client/faro";
 
 function isOnboardingPath(pathname: string) {
   return pathname === "/onboarding" || pathname.startsWith("/onboarding/");
@@ -43,6 +44,10 @@ export default function Providers({ children }: { children: React.ReactNode }) {
       getBotToken();
       botTokenInitialized.current = true;
     }
+  }, []);
+
+  useEffect(() => {
+    initFaro();
   }, []);
 
   useEffect(() => {
