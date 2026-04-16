@@ -395,7 +395,7 @@ export default function MatchDetailSectionResponsive({
     <div className="w-full">
       <section className="relative w-full bg-[var(--background-grey)] overflow-hidden">
         {/* background image */}
-        <div className="absolute inset-x-0 -top-[300px] sm:-top-[380px] md:-top-[455px] h-[900px] sm:h-[997px] w-full">
+        <div className="absolute inset-0 w-full">
           <Image
             src={heroBgImageUrl}
             fill
@@ -404,7 +404,7 @@ export default function MatchDetailSectionResponsive({
             loading="eager"
             fetchPriority="high"
             quality={25}
-            className="object-cover blur-[2px]"
+            className="object-fill blur-[2px]"
           />
         </div>
         <div className="absolute inset-0 opacity-30 bg-black blur-[2px]" />

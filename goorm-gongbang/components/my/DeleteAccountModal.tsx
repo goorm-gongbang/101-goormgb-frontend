@@ -59,6 +59,7 @@ export function DeleteAccountModal({ isOpen, onClose, onDeleteSuccess }: DeleteA
                     <p>작성한 데이터, 저장된 일정 및 맞춤 정보도 함께 삭제됩니다.</p>
                     <p>탈퇴 후 동일한 계정으로 재가입은 가능하지만, 이전 정보는 복원되지 않습니다.</p>
                     <p className="font-bold">탈퇴 후 30일 이내 재가입이 제한됩니다.</p>
+                    <p className="font-bold">결제한 티켓은 환불되지 않습니다.</p>
                 </div>
 
                 {/* 체크박스 */}
