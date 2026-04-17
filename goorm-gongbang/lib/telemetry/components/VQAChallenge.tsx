@@ -759,20 +759,27 @@ export function VQAChallenge({
 
   /* ADD BY CKH - body scroll lock */
   useEffect(() => {
-    const originalHtmlOverflow = document.documentElement.style.overflow;
-    const originalBodyOverflow = document.body.style.overflow;
+    const scrollY = window.scrollY;
+    const originalPosition = document.body.style.position;
+    const originalTop = document.body.style.top;
+    const originalWidth = document.body.style.width;
     const originalTouchAction = document.body.style.touchAction;
 
-    // html에도 설정해야 body→viewport 전파를 막아 fixed 오버레이의 overflow-auto 수평 스크롤이 동작함.
-    document.documentElement.style.overflow = "hidden";
-    document.body.style.overflow = "hidden";
+    // overflow 대신 position:fixed로 스크롤 락.
+    // overflow:hidden은 html/body→viewport 전파 or html containing block 변경으로
+    // fixed 오버레이 내부 overflow:auto 수평 스크롤을 깨뜨리는 부작용이 있음.
+    document.body.style.position = "fixed";
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.width = "100%";
     document.body.style.touchAction = "none";
     setPortalReady(true);
 
     return () => {
-      document.documentElement.style.overflow = originalHtmlOverflow;
-      document.body.style.overflow = originalBodyOverflow;
+      document.body.style.position = originalPosition;
+      document.body.style.top = originalTop;
+      document.body.style.width = originalWidth;
       document.body.style.touchAction = originalTouchAction;
+      window.scrollTo(0, scrollY);
     };
   }, []);
 
