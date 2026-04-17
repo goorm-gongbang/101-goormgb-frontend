@@ -759,15 +759,19 @@ export function VQAChallenge({
 
   /* ADD BY CKH - body scroll lock */
   useEffect(() => {
-    const originalOverflow = document.body.style.overflow;
+    const originalHtmlOverflow = document.documentElement.style.overflow;
+    const originalBodyOverflow = document.body.style.overflow;
     const originalTouchAction = document.body.style.touchAction;
 
+    // html에도 설정해야 body→viewport 전파를 막아 fixed 오버레이의 overflow-auto 수평 스크롤이 동작함.
+    document.documentElement.style.overflow = "hidden";
     document.body.style.overflow = "hidden";
     document.body.style.touchAction = "none";
     setPortalReady(true);
 
     return () => {
-      document.body.style.overflow = originalOverflow;
+      document.documentElement.style.overflow = originalHtmlOverflow;
+      document.body.style.overflow = originalBodyOverflow;
       document.body.style.touchAction = originalTouchAction;
     };
   }, []);
