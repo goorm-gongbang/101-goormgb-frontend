@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { PrimaryButton } from '@/components/common/Button';
 import { AIApiError } from '../api';
 import { useTelemetryContext } from '../context';
@@ -145,6 +146,7 @@ export function VQAChallenge({
   const [timingOk, setTimingOk] = useState(false);
   const [distanceToTarget, setDistanceToTarget] = useState<number | null>(null);
   const [dropOffsetMs, setDropOffsetMs] = useState<number | null>(null);
+  const [portalReady, setPortalReady] = useState(false);
 
   const mountedRef = useRef(true);
   const retryTimerRef = useRef<number | null>(null);
@@ -757,21 +759,28 @@ export function VQAChallenge({
 
   /* ADD BY CKH - body scroll lock */
   useEffect(() => {
-    const originalOverflow = document.body.style.overflow;
+    const originalHtmlOverflow = document.documentElement.style.overflow;
+    const originalBodyOverflow = document.body.style.overflow;
     const originalTouchAction = document.body.style.touchAction;
 
+    // html에도 설정해야 body→viewport 전파를 막아 fixed 오버레이의 overflow-auto 수평 스크롤이 동작함.
+    document.documentElement.style.overflow = "hidden";
     document.body.style.overflow = "hidden";
     document.body.style.touchAction = "none";
+    setPortalReady(true);
 
     return () => {
-      document.body.style.overflow = originalOverflow;
+      document.documentElement.style.overflow = originalHtmlOverflow;
+      document.body.style.overflow = originalBodyOverflow;
       document.body.style.touchAction = originalTouchAction;
     };
   }, []);
 
-  return (
+  if (!portalReady) return <></>;
+
+  return createPortal(
     <div className="fixed inset-0 z-50 overflow-auto bg-[linear-gradient(180deg,rgba(0,0,0,0.9)_0%,rgba(3,41,53,0.5)_100%)] backdrop-blur-[5px]">
-      <div className="flex min-h-full items-center justify-center p-4">
+      <div className="flex min-h-full min-w-[822px] items-center justify-center p-4">
       <div className="w-full min-w-[790px] max-w-[996px] rounded-2xl border-2 border-[var(--foundation-primary-400)] bg-[var(--foundation-neutral-white)] px-10 pb-10 pt-5 shadow-[0_0_20px_rgba(0,214,161,0.1)]">
         <div className="flex items-center justify-between gap-4">
           <div className="flex min-w-0 items-center gap-6">
@@ -1022,16 +1031,27 @@ export function VQAChallenge({
                   </div>
                 )}
 
-                {phase === 'SUCCESS' && (
+                {phase === 'SUCCESS' && isPracticeMode && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-[rgba(15,23,42,0.44)]">
+                    <style>{`@keyframes vqa-success-pop{from{opacity:0;transform:scale(0.82);filter:blur(4px)}to{opacity:1;transform:scale(1);filter:blur(0)}}`}</style>
+                    <p
+                      className="text-[72px] font-bold leading-none tracking-[-1.44px] text-[var(--foundation-primary-500)] [text-shadow:0_0_32px_rgba(0,214,161,0.4)] font-['Pretendard']"
+                      style={{ animation: 'vqa-success-pop 0.4s cubic-bezier(0.22,1,0.36,1) forwards' }}
+                    >
+                      Success
+                    </p>
+                    <span className="sr-only">{statusMessage}</span>
+                  </div>
+                )}
+
+                {phase === 'SUCCESS' && !isPracticeMode && (
                   <div className="absolute inset-0 flex items-center justify-center bg-[rgba(15,23,42,0.54)] backdrop-blur-[2px]">
                     <div className="w-full max-w-[509px] rounded-2xl border-2 border-[var(--foundation-primary-400)] bg-[linear-gradient(180deg,#EFFFF9_0%,#F8FFFC_36%,#FFFFFF_100%)] px-9 py-8 text-center shadow-[0_0_28px_rgba(0,214,161,0.24)]">
                       <h3 className="text-[32px] font-semibold leading-[1.5] text-[var(--foundation-primary-500)] font-['Pretendard']">
-                        {isPracticeMode ? '연습 성공' : '인증 통과'}
+                        인증 통과
                       </h3>
                       <p className="mt-3 text-[24px] font-medium leading-[1.5] text-[var(--foundation-neutral-240)] font-['Pretendard']">
-                        {isPracticeMode
-                          ? '다시 시작하기를 눌러 같은 방식으로 계속 연습할 수 있어요.'
-                          : '잠시만 기다려주세요. 대기열로 이동합니다.'}
+                        잠시만 기다려주세요. 대기열로 이동합니다.
                       </p>
                       <span className="sr-only">
                         {statusMessage} Position {positionOk ? 'OK' : 'MISS'} / Timing{' '}
@@ -1039,7 +1059,7 @@ export function VQAChallenge({
                         {distanceToTarget !== null ? ` / 거리 ${distanceToTarget}px` : ''}
                         {dropOffsetMs !== null ? ` / 타이밍 ${dropOffsetMs}ms` : ''}
                       </span>
-                      {state.status === 'submitting' && !isPracticeMode && (
+                      {state.status === 'submitting' && (
                         <div className="mt-5 flex items-center justify-center gap-3 text-sm font-medium leading-5 text-[var(--foundation-primary-600)] font-['Pretendard']">
                           <div className="h-5 w-5 animate-spin rounded-full border-2 border-[var(--foundation-primary-100)] border-b-[var(--foundation-primary-600)]" />
                           <span>서버 검증 중...</span>
@@ -1120,6 +1140,7 @@ export function VQAChallenge({
         )}
       </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
