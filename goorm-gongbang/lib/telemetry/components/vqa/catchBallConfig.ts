@@ -14,6 +14,7 @@ export const CATCH_BALL_CONFIG = {
   timingTargetJitterMs: 0,
   timingAlignOffsetMs: 20,
   catchRadius: 48,
+  catchPocketRadius: 32,
   safetyMargin: 18,
   sampleEveryMs: 20,
   gloveWidth: 92,
