@@ -400,7 +400,7 @@ export function VQAChallenge({
         finalGlove.x - roundSetup.landingPoint.x,
         finalGlove.y - roundSetup.landingPoint.y,
       );
-      const resolvedPositionOk = distance <= CATCH_BALL_CONFIG.catchRadius;
+      const resolvedPositionOk = distance <= CATCH_BALL_CONFIG.catchPocketRadius;
       const elapsedFromPitch = dropTimestamp - pitchStartMs;
       const timingStart = roundSetup.timingWindowStartMs;
       const timingEnd = roundSetup.timingWindowStartMs + CATCH_BALL_CONFIG.timingWindowMs;
@@ -637,13 +637,34 @@ export function VQAChallenge({
   const gaugeThumbSize = 14;
   const indicatorTopInset = 3;
   const indicatorBottomInset = 7;
+  const indicatorTravelRange =
+    VERTICAL_INDICATOR_TRACK.height - gaugeThumbSize - indicatorTopInset - indicatorBottomInset;
   const gaugeThumbTop = clamp(
-    indicatorTopInset +
-    (1 - indicatorProgress) *
-    (VERTICAL_INDICATOR_TRACK.height - gaugeThumbSize - indicatorTopInset - indicatorBottomInset),
+    indicatorTopInset + (1 - indicatorProgress) * indicatorTravelRange,
     indicatorTopInset,
     VERTICAL_INDICATOR_TRACK.height - gaugeThumbSize - indicatorBottomInset,
   );
+  // Green bar position derived from actual timing window — makes visual zone match judgment exactly.
+  // barTop: thumb top position when timing window closes (p_end → smaller y = higher position)
+  // barHeight: thumb traversal range during timing window + thumb size
+  const indicatorBarTop = roundSetup
+    ? Math.round(
+        indicatorTopInset +
+          (1 -
+            Math.min(
+              (roundSetup.timingWindowStartMs + CATCH_BALL_CONFIG.timingWindowMs) /
+                roundSetup.indicatorDurationMs,
+              1,
+            )) *
+            indicatorTravelRange,
+      )
+    : indicatorTopInset;
+  const indicatorBarHeight = roundSetup
+    ? Math.round(
+        gaugeThumbSize +
+          (CATCH_BALL_CONFIG.timingWindowMs / roundSetup.indicatorDurationMs) * indicatorTravelRange,
+      )
+    : 44;
   const countdownOverlayLabel =
     countdownLabel === 'READY' ? 'Ready' : countdownLabel === 'GO' ? 'Start!' : null;
   const playfieldTimeLabel = formatCountdown(remainingTime);
@@ -682,9 +703,11 @@ export function VQAChallenge({
         : [state.message];
   const errorConfirmLabel = '확인';
   const terminalErrorCardClass =
-    state.status === 'error' && state.reason === 'blocked' ? 'max-w-[703px] px-11 py-8' : 'max-w-[463px] px-9 py-8';
+    state.status === 'error' && state.reason === 'blocked' ? 'max-w-[703px] px-11 py-8' : 'max-w-[540px] px-9 py-8';
   const terminalErrorCopyClass =
-    state.status === 'error' && state.reason === 'blocked' ? 'max-w-[615px]' : 'max-w-[360px]';
+    state.status === 'error' && state.reason === 'blocked' ? 'max-w-[615px]' : 'max-w-[460px]';
+  const terminalErrorBodyFontClass =
+    state.status === 'error' && state.reason === 'blocked' ? 'text-[24px]' : 'text-[20px]';
   const handleErrorConfirm = () => {
     if (errorAccent === 'red') {
       onCancel();
@@ -702,9 +725,16 @@ export function VQAChallenge({
     draggingRef.current = true;
   };
 
-  const handlePointerUp = () => {
+  const handlePointerUp = (event: React.PointerEvent<HTMLDivElement>) => {
     if (!draggingRef.current) {
       return;
+    }
+
+    if (event.type === 'pointerup' && playRef.current) {
+      const rect = playRef.current.getBoundingClientRect();
+      const finalX = clamp(event.clientX - rect.left, MOVEMENT_ZONE.x, MOVEMENT_ZONE.x + MOVEMENT_ZONE.width);
+      const finalY = clamp(event.clientY - rect.top, MOVEMENT_ZONE.y, MOVEMENT_ZONE.y + MOVEMENT_ZONE.height);
+      gloveRef.current = { x: finalX, y: finalY };
     }
 
     draggingRef.current = false;
@@ -740,8 +770,9 @@ export function VQAChallenge({
   }, []);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[linear-gradient(180deg,rgba(0,0,0,0.9)_0%,rgba(3,41,53,0.5)_100%)] p-4 backdrop-blur-[5px]">
-      <div className="w-full max-w-[996px] rounded-2xl border-2 border-[var(--foundation-primary-400)] bg-[var(--foundation-neutral-white)] px-10 pb-10 pt-5 shadow-[0_0_20px_rgba(0,214,161,0.1)]">
+    <div className="fixed inset-0 z-50 overflow-auto bg-[linear-gradient(180deg,rgba(0,0,0,0.9)_0%,rgba(3,41,53,0.5)_100%)] backdrop-blur-[5px]">
+      <div className="flex min-h-full items-center justify-center p-4">
+      <div className="w-full min-w-[790px] max-w-[996px] rounded-2xl border-2 border-[var(--foundation-primary-400)] bg-[var(--foundation-neutral-white)] px-10 pb-10 pt-5 shadow-[0_0_20px_rgba(0,214,161,0.1)]">
         <div className="flex items-center justify-between gap-4">
           <div className="flex min-w-0 items-center gap-6">
             <p className="shrink-0 text-[20px] font-semibold leading-[1.5] text-[var(--foundation-neutral-240)] font-['Pretendard']">
@@ -821,11 +852,11 @@ export function VQAChallenge({
                   {errorTitle}
                 </h3>
                 <div className={`mx-auto mt-3 space-y-1 ${terminalErrorCopyClass}`}>
-                  <p className="text-[24px] font-semibold leading-[1.5] text-[var(--foundation-neutral-240)] font-['Pretendard']">
+                  <p className={`${terminalErrorBodyFontClass} font-semibold leading-[1.5] text-[var(--foundation-neutral-240)] font-['Pretendard']`}>
                     {errorDescription[0]}
                   </p>
                   {errorDescription[1] && (
-                    <p className="text-[24px] font-medium leading-[1.5] text-[var(--foundation-neutral-240)] font-['Pretendard']">
+                    <p className={`${terminalErrorBodyFontClass} font-medium leading-[1.5] text-[var(--foundation-neutral-240)] font-['Pretendard']`}>
                       {errorDescription[1]}
                     </p>
                   )}
@@ -845,8 +876,8 @@ export function VQAChallenge({
         )}
 
         {isLoadedChallengeState(state) && (
-          <div className="mt-4 flex items-start gap-4">
-            <div className="relative h-[458px] w-[708px] overflow-hidden rounded-2xl bg-white">
+          <div className="mt-4 flex flex-col gap-4 lg:flex-row lg:items-start">
+            <div className="relative w-fit overflow-hidden rounded-2xl bg-white">
               <div
                 ref={playRef}
                 className="relative h-full w-full touch-none overflow-hidden rounded-2xl"
@@ -887,7 +918,10 @@ export function VQAChallenge({
                       height: VERTICAL_INDICATOR_TRACK.height,
                     }}
                   >
-                    <div className="absolute left-1/2 top-[3px] h-[44px] w-[20px] -translate-x-1/2 rounded-[4px] border border-[var(--foundation-primary-100)] bg-[linear-gradient(180deg,var(--foundation-primary-700)_0%,var(--foundation-primary-500)_100%)]" />
+                    <div
+                      className="absolute left-1/2 w-[20px] -translate-x-1/2 rounded-[4px] border border-[var(--foundation-primary-100)] bg-[linear-gradient(180deg,var(--foundation-primary-700)_0%,var(--foundation-primary-500)_100%)]"
+                      style={{ top: indicatorBarTop, height: indicatorBarHeight }}
+                    />
                     <div
                       className="absolute left-1/2 h-[14px] w-[14px] -translate-x-1/2 rounded-full border border-[var(--foundation-primary-600)] bg-white"
                       style={{ top: gaugeThumbTop }}
@@ -1031,7 +1065,7 @@ export function VQAChallenge({
               </div>
             </div>
 
-            <div className="flex h-[458px] w-[188px] flex-col gap-6">
+            <div className="flex w-full flex-col gap-4 lg:h-[460px] lg:w-[188px] lg:gap-6">
               <div className="flex flex-col gap-2">
                 <div className="rounded-[10px] bg-[var(--foundation-primary-10)] py-1 text-center text-sm font-medium leading-[1.5] text-[var(--foundation-primary-600)] font-['Pretendard']">
                   남은 횟수
@@ -1084,6 +1118,7 @@ export function VQAChallenge({
             </div>
           </div>
         )}
+      </div>
       </div>
     </div>
   );
