@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { PrimaryButton } from '@/components/common/Button';
 import { AIApiError } from '../api';
 import { useTelemetryContext } from '../context';
@@ -145,6 +146,7 @@ export function VQAChallenge({
   const [timingOk, setTimingOk] = useState(false);
   const [distanceToTarget, setDistanceToTarget] = useState<number | null>(null);
   const [dropOffsetMs, setDropOffsetMs] = useState<number | null>(null);
+  const [portalReady, setPortalReady] = useState(false);
 
   const mountedRef = useRef(true);
   const retryTimerRef = useRef<number | null>(null);
@@ -762,6 +764,7 @@ export function VQAChallenge({
 
     document.body.style.overflow = "hidden";
     document.body.style.touchAction = "none";
+    setPortalReady(true);
 
     return () => {
       document.body.style.overflow = originalOverflow;
@@ -769,7 +772,9 @@ export function VQAChallenge({
     };
   }, []);
 
-  return (
+  if (!portalReady) return <></>;
+
+  return createPortal(
     <div className="fixed inset-0 z-50 overflow-auto bg-[linear-gradient(180deg,rgba(0,0,0,0.9)_0%,rgba(3,41,53,0.5)_100%)] backdrop-blur-[5px]">
       <div className="flex min-h-full min-w-[822px] items-center justify-center p-4">
       <div className="w-full min-w-[790px] max-w-[996px] rounded-2xl border-2 border-[var(--foundation-primary-400)] bg-[var(--foundation-neutral-white)] px-10 pb-10 pt-5 shadow-[0_0_20px_rgba(0,214,161,0.1)]">
@@ -1131,6 +1136,7 @@ export function VQAChallenge({
         )}
       </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
