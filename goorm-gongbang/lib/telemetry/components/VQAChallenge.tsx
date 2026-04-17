@@ -771,7 +771,7 @@ export function VQAChallenge({
 
   return (
     <div className="fixed inset-0 z-50 overflow-auto bg-[linear-gradient(180deg,rgba(0,0,0,0.9)_0%,rgba(3,41,53,0.5)_100%)] backdrop-blur-[5px]">
-      <div className="flex min-h-full min-w-fit items-center justify-center p-4">
+      <div className="flex min-h-full min-w-[822px] items-center justify-center p-4">
       <div className="w-full min-w-[790px] max-w-[996px] rounded-2xl border-2 border-[var(--foundation-primary-400)] bg-[var(--foundation-neutral-white)] px-10 pb-10 pt-5 shadow-[0_0_20px_rgba(0,214,161,0.1)]">
         <div className="flex items-center justify-between gap-4">
           <div className="flex min-w-0 items-center gap-6">
